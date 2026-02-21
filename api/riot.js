@@ -24,7 +24,11 @@ export default async function handler(req, res) {
     } else if (action === "summoner") {
       url = `https://${region}.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/${puuid}`;
     } else if (action === "rank") {
+      // Try by summonerId first, fall back to puuid-based rank lookup
       url = `https://${region}.api.riotgames.com/lol/league/v4/entries/by-summoner/${summonerId}`;
+    } else if (action === "rankbypuuid") {
+      // Direct rank lookup using puuid via summoner endpoint
+      url = `https://${region}.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/${puuid}`;
     } else if (action === "matchlist") {
       url = `https://${routing}.api.riotgames.com/lol/match/v5/matches/by-puuid/${puuid}/ids?queue=420&start=0&count=1`;
     } else if (action === "match") {
@@ -35,14 +39,11 @@ export default async function handler(req, res) {
 
     const separator = url.includes("?") ? "&" : "?";
     const finalUrl = `${url}${separator}api_key=${apiKey}`;
-
     const response = await fetch(finalUrl);
     const text = await response.text();
-    
     let data;
-    try { data = JSON.parse(text); } 
+    try { data = JSON.parse(text); }
     catch { data = { raw: text }; }
-    
     return res.status(response.status).json(data);
   } catch (e) {
     return res.status(500).json({ error: e.message, url });
