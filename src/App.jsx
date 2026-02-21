@@ -273,34 +273,73 @@ function AuthPage({ onLogin }) {
 }
 
 // ─── LINK LOL ACCOUNT ────────────────────────────────────────────────────────
+// Default starter icon IDs every LoL account owns (0-28)
+const STARTER_ICONS = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28];
+const getIconUrl = (id) => `https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/profile-icons/${id}.jpg`;
+
 function LinkAccount({ user, setUser, region, setRegion, toast }) {
   const [gameName, setGameName] = useState("");
   const [tagLine, setTagLine] = useState("");
   const [loading, setLoading] = useState(false);
+  // Verification state
+  const [step, setStep] = useState("input"); // input | verify
+  const [pendingAccount, setPendingAccount] = useState(null);
+  const [requiredIconId, setRequiredIconId] = useState(null);
 
-  const link = async () => {
+  const startLink = async () => {
     if (!gameName || !tagLine) return toast("Enter your Riot ID and tag", "error");
     setLoading(true);
     try {
       const account = await riot.getSummonerByName(gameName, tagLine);
-      console.log("Riot account response:", JSON.stringify(account));
-      if (!account || !account.puuid) throw new Error(`Account not found. Riot returned: ${JSON.stringify(account)}`);
-      const rank = await riot.getRankedInfo(account.puuid, region);
-      const updated = { ...user, lolAccount: `${gameName}#${tagLine}`, puuid: account.puuid, rank };
+      if (!account || !account.puuid) throw new Error("Account not found. Check your Riot ID and Tag.");
+      
+      // Check if this LoL account is already linked to another user
+      const allUsers = await storage.getUsers();
+      const alreadyLinked = allUsers.find(u => u.puuid === account.puuid && u.username !== user.username);
+      if (alreadyLinked) throw new Error("This LoL account is already linked to another platform account.");
+
+      // Pick a random starter icon for verification
+      const iconId = STARTER_ICONS[Math.floor(Math.random() * STARTER_ICONS.length)];
+      setPendingAccount({ ...account, gameName, tagLine });
+      setRequiredIconId(iconId);
+      setStep("verify");
+    } catch (e) {
+      toast(`Error: ${e.message}`, "error");
+    }
+    setLoading(false);
+  };
+
+  const verifyAndLink = async () => {
+    setLoading(true);
+    try {
+      // Fetch current profile icon via summoner endpoint
+      const summoner = await riotAPI({ action: "summoner", puuid: pendingAccount.puuid, region });
+      if (!summoner || summoner.profileIconId === undefined) throw new Error("Could not fetch your profile. Try again.");
+      
+      if (summoner.profileIconId !== requiredIconId) {
+        throw new Error(`Wrong icon! You currently have icon #${summoner.profileIconId} equipped. Please equip icon #${requiredIconId} in the League client first.`);
+      }
+
+      // Icon matches — link the account
+      const rank = await riot.getRankedInfo(pendingAccount.puuid, region);
+      const updated = { 
+        ...user, 
+        lolAccount: `${pendingAccount.gameName}#${pendingAccount.tagLine}`, 
+        puuid: pendingAccount.puuid, 
+        rank 
+      };
       await storage.setUser(user.username, updated);
       setUser(updated);
-      toast(`Linked! Rank: ${rank}`, "success");
+      toast(`Verified! Account linked. Rank: ${rank}`, "success");
+      setStep("input");
     } catch (e) {
-      toast(`Link failed: ${e.message}`, "error");
-      console.error("Full error:", e);
+      toast(`Verification failed: ${e.message}`, "error");
     }
     setLoading(false);
   };
 
   if (user.lolAccount) return (
-    <div style={{
-      background: "#0A1628", border: "1px solid #C8AA6E44", borderRadius: 4, padding: 24
-    }}>
+    <div style={{ background: "#0A1628", border: "1px solid #C8AA6E44", borderRadius: 4, padding: 24 }}>
       <div style={{ fontSize: 10, letterSpacing: 3, color: "#785A28", marginBottom: 12 }}>LINKED ACCOUNT</div>
       <div style={{ fontSize: 20, color: "#C8AA6E", fontWeight: 700 }}>{user.lolAccount}</div>
       <div style={{ color: "#785A28", fontSize: 13, marginTop: 4, fontFamily: "Crimson Text, serif" }}>
@@ -308,6 +347,51 @@ function LinkAccount({ user, setUser, region, setRegion, toast }) {
       </div>
       <div style={{ color: "#785A28", fontSize: 13 }}>
         Odds multiplier: <span style={{ color: "#0BC4AA" }}>{getOdds(user.rank)}x</span>
+      </div>
+      <button onClick={() => { setStep("input"); setUser({...user, lolAccount: null, puuid: null, rank: null}); storage.setUser(user.username, {...user, lolAccount: null, puuid: null, rank: null}); }}
+        style={{ marginTop: 12, background: "none", border: "1px solid #785A2855", color: "#785A28", padding: "6px 14px", borderRadius: 3, cursor: "pointer", fontFamily: "Cinzel, serif", fontSize: 11 }}>
+        Unlink Account
+      </button>
+    </div>
+  );
+
+  if (step === "verify" && pendingAccount && requiredIconId !== null) return (
+    <div style={{ background: "#0A1628", border: "1px solid #C8AA6E44", borderRadius: 4, padding: 24 }}>
+      <div style={{ fontSize: 10, letterSpacing: 3, color: "#C8AA6E", marginBottom: 16 }}>VERIFY ACCOUNT OWNERSHIP</div>
+      <p style={{ color: "#F0E6D388", fontSize: 13, fontFamily: "Crimson Text, serif", marginBottom: 20 }}>
+        To prove you own <strong style={{color:"#C8AA6E"}}>{pendingAccount.gameName}#{pendingAccount.tagLine}</strong>, 
+        set this icon as your profile picture in the League client, then click Verify:
+      </p>
+      <div style={{ display: "flex", alignItems: "center", gap: 20, marginBottom: 24, background: "#010A13", padding: 16, borderRadius: 4, border: "1px solid #C8AA6E33" }}>
+        <img 
+          src={getIconUrl(requiredIconId)} 
+          alt={`Icon ${requiredIconId}`}
+          style={{ width: 80, height: 80, borderRadius: 4, border: "2px solid #C8AA6E", imageRendering: "auto" }}
+          onError={e => { e.target.src = getIconUrl(0); }}
+        />
+        <div>
+          <div style={{ color: "#C8AA6E", fontSize: 16, fontWeight: 700, marginBottom: 4 }}>Icon #{requiredIconId}</div>
+          <div style={{ color: "#785A28", fontSize: 12, fontFamily: "Crimson Text, serif" }}>
+            1. Open League of Legends client<br/>
+            2. Click your profile icon (top right)<br/>
+            3. Select "Customize Identity"<br/>
+            4. Find and equip this icon<br/>
+            5. Come back here and click Verify
+          </div>
+        </div>
+      </div>
+      <div style={{ display: "flex", gap: 10 }}>
+        <button onClick={verifyAndLink} disabled={loading} style={{
+          flex: 1, background: "linear-gradient(135deg, #C8AA6E, #785A28)", border: "none",
+          color: "#010A13", padding: "12px", borderRadius: 3, fontFamily: "Cinzel, serif",
+          fontSize: 13, fontWeight: 700, cursor: "pointer", letterSpacing: 1
+        }}>
+          {loading ? "Verifying..." : "✓ Verify & Link"}
+        </button>
+        <button onClick={() => { setStep("input"); setPendingAccount(null); setRequiredIconId(null); }} style={{
+          background: "none", border: "1px solid #785A2855", color: "#785A28",
+          padding: "12px 20px", borderRadius: 3, fontFamily: "Cinzel, serif", fontSize: 12, cursor: "pointer"
+        }}>Cancel</button>
       </div>
     </div>
   );
@@ -333,7 +417,7 @@ function LinkAccount({ user, setUser, region, setRegion, toast }) {
           <option value="kr">KR</option>
           <option value="br1">BR</option>
         </select>
-        <button onClick={link} disabled={loading} style={{
+        <button onClick={startLink} disabled={loading} style={{
           background: "#C8AA6E", color: "#010A13", border: "none", padding: "10px 20px",
           borderRadius: 3, fontFamily: "Cinzel, serif", fontSize: 12, fontWeight: 700,
           cursor: "pointer", whiteSpace: "nowrap"
