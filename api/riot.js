@@ -2,34 +2,37 @@ export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-
   if (req.method === "OPTIONS") return res.status(200).end();
 
   const apiKey = process.env.RIOT_API_KEY;
-  if (!apiKey) return res.status(500).json({ error: "Riot API key not configured on server" });
+  if (!apiKey) return res.status(500).json({ error: "No API key configured" });
 
-  const { endpoint } = req.query;
-  if (!endpoint) return res.status(400).json({ error: "No endpoint provided" });
+  const { action, gameName, tagLine, region, puuid, summonerId, matchId } = req.query;
 
+  const regions = { euw1: "europe", na1: "americas", kr: "asia", br1: "americas" };
+  const routing = regions[region] || "europe";
+
+  let url = "";
   try {
-    // Decode the endpoint fully before using it
-    let url = endpoint;
-    let prev = null;
-    while (prev !== url) {
-      prev = url;
-      url = decodeURIComponent(url);
+    if (action === "account") {
+      url = `https://europe.api.riotgames.com/riot/account/v1/accounts/by-riot-id/${gameName}/${tagLine}`;
+    } else if (action === "summoner") {
+      url = `https://${region}.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/${puuid}`;
+    } else if (action === "rank") {
+      url = `https://${region}.api.riotgames.com/lol/league/v4/entries/by-summoner/${summonerId}`;
+    } else if (action === "matchlist") {
+      url = `https://${routing}.api.riotgames.com/lol/match/v5/matches/by-puuid/${puuid}/ids?queue=420&start=0&count=1`;
+    } else if (action === "match") {
+      url = `https://${routing}.api.riotgames.com/lol/match/v5/matches/${matchId}`;
+    } else {
+      return res.status(400).json({ error: "Unknown action" });
     }
-    
+
     const separator = url.includes("?") ? "&" : "?";
-    const finalUrl = `${url}${separator}api_key=${apiKey}`;
-    
-    console.log("Calling Riot URL:", finalUrl.replace(apiKey, "REDACTED"));
-    
-    const response = await fetch(finalUrl);
+    const response = await fetch(`${url}${separator}api_key=${apiKey}`);
     const data = await response.json();
-    res.status(response.status).json(data);
+    return res.status(response.status).json(data);
   } catch (e) {
-    console.error("Proxy error:", e);
-    res.status(500).json({ error: e.message });
+    return res.status(500).json({ error: e.message });
   }
 }
