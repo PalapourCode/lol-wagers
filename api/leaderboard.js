@@ -1,5 +1,5 @@
 const { neon } = require("@neondatabase/serverless");
-const sql = neon(process.env.STORAGE_URL);
+const sql = neon(process.env.POSTGRES_URL);
 
 module.exports = async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
