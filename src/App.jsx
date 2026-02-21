@@ -214,11 +214,11 @@ function AuthPage({ onLogin }) {
     if (!username.trim() || !password.trim()) return setError("Fill all fields");
     setLoading(true); setError("");
     try {
-      const existing = await storage.getUser(username.trim().toLowerCase());
+      const existing = await storage.getUser(username.trim());
       if (mode === "register") {
         if (existing) return setError("Username already taken");
         const newUser = {
-          username: username.trim().toLowerCase(),
+          username: username.trim(),
           password,
           balance: STARTING_BALANCE,
           bets: [],
@@ -347,13 +347,15 @@ function LinkAccount({ user, setUser, region, toast }) {
     setLoading(true);
     try {
       const account = await riot.getSummonerByName(gameName, tagLine);
+      if (!account || !account.puuid) throw new Error("Account not found. Check your Riot ID and Tag.");
       const rank = await riot.getRankedInfo(account.puuid, region);
       const updated = { ...user, lolAccount: `${gameName}#${tagLine}`, puuid: account.puuid, rank };
       await storage.setUser(user.username, updated);
       setUser(updated);
       toast(`Linked! Rank: ${rank}`, "success");
     } catch (e) {
-      toast(`Error: ${e.message}`, "error");
+      toast(`Link failed: ${e.message}`, "error");
+      console.error("Full error:", e);
     }
     setLoading(false);
   };
@@ -383,10 +385,17 @@ function LinkAccount({ user, setUser, region, toast }) {
           style={{ flex: 2, minWidth: 150, background: "#010A13", border: "1px solid #785A2855", color: "#F0E6D3", padding: "10px 12px", borderRadius: 3, fontFamily: "Cinzel, serif", fontSize: 13 }}
         />
         <input
-          placeholder="Tag (e.g. KR1)"
+          placeholder="Tag (e.g. EUW, NA1, 1234)"
           value={tagLine} onChange={e => setTagLine(e.target.value)}
           style={{ flex: 1, minWidth: 80, background: "#010A13", border: "1px solid #785A2855", color: "#F0E6D3", padding: "10px 12px", borderRadius: 3, fontFamily: "Cinzel, serif", fontSize: 13 }}
         />
+        <select value={region} onChange={e => setRegion(e.target.value)}
+          style={{ background: "#010A13", border: "1px solid #785A2855", color: "#F0E6D3", padding: "10px 12px", borderRadius: 3, fontFamily: "Cinzel, serif", fontSize: 13 }}>
+          <option value="euw1">EUW</option>
+          <option value="na1">NA</option>
+          <option value="kr">KR</option>
+          <option value="br1">BR</option>
+        </select>
         <button onClick={link} disabled={loading} style={{
           background: "#C8AA6E", color: "#010A13", border: "none", padding: "10px 20px",
           borderRadius: 3, fontFamily: "Cinzel, serif", fontSize: 12, fontWeight: 700,
