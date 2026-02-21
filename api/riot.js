@@ -12,7 +12,6 @@ export default async function handler(req, res) {
   const tagLine = req.query.tagLine || req.query.tagline;
   const region = req.query.region || "euw1";
   const puuid = req.query.puuid;
-  const summonerId = req.query.summonerId || req.query.summonerid;
   const matchId = req.query.matchId || req.query.matchid;
 
   const routing = { euw1: "europe", na1: "americas", kr: "asia", br1: "americas" }[region] || "europe";
@@ -21,14 +20,9 @@ export default async function handler(req, res) {
   try {
     if (action === "account") {
       url = `https://europe.api.riotgames.com/riot/account/v1/accounts/by-riot-id/${encodeURIComponent(gameName)}/${encodeURIComponent(tagLine)}`;
-    } else if (action === "summoner") {
-      url = `https://${region}.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/${puuid}`;
     } else if (action === "rank") {
-      // Try by summonerId first, fall back to puuid-based rank lookup
-      url = `https://${region}.api.riotgames.com/lol/league/v4/entries/by-summoner/${summonerId}`;
-    } else if (action === "rankbypuuid") {
-      // Direct rank lookup using puuid via summoner endpoint
-      url = `https://${region}.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/${puuid}`;
+      // Use league v4 entries by puuid directly - no summoner id needed
+      url = `https://${region}.api.riotgames.com/lol/league/v4/entries/by-puuid/${puuid}`;
     } else if (action === "matchlist") {
       url = `https://${routing}.api.riotgames.com/lol/match/v5/matches/by-puuid/${puuid}/ids?queue=420&start=0&count=1`;
     } else if (action === "match") {
@@ -46,6 +40,6 @@ export default async function handler(req, res) {
     catch { data = { raw: text }; }
     return res.status(response.status).json(data);
   } catch (e) {
-    return res.status(500).json({ error: e.message, url });
+    return res.status(500).json({ error: e.message });
   }
 }
