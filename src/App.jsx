@@ -79,8 +79,10 @@ const riot = {
   },
   async getRankedInfo(puuid, region) {
     const summoner = await riotAPI({ action: "summoner", puuid, region });
-    if (!summoner || !summoner.id) throw new Error(`Summoner fetch failed for region ${region}: ${JSON.stringify(summoner)}`);
-    const rankData = await riotAPI({ action: "rank", summonerId: summoner.id, region });
+    // Riot API may return id or encrypted summoner id - handle both
+    const summonerId = summoner?.id || summoner?.summonerId;
+    if (!summonerId) return "UNRANKED"; // Can't get rank without summoner id, default to unranked
+    const rankData = await riotAPI({ action: "rank", summonerId, region });
     if (!Array.isArray(rankData)) return "UNRANKED";
     const soloQ = rankData.find(e => e.queueType === "RANKED_SOLO_5x5");
     return soloQ ? `${soloQ.tier} ${soloQ.rank}` : "UNRANKED";
