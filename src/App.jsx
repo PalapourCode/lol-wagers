@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 const STARTING_BALANCE = 500;
 const MAX_BET = 30;
 const RAKE = 0.05; // 5%
-const RIOT_API_KEY = "RGAPI-YOUR-KEY-HERE"; // Users must set their own key
+// API key is handled server-side via /api/riot
 
 // Rank multipliers for odds (lower rank = higher payout potential)
 const RANK_ODDS = {
@@ -66,38 +66,32 @@ const storage = {
 };
 
 // ─── RIOT API ────────────────────────────────────────────────────────────────
-const riot = {
-  async getSummonerByName(gameName, tagLine, apiKey) {
-    // Using Riot's account-v1 endpoint
-    const url = `https://europe.api.riotgames.com/riot/account/v1/accounts/by-riot-id/${encodeURIComponent(gameName)}/${encodeURIComponent(tagLine)}?api_key=${apiKey}`;
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(`Summoner not found (${res.status})`);
-    return res.json();
-  },
-  async getRankedInfo(puuid, region, apiKey) {
-    const sumUrl = `https://${region}.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/${puuid}?api_key=${apiKey}`;
-    const sumRes = await fetch(sumUrl);
-    if (!sumRes.ok) throw new Error("Could not fetch summoner data");
-    const summoner = await sumRes.json();
+const riotFetch = async (url) => {
+  const proxy = `/api/riot?endpoint=${encodeURIComponent(url)}`;
+  const res = await fetch(proxy);
+  if (!res.ok) throw new Error(`Riot API error (${res.status})`);
+  return res.json();
+};
 
-    const rankUrl = `https://${region}.api.riotgames.com/lol/league/v4/entries/by-summoner/${summoner.id}?api_key=${apiKey}`;
-    const rankRes = await fetch(rankUrl);
-    const rankData = await rankRes.json();
+const riot = {
+  async getSummonerByName(gameName, tagLine) {
+    const url = `https://europe.api.riotgames.com/riot/account/v1/accounts/by-riot-id/${encodeURIComponent(gameName)}/${encodeURIComponent(tagLine)}`;
+    return riotFetch(url);
+  },
+  async getRankedInfo(puuid, region) {
+    const summoner = await riotFetch(`https://${region}.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/${puuid}`);
+    const rankData = await riotFetch(`https://${region}.api.riotgames.com/lol/league/v4/entries/by-summoner/${summoner.id}`);
     if (!Array.isArray(rankData)) return "UNRANKED";
     const soloQ = rankData.find(e => e.queueType === "RANKED_SOLO_5x5");
     return soloQ ? `${soloQ.tier} ${soloQ.rank}` : "UNRANKED";
   },
-  async getLastMatchResult(puuid, region, apiKey) {
-    // Map region to routing
+  async getLastMatchResult(puuid, region) {
     const routing = { euw1: "europe", na1: "americas", kr: "asia", br1: "americas" }[region] || "europe";
-    const matchListUrl = `https://${routing}.api.riotgames.com/lol/match/v5/matches/by-puuid/${puuid}/ids?queue=420&start=0&count=1&api_key=${apiKey}`;
-    const mlRes = await fetch(matchListUrl);
-    if (!mlRes.ok) throw new Error("Could not fetch matches");
-    const matchIds = await mlRes.json();
+    const matchIds = await riotFetch(`https://${routing}.api.riotgames.com/lol/match/v5/matches/by-puuid/${puuid}/ids?queue=420&start=0&count=1`);
     if (!matchIds.length) throw new Error("No ranked matches found");
 
-    const matchUrl = `https://${routing}.api.riotgames.com/lol/match/v5/matches/${matchIds[0]}?api_key=${apiKey}`;
-    const matchRes = await fetch(matchUrl);
+    const matchUrl = `https://${routing}.api.riotgames.com/lol/match/v5/matches/${matchIds[0]}`;
+    const matchRes = await fetch(`/api/riot?endpoint=${encodeURIComponent(matchUrl)}`);
     const match = await matchRes.json();
     const participant = match.info.participants.find(p => p.puuid === puuid);
     return {
@@ -342,7 +336,7 @@ function AuthPage({ onLogin }) {
 }
 
 // ─── LINK LOL ACCOUNT ────────────────────────────────────────────────────────
-function LinkAccount({ user, setUser, apiKey, region, toast }) {
+function LinkAccount({ user, setUser, region, toast }) {
   const [gameName, setGameName] = useState("");
   const [tagLine, setTagLine] = useState("");
   const [loading, setLoading] = useState(false);
@@ -352,8 +346,8 @@ function LinkAccount({ user, setUser, apiKey, region, toast }) {
     if (!gameName || !tagLine) return toast("Enter your Riot ID and tag", "error");
     setLoading(true);
     try {
-      const account = await riot.getSummonerByName(gameName, tagLine, apiKey);
-      const rank = await riot.getRankedInfo(account.puuid, region, apiKey);
+      const account = await riot.getSummonerByName(gameName, tagLine);
+      const rank = await riot.getRankedInfo(account.puuid, region);
       const updated = { ...user, lolAccount: `${gameName}#${tagLine}`, puuid: account.puuid, rank };
       await storage.setUser(user.username, updated);
       setUser(updated);
@@ -525,7 +519,7 @@ function PlaceBet({ user, setUser, toast }) {
 }
 
 // ─── RESOLVE BET ─────────────────────────────────────────────────────────────
-function ResolveBet({ user, setUser, apiKey, region, toast }) {
+function ResolveBet({ user, setUser, region, toast }) {
   const [loading, setLoading] = useState(false);
   const activeBet = user.bets?.find(b => b.status === "pending");
 
@@ -534,7 +528,7 @@ function ResolveBet({ user, setUser, apiKey, region, toast }) {
     if (!apiKey) return toast("Set your Riot API key first", "error");
     setLoading(true);
     try {
-      const match = await riot.getLastMatchResult(user.puuid, region, apiKey);
+      const match = await riot.getLastMatchResult(user.puuid, region);
 
       // Check if this match was played after bet was placed
       if (match.gameEndTimestamp < activeBet.placedAt) {
@@ -703,7 +697,6 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [tab, setTab] = useState("dashboard");
   const [toast, setToast] = useState(null);
-  const [apiKey, setApiKey] = useState("");
   const [region, setRegion] = useState("euw1");
 
   const showToast = useCallback((message, type = "info") => {
@@ -741,7 +734,7 @@ export default function App() {
 
       {/* Top bar */}
       <div style={{ borderBottom: "1px solid #785A2833", background: "#0A1628" }}>
-        <ApiKeyBanner apiKey={apiKey} setApiKey={setApiKey} region={region} setRegion={setRegion} />
+
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 24px", height: 56 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <span style={{ fontSize: 10, letterSpacing: 4, color: "#785A28" }}>RUNETERRA</span>
@@ -797,17 +790,17 @@ export default function App() {
                 </div>
               ))}
             </div>
-            <LinkAccount user={user} setUser={updateUser} apiKey={apiKey} region={region} toast={showToast} />
+            <LinkAccount user={user} setUser={updateUser} region={region} toast={showToast} />
             <PlaceBet user={user} setUser={updateUser} toast={showToast} />
-            <ResolveBet user={user} setUser={updateUser} apiKey={apiKey} region={region} toast={showToast} />
+            <ResolveBet user={user} setUser={updateUser} region={region} toast={showToast} />
           </div>
         )}
 
         {tab === "bet" && (
           <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-            <LinkAccount user={user} setUser={updateUser} apiKey={apiKey} region={region} toast={showToast} />
+            <LinkAccount user={user} setUser={updateUser} region={region} toast={showToast} />
             <PlaceBet user={user} setUser={updateUser} toast={showToast} />
-            <ResolveBet user={user} setUser={updateUser} apiKey={apiKey} region={region} toast={showToast} />
+            <ResolveBet user={user} setUser={updateUser} region={region} toast={showToast} />
           </div>
         )}
 
