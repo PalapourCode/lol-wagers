@@ -142,65 +142,6 @@ function Toast({ message, type, onClose }) {
   );
 }
 
-function ApiKeyBanner({ apiKey, setApiKey, region, setRegion }) {
-  const [input, setInput] = useState(apiKey);
-  const [open, setOpen] = useState(!apiKey);
-
-  if (!open) return (
-    <div
-      onClick={() => setOpen(true)}
-      style={{
-        background: "#0A1628", borderBottom: "1px solid #785A2844",
-        padding: "8px 24px", cursor: "pointer", display: "flex",
-        alignItems: "center", gap: 8, fontSize: 12, color: "#785A28"
-      }}>
-      <span>⚙</span>
-      <span style={{ fontFamily: "Cinzel, serif" }}>
-        {apiKey ? `Riot API Key: ${apiKey.slice(0, 12)}...  |  Region: ${region}` : "⚠ No Riot API Key set — click to configure"}
-      </span>
-    </div>
-  );
-
-  return (
-    <div style={{ background: "#0A1628", borderBottom: "1px solid #C8AA6E44", padding: "16px 24px" }}>
-      <div style={{ maxWidth: 700, display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
-        <input
-          value={input}
-          onChange={e => setInput(e.target.value)}
-          placeholder="RGAPI-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-          style={{
-            flex: 1, minWidth: 280, background: "#010A13", border: "1px solid #785A28",
-            color: "#F0E6D3", padding: "8px 12px", borderRadius: 3,
-            fontFamily: "monospace", fontSize: 12
-          }}
-        />
-        <select
-          value={region}
-          onChange={e => setRegion(e.target.value)}
-          style={{
-            background: "#010A13", border: "1px solid #785A28", color: "#F0E6D3",
-            padding: "8px 12px", borderRadius: 3, fontFamily: "Cinzel, serif", fontSize: 12
-          }}>
-          <option value="euw1">EUW</option>
-          <option value="na1">NA</option>
-          <option value="kr">KR</option>
-          <option value="br1">BR</option>
-        </select>
-        <button
-          onClick={() => { setApiKey(input); setOpen(false); }}
-          style={{
-            background: "#C8AA6E", color: "#010A13", border: "none",
-            padding: "8px 16px", borderRadius: 3, cursor: "pointer",
-            fontFamily: "Cinzel, serif", fontSize: 12, fontWeight: 700
-          }}>Save</button>
-        <button onClick={() => setOpen(false)} style={{ background: "none", border: "none", color: "#785A28", cursor: "pointer", fontSize: 18 }}>✕</button>
-      </div>
-      <p style={{ color: "#785A28", fontSize: 11, marginTop: 8, fontFamily: "Cinzel, serif" }}>
-        Get a free API key at <strong>developer.riotgames.com</strong> — development keys work for testing (limited to ~100 req/2min)
-      </p>
-    </div>
-  );
-}
 
 // ─── AUTH PAGE ───────────────────────────────────────────────────────────────
 function AuthPage({ onLogin }) {
@@ -214,11 +155,11 @@ function AuthPage({ onLogin }) {
     if (!username.trim() || !password.trim()) return setError("Fill all fields");
     setLoading(true); setError("");
     try {
-      const existing = await storage.getUser(username.trim());
+      const existing = await storage.getUser(username.trim().toLowerCase());
       if (mode === "register") {
         if (existing) return setError("Username already taken");
         const newUser = {
-          username: username.trim(),
+          username: username.trim().toLowerCase(),
           password,
           balance: STARTING_BALANCE,
           bets: [],
@@ -285,7 +226,7 @@ function AuthPage({ onLogin }) {
         </div>
 
         {[
-          { label: "Username", value: username, set: setUsername, type: "text" },
+          { label: "Username (case insensitive)", value: username, set: setUsername, type: "text" },
           { label: "Password", value: password, set: setPassword, type: "password" }
         ].map(f => (
           <div key={f.label} style={{ marginBottom: 16 }}>
@@ -342,7 +283,6 @@ function LinkAccount({ user, setUser, region, toast }) {
   const [loading, setLoading] = useState(false);
 
   const link = async () => {
-    if (!apiKey) return toast("Set your Riot API key first (top bar)", "error");
     if (!gameName || !tagLine) return toast("Enter your Riot ID and tag", "error");
     setLoading(true);
     try {
@@ -534,7 +474,6 @@ function ResolveBet({ user, setUser, region, toast }) {
 
   const resolve = async () => {
     if (!activeBet) return;
-    if (!apiKey) return toast("Set your Riot API key first", "error");
     setLoading(true);
     try {
       const match = await riot.getLastMatchResult(user.puuid, region);
