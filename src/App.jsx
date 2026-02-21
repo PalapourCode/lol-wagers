@@ -40,27 +40,27 @@ const timeAgo = (ts) => {
 const storage = {
   async getUser(username) {
     try {
-      const r = await window.storage.get(`user:${username}`, true);
-      return r ? JSON.parse(r.value) : null;
+      const val = localStorage.getItem(`user:${username}`);
+      return val ? JSON.parse(val) : null;
     } catch { return null; }
   },
   async setUser(username, data) {
     try {
-      await window.storage.set(`user:${username}`, JSON.stringify(data), true);
+      localStorage.setItem(`user:${username}`, JSON.stringify(data));
+      const usernames = JSON.parse(localStorage.getItem('usernames') || '[]');
+      if (!usernames.includes(username)) {
+        usernames.push(username);
+        localStorage.setItem('usernames', JSON.stringify(usernames));
+      }
     } catch (e) { console.error(e); }
   },
   async getUsers() {
     try {
-      const r = await window.storage.list("user:", true);
-      if (!r) return [];
-      const users = [];
-      for (const key of r.keys) {
-        try {
-          const u = await window.storage.get(key, true);
-          if (u) users.push(JSON.parse(u.value));
-        } catch {}
-      }
-      return users;
+      const usernames = JSON.parse(localStorage.getItem('usernames') || '[]');
+      return usernames.map(u => {
+        try { return JSON.parse(localStorage.getItem(`user:${u}`)); }
+        catch { return null; }
+      }).filter(Boolean);
     } catch { return []; }
   }
 };
