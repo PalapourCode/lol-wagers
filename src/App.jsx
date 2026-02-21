@@ -37,32 +37,15 @@ const timeAgo = (ts) => {
 };
 
 // ─── STORAGE HELPERS ─────────────────────────────────────────────────────────
-const storage = {
-  async getUser(username) {
-    try {
-      const val = localStorage.getItem(`user:${username}`);
-      return val ? JSON.parse(val) : null;
-    } catch { return null; }
-  },
-  async setUser(username, data) {
-    try {
-      localStorage.setItem(`user:${username}`, JSON.stringify(data));
-      const usernames = JSON.parse(localStorage.getItem('usernames') || '[]');
-      if (!usernames.includes(username)) {
-        usernames.push(username);
-        localStorage.setItem('usernames', JSON.stringify(usernames));
-      }
-    } catch (e) { console.error(e); }
-  },
-  async getUsers() {
-    try {
-      const usernames = JSON.parse(localStorage.getItem('usernames') || '[]');
-      return usernames.map(u => {
-        try { return JSON.parse(localStorage.getItem(`user:${u}`)); }
-        catch { return null; }
-      }).filter(Boolean);
-    } catch { return []; }
-  }
+const apiCall = async (endpoint, body) => {
+  const res = await fetch(endpoint, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body)
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Request failed");
+  return data;
 };
 
 // ─── RIOT API ────────────────────────────────────────────────────────────────
@@ -151,26 +134,8 @@ function AuthPage({ onLogin }) {
     if (!username.trim() || !password.trim()) return setError("Fill all fields");
     setLoading(true); setError("");
     try {
-      const existing = await storage.getUser(username.trim().toLowerCase());
-      if (mode === "register") {
-        if (existing) return setError("Username already taken");
-        const newUser = {
-          username: username.trim().toLowerCase(),
-          password,
-          balance: STARTING_BALANCE,
-          bets: [],
-          lolAccount: null,
-          rank: null,
-          puuid: null,
-          createdAt: Date.now()
-        };
-        await storage.setUser(newUser.username, newUser);
-        onLogin(newUser);
-      } else {
-        if (!existing) return setError("User not found");
-        if (existing.password !== password) return setError("Wrong password");
-        onLogin(existing);
-      }
+      const data = await apiCall("/api/auth", { action: mode === "register" ? "register" : "login", username: username.trim(), password });
+      onLogin(data.user);
     } catch (e) { setError(e.message); }
     finally { setLoading(false); }
   };
@@ -322,14 +287,14 @@ function LinkAccount({ user, setUser, region, setRegion, toast }) {
 
       // Icon matches — link the account
       const rank = await riot.getRankedInfo(pendingAccount.puuid, region);
-      const updated = { 
-        ...user, 
-        lolAccount: `${pendingAccount.gameName}#${pendingAccount.tagLine}`, 
-        puuid: pendingAccount.puuid, 
-        rank 
-      };
-      await storage.setUser(user.username, updated);
-      setUser(updated);
+      const data = await apiCall("/api/user", {
+        action: "linkAccount",
+        username: user.username,
+        lolAccount: `${pendingAccount.gameName}#${pendingAccount.tagLine}`,
+        puuid: pendingAccount.puuid,
+        rank
+      });
+      setUser(data.user);
       toast(`Verified! Account linked. Rank: ${rank}`, "success");
       setStep("input");
     } catch (e) {
@@ -348,7 +313,7 @@ function LinkAccount({ user, setUser, region, setRegion, toast }) {
       <div style={{ color: "#785A28", fontSize: 13 }}>
         Odds multiplier: <span style={{ color: "#0BC4AA" }}>{getOdds(user.rank)}x</span>
       </div>
-      <button onClick={() => { setStep("input"); setUser({...user, lolAccount: null, puuid: null, rank: null}); storage.setUser(user.username, {...user, lolAccount: null, puuid: null, rank: null}); }}
+      <button onClick={async () => { const data = await apiCall("/api/user", { action: "unlinkAccount", username: user.username }); setUser(data.user); setStep("input"); }}
         style={{ marginTop: 12, background: "none", border: "1px solid #785A2855", color: "#785A28", padding: "6px 14px", borderRadius: 3, cursor: "pointer", fontFamily: "Cinzel, serif", fontSize: 11 }}>
         Unlink Account
       </button>
@@ -446,24 +411,19 @@ function PlaceBet({ user, setUser, toast }) {
     if (amount < 1) return toast("Minimum bet is $1", "error");
 
     setLoading(true);
-    const bet = {
-      id: Date.now(),
-      amount: Number(amount),
-      odds,
-      potentialWin: Number(potentialWin),
-      status: "pending",
-      placedAt: Date.now(),
-      matchId: null,
-      result: null
-    };
-    const updated = {
-      ...user,
-      balance: user.balance - amount,
-      bets: [...(user.bets || []), bet]
-    };
-    await storage.setUser(user.username, updated);
-    setUser(updated);
-    toast(`Bet placed! Win your next ranked game to earn ${formatMoney(potentialWin)}`, "success");
+    try {
+      const data = await apiCall("/api/bet", {
+        action: "placeBet",
+        username: user.username,
+        amount: Number(amount),
+        odds,
+        potentialWin: Number(potentialWin)
+      });
+      setUser(data.user);
+      toast(`Bet placed! Win your next ranked game to earn ${formatMoney(potentialWin)}`, "success");
+    } catch(e) {
+      toast(e.message, "error");
+    }
     setLoading(false);
   };
 
@@ -567,22 +527,14 @@ function ResolveBet({ user, setUser, region, toast }) {
       }
 
       const won = match.win;
-      const updatedBets = user.bets.map(b => b.id === activeBet.id ? {
-        ...b,
-        status: won ? "won" : "lost",
+      const data = await apiCall("/api/bet", {
+        action: "resolveBet",
+        username: user.username,
+        won,
         matchId: match.matchId,
-        result: match,
-        resolvedAt: Date.now()
-      } : b);
-
-      const balanceChange = won ? activeBet.potentialWin : 0;
-      const updated = {
-        ...user,
-        balance: user.balance + balanceChange,
-        bets: updatedBets
-      };
-      await storage.setUser(user.username, updated);
-      setUser(updated);
+        result: match
+      });
+      setUser(data.user);
 
       if (won) {
         toast(`🏆 You won! +${formatMoney(activeBet.potentialWin)} added to your balance!`, "success");
@@ -672,18 +624,10 @@ function Leaderboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    storage.getUsers().then(all => {
-      const sorted = all.map(u => ({
-        username: u.username,
-        balance: u.balance,
-        wins: u.bets?.filter(b => b.status === "won").length || 0,
-        total: u.bets?.filter(b => b.status !== "pending").length || 0,
-        lolAccount: u.lolAccount,
-        rank: u.rank
-      })).sort((a, b) => b.balance - a.balance);
-      setUsers(sorted);
-      setLoading(false);
-    });
+    fetch("/api/leaderboard")
+      .then(r => r.json())
+      .then(data => { setUsers(data.users || []); setLoading(false); })
+      .catch(() => setLoading(false));
   }, []);
 
   return (
@@ -732,9 +676,8 @@ export default function App() {
     setToast({ message, type, id: Date.now() });
   }, []);
 
-  const updateUser = useCallback(async (updated) => {
+  const updateUser = useCallback((updated) => {
     setUser(updated);
-    await storage.setUser(updated.username, updated);
   }, []);
 
   if (!user) return <AuthPage onLogin={setUser} />;
