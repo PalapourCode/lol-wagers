@@ -23,6 +23,8 @@ export default async function handler(req, res) {
     } else if (action === "rank") {
       // Use league v4 entries by puuid directly - no summoner id needed
       url = `https://${region}.api.riotgames.com/lol/league/v4/entries/by-puuid/${puuid}`;
+    } else if (action === "summoner") {
+      url = `https://${region}.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/${puuid}`;
     } else if (action === "matchlist") {
       url = `https://${routing}.api.riotgames.com/lol/match/v5/matches/by-puuid/${puuid}/ids?queue=420&start=0&count=1`;
     } else if (action === "match") {
