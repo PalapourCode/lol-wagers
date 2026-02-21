@@ -79,7 +79,7 @@ const riot = {
   },
   async getRankedInfo(puuid, region) {
     const summoner = await riotAPI({ action: "summoner", puuid, region });
-    if (!summoner || !summoner.id) throw new Error("Could not fetch summoner");
+    if (!summoner || !summoner.id) throw new Error(`Summoner fetch failed for region ${region}: ${JSON.stringify(summoner)}`);
     const rankData = await riotAPI({ action: "rank", summonerId: summoner.id, region });
     if (!Array.isArray(rankData)) return "UNRANKED";
     const soloQ = rankData.find(e => e.queueType === "RANKED_SOLO_5x5");
@@ -274,7 +274,7 @@ function AuthPage({ onLogin }) {
 }
 
 // ─── LINK LOL ACCOUNT ────────────────────────────────────────────────────────
-function LinkAccount({ user, setUser, region, toast }) {
+function LinkAccount({ user, setUser, region, setRegion, toast }) {
   const [gameName, setGameName] = useState("");
   const [tagLine, setTagLine] = useState("");
   const [loading, setLoading] = useState(false);
@@ -736,7 +736,7 @@ export default function App() {
                 </div>
               ))}
             </div>
-            <LinkAccount user={user} setUser={updateUser} region={region} toast={showToast} />
+            <LinkAccount user={user} setUser={updateUser} region={region} setRegion={setRegion} toast={showToast} />
             <PlaceBet user={user} setUser={updateUser} toast={showToast} />
             <ResolveBet user={user} setUser={updateUser} region={region} toast={showToast} />
           </div>
@@ -744,7 +744,7 @@ export default function App() {
 
         {tab === "bet" && (
           <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-            <LinkAccount user={user} setUser={updateUser} region={region} toast={showToast} />
+            <LinkAccount user={user} setUser={updateUser} region={region} setRegion={setRegion} toast={showToast} />
             <PlaceBet user={user} setUser={updateUser} toast={showToast} />
             <ResolveBet user={user} setUser={updateUser} region={region} toast={showToast} />
           </div>
