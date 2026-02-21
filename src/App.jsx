@@ -66,34 +66,31 @@ const storage = {
 };
 
 // ─── RIOT API ────────────────────────────────────────────────────────────────
-const riotFetch = async (url) => {
-  const proxy = `/api/riot?endpoint=${encodeURIComponent(url)}`;
-  const res = await fetch(proxy);
+const riotAPI = async (params) => {
+  const qs = new URLSearchParams(params).toString();
+  const res = await fetch(`/api/riot?${qs}`);
   if (!res.ok) throw new Error(`Riot API error (${res.status})`);
   return res.json();
 };
 
 const riot = {
   async getSummonerByName(gameName, tagLine) {
-    const url = `https://europe.api.riotgames.com/riot/account/v1/accounts/by-riot-id/${encodeURIComponent(gameName)}/${encodeURIComponent(tagLine)}`;
-    return riotFetch(url);
+    return riotAPI({ action: "account", gameName, tagLine });
   },
   async getRankedInfo(puuid, region) {
-    const summoner = await riotFetch(`https://${region}.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/${puuid}`);
-    const rankData = await riotFetch(`https://${region}.api.riotgames.com/lol/league/v4/entries/by-summoner/${summoner.id}`);
+    const summoner = await riotAPI({ action: "summoner", puuid, region });
+    if (!summoner || !summoner.id) throw new Error("Could not fetch summoner");
+    const rankData = await riotAPI({ action: "rank", summonerId: summoner.id, region });
     if (!Array.isArray(rankData)) return "UNRANKED";
     const soloQ = rankData.find(e => e.queueType === "RANKED_SOLO_5x5");
     return soloQ ? `${soloQ.tier} ${soloQ.rank}` : "UNRANKED";
   },
   async getLastMatchResult(puuid, region) {
-    const routing = { euw1: "europe", na1: "americas", kr: "asia", br1: "americas" }[region] || "europe";
-    const matchIds = await riotFetch(`https://${routing}.api.riotgames.com/lol/match/v5/matches/by-puuid/${puuid}/ids?queue=420&start=0&count=1`);
-    if (!matchIds.length) throw new Error("No ranked matches found");
-
-    const matchUrl = `https://${routing}.api.riotgames.com/lol/match/v5/matches/${matchIds[0]}`;
-    const matchRes = await fetch(`/api/riot?endpoint=${encodeURIComponent(matchUrl)}`);
-    const match = await matchRes.json();
+    const matchIds = await riotAPI({ action: "matchlist", puuid, region });
+    if (!Array.isArray(matchIds) || !matchIds.length) throw new Error("No ranked matches found");
+    const match = await riotAPI({ action: "match", matchId: matchIds[0], region });
     const participant = match.info.participants.find(p => p.puuid === puuid);
+    if (!participant) throw new Error("Could not find your data in the match");
     return {
       matchId: matchIds[0],
       win: participant.win,
@@ -104,7 +101,7 @@ const riot = {
       gameEndTimestamp: match.info.gameEndTimestamp
     };
   }
-};
+}
 
 // ─── COMPONENTS ──────────────────────────────────────────────────────────────
 
@@ -287,7 +284,8 @@ function LinkAccount({ user, setUser, region, toast }) {
     setLoading(true);
     try {
       const account = await riot.getSummonerByName(gameName, tagLine);
-      if (!account || !account.puuid) throw new Error("Account not found. Check your Riot ID and Tag.");
+      console.log("Riot account response:", JSON.stringify(account));
+      if (!account || !account.puuid) throw new Error(`Account not found. Riot returned: ${JSON.stringify(account)}`);
       const rank = await riot.getRankedInfo(account.puuid, region);
       const updated = { ...user, lolAccount: `${gameName}#${tagLine}`, puuid: account.puuid, rank };
       await storage.setUser(user.username, updated);
