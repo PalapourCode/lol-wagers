@@ -83,6 +83,7 @@ const riot = {
     const rankUrl = `https://${region}.api.riotgames.com/lol/league/v4/entries/by-summoner/${summoner.id}?api_key=${apiKey}`;
     const rankRes = await fetch(rankUrl);
     const rankData = await rankRes.json();
+    if (!Array.isArray(rankData)) return "UNRANKED";
     const soloQ = rankData.find(e => e.queueType === "RANKED_SOLO_5x5");
     return soloQ ? `${soloQ.tier} ${soloQ.rank}` : "UNRANKED";
   },
