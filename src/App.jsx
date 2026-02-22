@@ -392,7 +392,7 @@ function AuthPage({ onLogin }) {
       {/* Top brand bar */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 48px", borderBottom: "1px solid #2D2D32" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <img src="/logo.png" alt="Runeterra Wagers" style={{ width: 64, height: 64, objectFit: "contain" }} />
+          <img src="/logo.png" alt="Runeterra Wagers" style={{ width: 128, height: 128, objectFit: "contain" }} />
           <div>
             <div style={{ fontSize: 9, letterSpacing: 5, color: "#A0A0A8" }}>RUNETERRA</div>
             <div style={{ fontSize: 16, fontWeight: 700, color: "#C8AA6E", lineHeight: 1, fontFamily: "Barlow Condensed, sans-serif" }}>WAGERS</div>
@@ -456,7 +456,7 @@ function AuthPage({ onLogin }) {
             {/* Hero */}
             <div style={{ textAlign: "center", marginBottom: 36 }}>
               <div style={{ marginBottom: 12, animation: "float 4s ease-in-out infinite" }}>
-              <img src="/logo.png" alt="Runeterra Wagers" style={{ width: 200, height: 200, objectFit: "contain", filter: "drop-shadow(0 0 40px #C8AA6E66)" }} />
+              <img src="/logo.png" alt="Runeterra Wagers" style={{ width: 400, height: 400, objectFit: "contain", filter: "drop-shadow(0 0 60px #C8AA6E77)" }} />
             </div>
               <h1 style={{ fontSize: 42, fontWeight: 900, color: "#C8AA6E", margin: "0 0 4px", animation: "glow 3s ease-in-out infinite", lineHeight: 1, fontFamily: "Barlow Condensed, sans-serif" }}>
                 BET ON<br /><span style={{ color: "#F0F0F0" }}>YOURSELF</span>
@@ -597,6 +597,210 @@ function AuthPage({ onLogin }) {
   );
 }
 
+// ─── LINKED PLAYER CARD ───────────────────────────────────────────────────────
+function LinkedPlayerCard({ user, setUser, region }) {
+  const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  const DDRAGON_VERSION = "14.24.1"; // fallback, will be overridden
+
+  useEffect(() => {
+    if (!user.puuid) { setLoading(false); return; }
+    loadProfile();
+  }, [user.puuid]);
+
+  const loadProfile = async () => {
+    setLoading(true);
+    try {
+      // Fetch all in parallel
+      const [summoner, rankData, masteryRaw, champData] = await Promise.all([
+        riotAPI({ action: "summoner", puuid: user.puuid, region }),
+        riotAPI({ action: "rank", puuid: user.puuid, region }),
+        riotAPI({ action: "mastery", puuid: user.puuid, region }),
+        riotAPI({ action: "championdata" }),
+      ]);
+
+      // Ranked stats
+      const soloQ = Array.isArray(rankData)
+        ? rankData.find(e => e.queueType === "RANKED_SOLO_5x5")
+        : null;
+      const wins = soloQ?.wins || 0;
+      const losses = soloQ?.losses || 0;
+      const winrate = wins + losses > 0 ? Math.round((wins / (wins + losses)) * 100) : null;
+
+      // Top champions with names resolved
+      const topChamps = Array.isArray(masteryRaw)
+        ? masteryRaw.slice(0, 3).map(m => ({
+            name: champData.idToKey?.[String(m.championId)] || "Unknown",
+            points: m.championPoints,
+            level: m.championLevel,
+          }))
+        : [];
+
+      setProfile({
+        iconId: summoner.profileIconId,
+        level: summoner.summonerLevel,
+        version: champData.version || DDRAGON_VERSION,
+        wins,
+        losses,
+        winrate,
+        topChamps,
+        rank: soloQ ? `${soloQ.tier} ${soloQ.rank}` : "UNRANKED",
+        lp: soloQ?.leaguePoints ?? null,
+      });
+    } catch (e) {
+      console.error("Profile load error", e);
+    }
+    setLoading(false);
+  };
+
+  const unlink = async () => {
+    const data = await apiCall("/api/user", { action: "unlinkAccount", username: user.username });
+    setUser(data.user);
+  };
+
+  const v = profile?.version || DDRAGON_VERSION;
+  const iconUrl = profile?.iconId != null
+    ? `https://ddragon.leagueoflegends.com/cdn/${v}/img/profileicon/${profile.iconId}.png`
+    : null;
+  const champImgUrl = (name) =>
+    `https://ddragon.leagueoflegends.com/cdn/${v}/img/champion/${name}.png`;
+
+  const RANK_COLORS = {
+    IRON: "#9d9d9d", BRONZE: "#b87333", SILVER: "#a8b2c0",
+    GOLD: "#C8AA6E", PLATINUM: "#4cc9b0", EMERALD: "#22c55e",
+    DIAMOND: "#6ab0f5", MASTER: "#c084fc", GRANDMASTER: "#ef4444", CHALLENGER: "#facc15"
+  };
+  const rankColor = RANK_COLORS[profile?.rank?.split(" ")[0]] || "#C8AA6E";
+
+  return (
+    <div style={{ background: "#242428", border: "1px solid #2D2D32", borderRadius: 8, overflow: "hidden" }}>
+      {/* Top section: profile icon + core info */}
+      <div style={{ display: "flex", gap: 20, padding: "20px 24px", alignItems: "flex-start", borderBottom: "1px solid #2D2D32" }}>
+
+        {/* Profile icon */}
+        <div style={{ position: "relative", flexShrink: 0 }}>
+          {iconUrl ? (
+            <img
+              src={iconUrl}
+              alt="Profile Icon"
+              style={{ width: 72, height: 72, borderRadius: 6, border: `2px solid ${rankColor}`, display: "block" }}
+              onError={e => { e.target.style.display = "none"; }}
+            />
+          ) : (
+            <div style={{ width: 72, height: 72, borderRadius: 6, background: "#35353A", border: `2px solid ${rankColor}` }} />
+          )}
+          {profile?.level && (
+            <div style={{
+              position: "absolute", bottom: -8, left: "50%", transform: "translateX(-50%)",
+              background: "#1A1A1E", border: `1px solid ${rankColor}`,
+              borderRadius: 10, padding: "1px 8px",
+              fontSize: 10, color: rankColor, fontWeight: 700, whiteSpace: "nowrap",
+              fontFamily: "Barlow Condensed, sans-serif"
+            }}>LVL {profile.level}</div>
+          )}
+        </div>
+
+        {/* Name + rank info */}
+        <div style={{ flex: 1, paddingTop: 2 }}>
+          <div style={{ fontSize: 18, fontWeight: 700, color: "#F0F0F0", marginBottom: 4, fontFamily: "Barlow Condensed, sans-serif" }}>
+            {user.lolAccount}
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+            <span style={{
+              background: `${rankColor}22`, border: `1px solid ${rankColor}55`,
+              borderRadius: 3, padding: "3px 10px",
+              fontSize: 12, color: rankColor, fontWeight: 700,
+              fontFamily: "Barlow Condensed, sans-serif", letterSpacing: 1
+            }}>
+              {profile?.rank || user.rank || "UNRANKED"}
+            </span>
+            {profile?.lp != null && (
+              <span style={{ fontSize: 13, color: "#A0A0A8" }}>{profile.lp} LP</span>
+            )}
+          </div>
+
+          {/* W/L/Winrate row */}
+          {loading ? (
+            <div style={{ color: "#A0A0A8", fontSize: 13 }}>Loading stats...</div>
+          ) : profile ? (
+            <div style={{ display: "flex", gap: 16 }}>
+              <div>
+                <span style={{ fontSize: 15, fontWeight: 700, color: "#3FB950" }}>{profile.wins}W</span>
+                <span style={{ fontSize: 15, fontWeight: 700, color: "#F85149", marginLeft: 6 }}>{profile.losses}L</span>
+              </div>
+              {profile.winrate != null && (
+                <div style={{
+                  fontSize: 13, color: profile.winrate >= 55 ? "#3FB950" : profile.winrate >= 50 ? "#C8AA6E" : "#A0A0A8"
+                }}>
+                  {profile.winrate}% winrate
+                </div>
+              )}
+              <div style={{ fontSize: 13, color: "#A0A0A8" }}>
+                Odds: <span style={{ color: "#C8AA6E", fontWeight: 700 }}>{getOdds(user.rank)}x</span>
+              </div>
+            </div>
+          ) : null}
+        </div>
+
+        {/* Unlink button */}
+        <button onClick={unlink} style={{
+          background: "none", border: "1px solid #35353A", color: "#7A7A82",
+          padding: "6px 14px", borderRadius: 4, cursor: "pointer",
+          fontSize: 12, flexShrink: 0, transition: "all 0.2s"
+        }}
+          onMouseEnter={e => { e.target.style.borderColor = "#F85149"; e.target.style.color = "#F85149"; }}
+          onMouseLeave={e => { e.target.style.borderColor = "#35353A"; e.target.style.color = "#7A7A82"; }}
+        >Unlink</button>
+      </div>
+
+      {/* Bottom section: top champions */}
+      {!loading && profile?.topChamps?.length > 0 && (
+        <div style={{ padding: "16px 24px" }}>
+          <div style={{ fontSize: 11, letterSpacing: 3, color: "#A0A0A8", marginBottom: 12 }}>TOP CHAMPIONS</div>
+          <div style={{ display: "flex", gap: 12 }}>
+            {profile.topChamps.map((champ, i) => (
+              <div key={champ.name} style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, background: "#1A1A1E", borderRadius: 6, padding: "10px 12px", border: i === 0 ? "1px solid #C8AA6E33" : "1px solid #2A2A2E" }}>
+                <div style={{ position: "relative", flexShrink: 0 }}>
+                  <img
+                    src={champImgUrl(champ.name)}
+                    alt={champ.name}
+                    style={{ width: 44, height: 44, borderRadius: 4, border: i === 0 ? "1px solid #C8AA6E" : "1px solid #35353A", display: "block" }}
+                    onError={e => { e.target.src = "https://ddragon.leagueoflegends.com/cdn/img/champion/splash/Garen_0.jpg"; }}
+                  />
+                  {i === 0 && (
+                    <div style={{
+                      position: "absolute", top: -6, right: -6,
+                      background: "#C8AA6E", borderRadius: "50%",
+                      width: 16, height: 16, display: "flex", alignItems: "center", justifyContent: "center",
+                      fontSize: 9, fontWeight: 900, color: "#1A1A1E"
+                    }}>1</div>
+                  )}
+                </div>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: "#F0F0F0", marginBottom: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {champ.name}
+                  </div>
+                  <div style={{ fontSize: 11, color: "#A0A0A8" }}>
+                    M{champ.level} · {(champ.points / 1000).toFixed(0)}K pts
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {loading && (
+        <div style={{ padding: "20px 24px", display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{ width: 16, height: 16, border: "2px solid #C8AA6E33", borderTop: "2px solid #C8AA6E", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+          <span style={{ color: "#A0A0A8", fontSize: 13 }}>Loading champion data...</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── LINK LOL ACCOUNT ────────────────────────────────────────────────────────
 // Default starter icon IDs every LoL account owns (0-28)
 const STARTER_ICONS = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28];
@@ -661,22 +865,7 @@ function LinkAccount({ user, setUser, region, setRegion, toast }) {
     setLoading(false);
   };
 
-  if (user.lolAccount) return (
-    <div style={{ background: "#242428", border: "1px solid #C8AA6E44", borderRadius: 4, padding: 24 }}>
-      <div style={{ fontSize: 10, letterSpacing: 3, color: "#A0A0A8", marginBottom: 12 }}>LINKED ACCOUNT</div>
-      <div style={{ fontSize: 20, color: "#C8AA6E", fontWeight: 700 }}>{user.lolAccount}</div>
-      <div style={{ color: "#A0A0A8", fontSize: 13, marginTop: 4, fontFamily: "DM Sans, sans-serif" }}>
-        Rank: <span style={{ color: "#F0F0F0" }}>{user.rank || "UNRANKED"}</span>
-      </div>
-      <div style={{ color: "#A0A0A8", fontSize: 13 }}>
-        Odds multiplier: <span style={{ color: "#0BC4AA" }}>{getOdds(user.rank)}x</span>
-      </div>
-      <button onClick={async () => { const data = await apiCall("/api/user", { action: "unlinkAccount", username: user.username }); setUser(data.user); setStep("input"); }}
-        style={{ marginTop: 12, background: "none", border: "1px solid #35353A", color: "#A0A0A8", padding: "6px 14px", borderRadius: 3, cursor: "pointer", fontFamily: "Barlow Condensed, sans-serif", fontSize: 11 }}>
-        Unlink Account
-      </button>
-    </div>
-  );
+  if (user.lolAccount) return <LinkedPlayerCard user={user} setUser={setUser} region={region} />;
 
   if (step === "verify" && pendingAccount && requiredIconId !== null) return (
     <div style={{ background: "#242428", border: "1px solid #C8AA6E44", borderRadius: 4, padding: 24 }}>
