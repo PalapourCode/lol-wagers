@@ -49,11 +49,13 @@ async function initDB() {
       username    TEXT REFERENCES users(username),
       skin_name   TEXT NOT NULL,
       rp_cost     INTEGER NOT NULL,
-      credit_cost NUMERIC NOT NULL,
+      credit_cost NUMERIC DEFAULT 0,
+      real_cost   NUMERIC DEFAULT 0,
       status      TEXT DEFAULT 'pending',
       created_at  BIGINT NOT NULL
     )
   `;
+  await sql`ALTER TABLE skin_redemptions ADD COLUMN IF NOT EXISTS real_cost NUMERIC DEFAULT 0`;
 }
 
 async function getUser(username) {
