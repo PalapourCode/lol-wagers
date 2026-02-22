@@ -259,9 +259,7 @@ function LinkAccount({ user, setUser, region, setRegion, toast }) {
       if (!account || !account.puuid) throw new Error("Account not found. Check your Riot ID and Tag.");
       
       // Check if this LoL account is already linked to another user
-      const allUsers = await storage.getUsers();
-      const alreadyLinked = allUsers.find(u => u.puuid === account.puuid && u.username !== user.username);
-      if (alreadyLinked) throw new Error("This LoL account is already linked to another platform account.");
+      // Duplicate check handled server-side in /api/user
 
       // Pick a random starter icon for verification
       const iconId = STARTER_ICONS[Math.floor(Math.random() * STARTER_ICONS.length)];
