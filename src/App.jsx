@@ -1050,7 +1050,7 @@ export default function App() {
       </div>
 
       {toast && <Toast key={toast.id} message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
-      <DebugPanel user={user} setUser={updateUser} toast={showToast} showResult={setResultScreen} />
+      {user.username === "palapourheal" && <DebugPanel user={user} setUser={updateUser} toast={showToast} showResult={setResultScreen} />}
       {resultScreen && <ResultScreen result={resultScreen.result} bet={resultScreen.bet} onClose={() => setResultScreen(null)} />}
     </div>
   );
