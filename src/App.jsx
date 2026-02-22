@@ -392,7 +392,7 @@ function AuthPage({ onLogin }) {
       {/* Top brand bar */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 48px", borderBottom: "1px solid #2D2D32" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <img src="/logo.png" alt="Runeterra Wagers" style={{ width: 44, height: 44, objectFit: "contain" }} />
+          <img src="/logo.png" alt="Runeterra Wagers" style={{ width: 64, height: 64, objectFit: "contain" }} />
           <div>
             <div style={{ fontSize: 9, letterSpacing: 5, color: "#A0A0A8" }}>RUNETERRA</div>
             <div style={{ fontSize: 16, fontWeight: 700, color: "#C8AA6E", lineHeight: 1, fontFamily: "Barlow Condensed, sans-serif" }}>WAGERS</div>
@@ -456,7 +456,7 @@ function AuthPage({ onLogin }) {
             {/* Hero */}
             <div style={{ textAlign: "center", marginBottom: 36 }}>
               <div style={{ marginBottom: 12, animation: "float 4s ease-in-out infinite" }}>
-              <img src="/logo.png" alt="Runeterra Wagers" style={{ width: 96, height: 96, objectFit: "contain", filter: "drop-shadow(0 0 20px #C8AA6E55)" }} />
+              <img src="/logo.png" alt="Runeterra Wagers" style={{ width: 200, height: 200, objectFit: "contain", filter: "drop-shadow(0 0 40px #C8AA6E66)" }} />
             </div>
               <h1 style={{ fontSize: 42, fontWeight: 900, color: "#C8AA6E", margin: "0 0 4px", animation: "glow 3s ease-in-out infinite", lineHeight: 1, fontFamily: "Barlow Condensed, sans-serif" }}>
                 BET ON<br /><span style={{ color: "#F0F0F0" }}>YOURSELF</span>
