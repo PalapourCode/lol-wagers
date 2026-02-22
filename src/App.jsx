@@ -14,28 +14,38 @@ const getRankTier = (rankStr) => {
   return rankStr.split(" ")[0].toUpperCase();
 };
 
-// Pure winrate-based odds — higher WR = lower multiplier (you're favoured)
-// No ranked data or unranked = 1.60x flat
-const getOdds = (rankStr, winrate) => {
-  if (winrate == null) return 1.60;
-  if (winrate >= 65) return 1.25;  // Smurf Tax
-  if (winrate >= 58) return 1.50;  // Favoured
-  if (winrate >= 52) return 1.70;  // Balanced  ← bumped from 1.50
-  if (winrate >= 47) return 2.00;  // Coin Flip ← bumped from 1.75
-  if (winrate >= 40) return 2.50;  // Underdog  ← bumped from 2.10
-  return 3.00;                     // Chaos      ← bumped from 2.50
+// ─── WINRATE → MULTIPLIER FORMULA ────────────────────────────────────────────
+// Mathematical basis: fair odds for a win = 1 / win_probability
+// A 50% WR player has 0.50 win prob → fair odds = 2.00x
+// We apply a 10% house edge: multiplier = (1 / win_prob) * 0.90
+// Then clamp between 1.20x (dominant player) and 3.50x (struggling player)
+// No winrate data → 1.80x default (slightly below fair coin flip, house favoured)
+const getOdds = (winrate) => {
+  if (winrate == null) return 1.80;
+  const winProb = Math.max(0.20, Math.min(0.80, winrate / 100));
+  const raw = (1 / winProb) * 0.90;
+  return Math.round(Math.max(1.20, Math.min(3.50, raw)) * 100) / 100;
 };
 
-// Describe the odds tier in plain english for UI
+// Winrate label for UI — describes the tier in plain english
 const getOddsLabel = (winrate) => {
-  if (winrate == null) return "Standard";
-  if (winrate >= 65) return "Smurf Tax";
-  if (winrate >= 58) return "Favoured";
-  if (winrate >= 52) return "Balanced";
-  if (winrate >= 47) return "Coin Flip";
+  if (winrate == null) return "No data";
+  if (winrate >= 65) return "Dominant";
+  if (winrate >= 55) return "Favoured";
+  if (winrate >= 48) return "Balanced";
   if (winrate >= 40) return "Underdog";
-  return "Chaos";
+  return "High Risk";
 };
+
+// Winrate bracket description for the multiplier table
+const WR_BRACKETS = [
+  { label: "65%+ WR", range: "65%+", odds: getOdds(67), desc: "Dominant" },
+  { label: "58–64% WR", range: "58–64%", odds: getOdds(61), desc: "Favoured" },
+  { label: "52–57% WR", range: "52–57%", odds: getOdds(54), desc: "Above average" },
+  { label: "48–51% WR", range: "48–51%", odds: getOdds(50), desc: "Balanced" },
+  { label: "42–47% WR", range: "42–47%", odds: getOdds(44), desc: "Underdog" },
+  { label: "< 42% WR", range: "<42%", odds: getOdds(38), desc: "High Risk" },
+];
 
 const formatMoney = (n) => `$${Number(n).toFixed(2)}`;
 
@@ -454,17 +464,18 @@ function AuthPage({ onLogin }) {
             ))}
           </div>
 
-          {/* Rank odds table */}
+          {/* Winrate odds table */}
           <div style={{ marginTop: 40, background: "#24242888", border: "1px solid #2A2A2E", borderRadius: 8, padding: 20 }}>
-            <div style={{ fontSize: 12, letterSpacing: 3, color: "#C8AA6E", marginBottom: 16 }}>PAYOUT MULTIPLIERS BY RANK</div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px 24px" }}>
-              {[
-                ["Iron", "1.60x"], ["Bronze", "1.55x"], ["Silver", "1.50x"], ["Gold", "1.45x"],
-                ["Platinum", "1.40x"], ["Emerald", "1.38x"], ["Diamond", "1.35x"], ["Master+", "1.15–1.25x"]
-              ].map(([rank, odds]) => (
-                <div key={rank} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "4px 0", borderBottom: "1px solid #222225" }}>
-                  <span style={{ fontSize: 12, color: "#A0A0A8", fontFamily: "DM Sans, sans-serif" }}>{rank}</span>
-                  <span style={{ fontSize: 15, color: "#C8AA6E", fontWeight: 700 }}>{odds}</span>
+            <div style={{ fontSize: 13, letterSpacing: 3, color: "#C8AA6E", marginBottom: 4, fontWeight: 700 }}>PAYOUT MULTIPLIERS</div>
+            <div style={{ fontSize: 13, color: "#A0A0A8", fontFamily: "DM Sans, sans-serif", marginBottom: 16 }}>Based on your winrate — not your rank</div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px 24px" }}>
+              {WR_BRACKETS.map(({ range, odds, desc }) => (
+                <div key={range} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 0", borderBottom: "1px solid #222225" }}>
+                  <div>
+                    <div style={{ fontSize: 13, color: "#D0D0D8", fontFamily: "DM Sans, sans-serif" }}>{range}</div>
+                    <div style={{ fontSize: 12, color: "#7A7A82", fontFamily: "DM Sans, sans-serif" }}>{desc}</div>
+                  </div>
+                  <span style={{ fontSize: 16, color: "#C8AA6E", fontWeight: 700 }}>{odds.toFixed(2)}x</span>
                 </div>
               ))}
             </div>
@@ -1044,8 +1055,8 @@ function LinkedPlayerCard({ user, setUser, region }) {
                   {profile.winrate}% winrate
                 </div>
               )}
-              <div style={{ fontSize: 13, color: "#A0A0A8" }}>
-                Odds: <span style={{ color: "#C8AA6E", fontWeight: 700 }}>{getOdds(user.rank, profile?.winrate)}x</span> <span style={{ fontSize: 11, color: "#7A7A82", marginLeft: 4 }}>({getOddsLabel(profile?.winrate)})</span>
+              <div style={{ fontSize: 15, color: "#A0A0A8", fontFamily: "DM Sans, sans-serif" }}>
+                Odds: <span style={{ color: "#C8AA6E", fontWeight: 700, fontSize: 16 }}>{getOdds(profile?.winrate)}x</span> <span style={{ fontSize: 13, color: "#A0A0A8", marginLeft: 4 }}>({getOddsLabel(profile?.winrate)})</span>
               </div>
             </div>
           ) : null}
@@ -1270,7 +1281,7 @@ function PlaceBet({ user, setUser, toast, betMode }) {
   const isReal = betMode === "real";
   const maxBet = isReal ? MAX_REAL_BET : MAX_BET;
   const activeBet = user.bets?.find(b => b.status === "pending");
-  const odds = getOdds(user.rank, user.winrate);
+  const odds = getOdds(user.winrate);
   const rake = isReal ? 0 : RAKE; // no rake on real bets — stake returned + profit split
   const potentialWin = isReal
     ? (amount * odds).toFixed(2) // full payout shown (stake back + profit as credits)
@@ -1376,21 +1387,23 @@ function PlaceBet({ user, setUser, toast, betMode }) {
           <div style={{ background: "#1A1A1E", borderRadius: 3, padding: 16, marginBottom: 20 }}>
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: isReal ? 12 : 0 }}>
               <div>
-                <div style={{ fontSize: 10, letterSpacing: 2, color: "#A0A0A8" }}>YOUR ODDS</div>
-                <div style={{ color: accentColor, fontSize: 18, fontWeight: 700 }}>{odds}x</div>
-                <div style={{ color: "#A0A0A8", fontSize: 10 }}>{user.rank || "UNRANKED"}</div>
+                <div style={{ fontSize: 12, letterSpacing: 2, color: "#A0A0A8", fontFamily: "DM Sans, sans-serif" }}>YOUR MULTIPLIER</div>
+                <div style={{ color: accentColor, fontSize: 24, fontWeight: 700 }}>{odds}x</div>
+                <div style={{ color: "#A0A0A8", fontSize: 13, fontFamily: "DM Sans, sans-serif" }}>
+                  {user.winrate != null ? `${user.winrate}% WR · ${getOddsLabel(user.winrate)}` : "Link account to get odds"}
+                </div>
               </div>
               <div style={{ textAlign: "right" }}>
-                <div style={{ fontSize: 10, letterSpacing: 2, color: "#A0A0A8" }}>IF YOU WIN</div>
+                <div style={{ fontSize: 12, letterSpacing: 2, color: "#A0A0A8", fontFamily: "DM Sans, sans-serif" }}>IF YOU WIN</div>
                 {isReal ? (
                   <>
-                    <div style={{ color: "#4ade80", fontSize: 16, fontWeight: 700 }}>${Number(amount).toFixed(2)} <span style={{ fontSize: 11, color: "#A0A0A8" }}>back to wallet</span></div>
-                    <div style={{ color: "#a78bfa", fontSize: 16, fontWeight: 700 }}>${(potentialWin - amount).toFixed(2)} <span style={{ fontSize: 11, color: "#A0A0A8" }}>skin credits</span></div>
+                    <div style={{ color: "#4ade80", fontSize: 17, fontWeight: 700 }}>${Number(amount).toFixed(2)} <span style={{ fontSize: 13, color: "#A0A0A8", fontFamily: "DM Sans, sans-serif" }}>back to wallet</span></div>
+                    <div style={{ color: "#a78bfa", fontSize: 17, fontWeight: 700 }}>${(potentialWin - amount).toFixed(2)} <span style={{ fontSize: 13, color: "#A0A0A8", fontFamily: "DM Sans, sans-serif" }}>skin credits</span></div>
                   </>
                 ) : (
                   <>
-                    <div style={{ color: "#0BC4AA", fontSize: 24, fontWeight: 700 }}>{formatMoney(potentialWin)}</div>
-                    <div style={{ color: "#A0A0A8", fontSize: 10 }}>{RAKE * 100}% rake applied</div>
+                    <div style={{ color: "#0BC4AA", fontSize: 26, fontWeight: 700 }}>{formatMoney(potentialWin)}</div>
+                    <div style={{ color: "#A0A0A8", fontSize: 13, fontFamily: "DM Sans, sans-serif" }}>{RAKE * 100}% rake applied</div>
                   </>
                 )}
               </div>
@@ -1634,18 +1647,26 @@ function DepositPanel({ user, setUser, toast }) {
 }
 
 // ─── SKIN SHOP ────────────────────────────────────────────────────────────────
+// RP cards: creditCost is the full price in dollars.
+// Players can pay with any mix of Skin Credits + Real Balance.
 const RP_CARDS = [
-  { name: "RP Card 650", rp: 650, creditCost: 5.00, popular: false },
-  { name: "RP Card 1380", rp: 1380, creditCost: 10.00, popular: true },
-  { name: "RP Card 2800", rp: 2800, creditCost: 20.00, popular: false },
-  { name: "RP Card 5750", rp: 5750, creditCost: 40.00, popular: false },
+  { name: "RP Card 650", rp: 650, totalCost: 5.00, popular: false },
+  { name: "RP Card 1380", rp: 1380, totalCost: 10.00, popular: true },
+  { name: "RP Card 2800", rp: 2800, totalCost: 20.00, popular: false },
+  { name: "RP Card 5750", rp: 5750, totalCost: 40.00, popular: false },
 ];
 
 function SkinShop({ user, setUser, toast }) {
   const [redemptions, setRedemptions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [loadingHistory, setLoadingHistory] = useState(true);
-  const [confirmCard, setConfirmCard] = useState(null);
+  // selectedCard = the card being checked out
+  const [selectedCard, setSelectedCard] = useState(null);
+  // How much the player allocates from each balance (controlled by slider)
+  const [creditsUsed, setCreditsUsed] = useState(0);
+
+  const skinCredits = Number(user.skinCredits || 0);
+  const realBalance = Number(user.realBalance || 0);
 
   useEffect(() => {
     fetch("/api/redeem", {
@@ -1658,21 +1679,39 @@ function SkinShop({ user, setUser, toast }) {
       .finally(() => setLoadingHistory(false));
   }, [user.username]);
 
-  const redeem = async (card) => {
-    if (Number(user.skinCredits) < card.creditCost) return toast("Not enough skin credits", "error");
+  const openCheckout = (card) => {
+    // Auto-fill: use as many credits as possible, rest from real balance
+    const maxCredits = Math.min(skinCredits, card.totalCost);
+    setCreditsUsed(Math.round(maxCredits * 100) / 100);
+    setSelectedCard(card);
+  };
+
+  const realUsed = selectedCard ? Math.max(0, Math.round((selectedCard.totalCost - creditsUsed) * 100) / 100) : 0;
+  const canAffordSelected = selectedCard
+    ? (creditsUsed <= skinCredits && realUsed <= realBalance && Math.abs(creditsUsed + realUsed - selectedCard.totalCost) < 0.001)
+    : false;
+
+  const redeem = async () => {
+    if (!selectedCard || !canAffordSelected) return;
     setLoading(true);
     try {
       const data = await apiCall("/api/redeem", {
         action: "submitRedemption",
         username: user.username,
-        skinName: card.name,
-        rpCost: card.rp,
-        creditCost: card.creditCost
+        skinName: selectedCard.name,
+        rpCost: selectedCard.rp,
+        creditCost: creditsUsed,
+        realCost: realUsed,
+        totalCost: selectedCard.totalCost
       });
       setUser(data.user);
-      setRedemptions(prev => [{ id: Date.now(), skinName: card.name, rpCost: card.rp, creditCost: card.creditCost, status: "pending", createdAt: Date.now() }, ...prev]);
-      setConfirmCard(null);
-      toast(`✅ Redemption submitted! You'll receive your ${card.name} in-game shortly.`, "success");
+      setRedemptions(prev => [{
+        id: Date.now(), skinName: selectedCard.name, rpCost: selectedCard.rp,
+        creditCost: creditsUsed, realCost: realUsed, totalCost: selectedCard.totalCost,
+        status: "pending", createdAt: Date.now()
+      }, ...prev]);
+      setSelectedCard(null);
+      toast(`✅ Redemption submitted! Your ${selectedCard.name} will be gifted to your LoL account within 24h.`, "success");
     } catch(e) {
       toast(e.message, "error");
     }
@@ -1681,80 +1720,158 @@ function SkinShop({ user, setUser, toast }) {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      {/* Balance display */}
-      <div style={{ background: "#1a0d28", border: "1px solid #a78bfa33", borderRadius: 8, padding: "16px 20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <div>
-          <div style={{ fontSize: 10, letterSpacing: 3, color: "#a78bfa", marginBottom: 4 }}>YOUR SKIN CREDITS</div>
-          <div style={{ fontSize: 28, fontWeight: 700, color: "#a78bfa", fontFamily: "Barlow Condensed, sans-serif" }}>
-            ${Number(user.skinCredits || 0).toFixed(2)}
-          </div>
+
+      {/* Balance overview */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+        <div style={{ background: "#1a0d28", border: "1px solid #a78bfa44", borderRadius: 8, padding: "16px 18px" }}>
+          <div style={{ fontSize: 13, letterSpacing: 2, color: "#a78bfa", marginBottom: 6, fontFamily: "DM Sans, sans-serif", fontWeight: 600 }}>💜 SKIN CREDITS</div>
+          <div style={{ fontSize: 26, fontWeight: 700, color: "#a78bfa", fontFamily: "Barlow Condensed, sans-serif" }}>${skinCredits.toFixed(2)}</div>
+          <div style={{ fontSize: 13, color: "#c4b5fd", fontFamily: "DM Sans, sans-serif", marginTop: 4 }}>Earned from bet winnings</div>
         </div>
-        <div style={{ fontSize: 32 }}>💜</div>
+        <div style={{ background: "#0d280d", border: "1px solid #4ade8044", borderRadius: 8, padding: "16px 18px" }}>
+          <div style={{ fontSize: 13, letterSpacing: 2, color: "#4ade80", marginBottom: 6, fontFamily: "DM Sans, sans-serif", fontWeight: 600 }}>💵 REAL BALANCE</div>
+          <div style={{ fontSize: 26, fontWeight: 700, color: "#4ade80", fontFamily: "Barlow Condensed, sans-serif" }}>${realBalance.toFixed(2)}</div>
+          <div style={{ fontSize: 13, color: "#86efac", fontFamily: "DM Sans, sans-serif", marginTop: 4 }}>Withdrawable funds</div>
+        </div>
       </div>
 
-      <div style={{ background: "#242428", border: "1px solid #2D2D32", borderRadius: 8, padding: 24 }}>
-        <div style={{ fontSize: 10, letterSpacing: 3, color: "#A0A0A8", marginBottom: 6 }}>RP CARD SHOP</div>
-        <div style={{ fontSize: 13, color: "#C0C0C8", fontFamily: "DM Sans, sans-serif", marginBottom: 20, lineHeight: 1.6 }}>
-          Spend your skin credits on RP cards. After you submit a request, the card will be gifted to your linked LoL account directly in-game, usually within 24h.
+      {/* How it works */}
+      <div style={{ background: "#1a1a28", border: "1px solid #a78bfa22", borderRadius: 8, padding: "14px 18px" }}>
+        <div style={{ fontSize: 14, color: "#c4b5fd", fontFamily: "DM Sans, sans-serif", lineHeight: 1.7 }}>
+          <strong style={{ color: "#a78bfa" }}>How it works:</strong> Choose an RP card below. You can pay using any mix of your Skin Credits and Real Balance. After submitting, the RP card will be gifted directly to your linked LoL account — usually within 24 hours.
         </div>
+      </div>
 
+      {/* Checkout modal */}
+      {selectedCard && (
+        <div style={{ background: "#1A1A1E", border: "2px solid #a78bfa55", borderRadius: 10, padding: 24 }}>
+          <div style={{ fontSize: 14, letterSpacing: 2, color: "#a78bfa", marginBottom: 16, fontFamily: "DM Sans, sans-serif", fontWeight: 700 }}>CHECKOUT — {selectedCard.name}</div>
+          <div style={{ fontSize: 22, color: "#a78bfa", fontWeight: 900, fontFamily: "Barlow Condensed, sans-serif", marginBottom: 20 }}>{selectedCard.rp.toLocaleString()} RP · Total: ${selectedCard.totalCost.toFixed(2)}</div>
+
+          {/* Split slider */}
+          <div style={{ marginBottom: 20 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
+              <span style={{ fontSize: 14, color: "#a78bfa", fontFamily: "DM Sans, sans-serif", fontWeight: 600 }}>💜 Credits: ${creditsUsed.toFixed(2)}</span>
+              <span style={{ fontSize: 14, color: "#4ade80", fontFamily: "DM Sans, sans-serif", fontWeight: 600 }}>💵 Real: ${realUsed.toFixed(2)}</span>
+            </div>
+            <input
+              type="range"
+              min={0}
+              max={Math.min(skinCredits, selectedCard.totalCost)}
+              step={0.01}
+              value={creditsUsed}
+              onChange={e => {
+                const v = Number(e.target.value);
+                const r = Math.round((selectedCard.totalCost - v) * 100) / 100;
+                if (r <= realBalance) setCreditsUsed(Math.round(v * 100) / 100);
+              }}
+              style={{ width: "100%", accentColor: "#a78bfa" }}
+            />
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "#7A7A82", fontFamily: "DM Sans, sans-serif", marginTop: 4 }}>
+              <span>All real money</span><span>All skin credits</span>
+            </div>
+          </div>
+
+          {/* Breakdown */}
+          <div style={{ background: "#242428", borderRadius: 6, padding: "12px 16px", marginBottom: 16 }}>
+            {creditsUsed > 0 && <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+              <span style={{ fontSize: 14, color: "#c4b5fd", fontFamily: "DM Sans, sans-serif" }}>Skin Credits used</span>
+              <span style={{ fontSize: 14, color: "#a78bfa", fontWeight: 700 }}>−${creditsUsed.toFixed(2)}</span>
+            </div>}
+            {realUsed > 0 && <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+              <span style={{ fontSize: 14, color: "#86efac", fontFamily: "DM Sans, sans-serif" }}>Real Balance used</span>
+              <span style={{ fontSize: 14, color: "#4ade80", fontWeight: 700 }}>−${realUsed.toFixed(2)}</span>
+            </div>}
+            {!canAffordSelected && (
+              <div style={{ color: "#C8464A", fontSize: 13, fontFamily: "DM Sans, sans-serif", marginTop: 6 }}>
+                ⚠️ Not enough balance. Adjust the slider or deposit more funds.
+              </div>
+            )}
+          </div>
+
+          <div style={{ display: "flex", gap: 10 }}>
+            <button onClick={redeem} disabled={loading || !canAffordSelected} style={{
+              flex: 2, background: canAffordSelected ? "linear-gradient(135deg, #a78bfa, #7c3aed)" : "#35353A",
+              color: canAffordSelected ? "#fff" : "#A0A0A8", border: "none", padding: "14px",
+              borderRadius: 4, fontFamily: "Barlow Condensed, sans-serif", fontSize: 15,
+              fontWeight: 700, cursor: canAffordSelected ? "pointer" : "not-allowed", letterSpacing: 1
+            }}>
+              {loading ? "Submitting..." : "CONFIRM REDEMPTION"}
+            </button>
+            <button onClick={() => setSelectedCard(null)} style={{
+              flex: 1, background: "none", color: "#A0A0A8", border: "1px solid #35353A",
+              padding: "14px", borderRadius: 4, fontFamily: "Barlow Condensed, sans-serif",
+              fontSize: 14, cursor: "pointer"
+            }}>CANCEL</button>
+          </div>
+        </div>
+      )}
+
+      {/* RP Cards grid */}
+      <div style={{ background: "#242428", border: "1px solid #2D2D32", borderRadius: 8, padding: 24 }}>
+        <div style={{ fontSize: 14, letterSpacing: 2, color: "#C8AA6E", marginBottom: 20, fontWeight: 700 }}>RP CARD SHOP</div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
           {RP_CARDS.map(card => {
-            const canAfford = Number(user.skinCredits || 0) >= card.creditCost;
+            const totalAvailable = skinCredits + realBalance;
+            const canAfford = totalAvailable >= card.totalCost;
             return (
               <div key={card.name} style={{
-                background: "#1A1A1E", border: `1px solid ${card.popular ? "#a78bfa55" : "#2A2A2E"}`,
-                borderRadius: 8, padding: 16, position: "relative",
-                opacity: canAfford ? 1 : 0.6
+                background: "#1A1A1E", border: `2px solid ${card.popular ? "#a78bfa55" : "#2A2A2E"}`,
+                borderRadius: 8, padding: 18, position: "relative"
               }}>
                 {card.popular && (
-                  <div style={{ position: "absolute", top: -10, left: "50%", transform: "translateX(-50%)", background: "#a78bfa", color: "#1A1A1E", fontSize: 9, fontWeight: 700, letterSpacing: 1, padding: "2px 10px", borderRadius: 10 }}>POPULAR</div>
+                  <div style={{ position: "absolute", top: -11, left: "50%", transform: "translateX(-50%)", background: "#a78bfa", color: "#1A1A1E", fontSize: 10, fontWeight: 700, letterSpacing: 1, padding: "3px 12px", borderRadius: 10 }}>POPULAR</div>
                 )}
-                <div style={{ fontSize: 20, marginBottom: 8 }}>🎮</div>
-                <div style={{ color: "#F0F0F0", fontSize: 15, fontWeight: 700, fontFamily: "Barlow Condensed, sans-serif", marginBottom: 4 }}>{card.name}</div>
-                <div style={{ color: "#a78bfa", fontSize: 22, fontWeight: 900, fontFamily: "Barlow Condensed, sans-serif", marginBottom: 12 }}>{card.rp.toLocaleString()} RP</div>
-                <div style={{ color: "#A0A0A8", fontSize: 12, marginBottom: 12 }}>Cost: <span style={{ color: "#a78bfa", fontWeight: 700 }}>${card.creditCost.toFixed(2)} credits</span></div>
-                {confirmCard?.name === card.name ? (
-                  <div style={{ display: "flex", gap: 6 }}>
-                    <button onClick={() => redeem(card)} disabled={loading} style={{ flex: 1, background: "#a78bfa", color: "#1A1A1E", border: "none", padding: "8px", borderRadius: 3, fontFamily: "Barlow Condensed, sans-serif", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
-                      {loading ? "..." : "CONFIRM"}
-                    </button>
-                    <button onClick={() => setConfirmCard(null)} style={{ flex: 1, background: "none", color: "#A0A0A8", border: "1px solid #35353A", padding: "8px", borderRadius: 3, fontFamily: "Barlow Condensed, sans-serif", fontSize: 11, cursor: "pointer" }}>CANCEL</button>
-                  </div>
-                ) : (
-                  <button onClick={() => canAfford ? setConfirmCard(card) : toast("Not enough skin credits", "error")} style={{
+                <div style={{ fontSize: 22, marginBottom: 8 }}>🎮</div>
+                <div style={{ color: "#F0F0F0", fontSize: 17, fontWeight: 700, fontFamily: "Barlow Condensed, sans-serif", marginBottom: 4 }}>{card.name}</div>
+                <div style={{ color: "#a78bfa", fontSize: 24, fontWeight: 900, fontFamily: "Barlow Condensed, sans-serif", marginBottom: 8 }}>{card.rp.toLocaleString()} RP</div>
+                <div style={{ fontSize: 14, color: "#C0C0C8", fontFamily: "DM Sans, sans-serif", marginBottom: 14 }}>
+                  Total: <span style={{ color: "#F0F0F0", fontWeight: 700 }}>${card.totalCost.toFixed(2)}</span>
+                  <span style={{ color: "#7A7A82", marginLeft: 6 }}>(credits + real balance)</span>
+                </div>
+                <button
+                  onClick={() => canAfford ? openCheckout(card) : toast("Not enough combined balance (credits + real funds)", "error")}
+                  style={{
                     width: "100%", background: canAfford ? "linear-gradient(135deg, #a78bfa, #7c3aed)" : "#35353A",
-                    color: canAfford ? "#fff" : "#A0A0A8", border: "none", padding: "8px", borderRadius: 3,
-                    fontFamily: "Barlow Condensed, sans-serif", fontSize: 11, fontWeight: 700,
-                    cursor: canAfford ? "pointer" : "not-allowed", letterSpacing: 1
+                    color: canAfford ? "#fff" : "#7A7A82", border: "none", padding: "10px",
+                    borderRadius: 4, fontFamily: "Barlow Condensed, sans-serif", fontSize: 13,
+                    fontWeight: 700, cursor: canAfford ? "pointer" : "not-allowed", letterSpacing: 1
                   }}>
-                    {canAfford ? "REDEEM" : "NOT ENOUGH CREDITS"}
-                  </button>
-                )}
+                  {canAfford ? "SELECT" : `Need $${Math.max(0, card.totalCost - totalAvailable).toFixed(2)} more`}
+                </button>
               </div>
             );
           })}
         </div>
       </div>
 
+      {/* Redemption history */}
       <div style={{ background: "#242428", border: "1px solid #2D2D32", borderRadius: 8, padding: 24 }}>
-        <div style={{ fontSize: 10, letterSpacing: 3, color: "#A0A0A8", marginBottom: 16 }}>YOUR REDEMPTIONS</div>
+        <div style={{ fontSize: 14, letterSpacing: 2, color: "#C8AA6E", marginBottom: 16, fontWeight: 700 }}>YOUR REDEMPTIONS</div>
+        <div style={{ fontSize: 14, color: "#A0A0A8", fontFamily: "DM Sans, sans-serif", marginBottom: 16 }}>
+          Status <span style={{ color: "#a78bfa" }}>Pending</span> = request received, gift on its way. <span style={{ color: "#4ade80" }}>Sent</span> = gifted in-game.
+        </div>
         {loadingHistory ? <Loader text="Loading..." /> : redemptions.length === 0 ? (
-          <div style={{ color: "#A0A0A8", fontSize: 13, fontFamily: "DM Sans, sans-serif", fontStyle: "italic", textAlign: "center", padding: "16px 0" }}>No redemptions yet.</div>
+          <div style={{ color: "#A0A0A8", fontSize: 14, fontFamily: "DM Sans, sans-serif", fontStyle: "italic", textAlign: "center", padding: "16px 0" }}>No redemptions yet.</div>
         ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {redemptions.map((r, i) => (
-              <div key={r.id || i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 12px", borderRadius: 4, background: "#1A1A1E", border: `1px solid ${r.status === "fulfilled" ? "#4ade8022" : "#a78bfa22"}` }}>
-                <div>
-                  <div style={{ color: "#F0F0F0", fontSize: 13, fontWeight: 600 }}>{r.skinName}</div>
-                  <div style={{ display: "flex", gap: 8, marginTop: 4, alignItems: "center" }}>
-                    <span style={{ fontSize: 10, color: r.status === "fulfilled" ? "#4ade80" : "#a78bfa", border: `1px solid ${r.status === "fulfilled" ? "#4ade80" : "#a78bfa"}`, padding: "1px 6px", borderRadius: 2, letterSpacing: 1 }}>
-                      {r.status === "fulfilled" ? "✓ SENT" : "⏳ PENDING"}
-                    </span>
-                    <span style={{ fontSize: 11, color: "#A0A0A8" }}>{timeAgo(r.createdAt)}</span>
+              <div key={r.id || i} style={{ padding: "14px 16px", borderRadius: 6, background: "#1A1A1E", border: `1px solid ${r.status === "fulfilled" ? "#4ade8033" : "#a78bfa33"}` }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                  <div>
+                    <div style={{ color: "#F0F0F0", fontSize: 15, fontWeight: 700, fontFamily: "Barlow Condensed, sans-serif" }}>{r.skinName}</div>
+                    <div style={{ display: "flex", gap: 8, marginTop: 6, alignItems: "center", flexWrap: "wrap" }}>
+                      <span style={{ fontSize: 12, color: r.status === "fulfilled" ? "#4ade80" : "#a78bfa", border: `1px solid ${r.status === "fulfilled" ? "#4ade80" : "#a78bfa"}`, padding: "2px 8px", borderRadius: 3, letterSpacing: 1, fontWeight: 700 }}>
+                        {r.status === "fulfilled" ? "✓ SENT" : "⏳ PENDING"}
+                      </span>
+                      <span style={{ fontSize: 13, color: "#A0A0A8", fontFamily: "DM Sans, sans-serif" }}>{timeAgo(r.createdAt)}</span>
+                    </div>
+                  </div>
+                  <div style={{ textAlign: "right" }}>
+                    {r.creditCost > 0 && <div style={{ color: "#a78bfa", fontSize: 14, fontWeight: 700 }}>💜 −${Number(r.creditCost).toFixed(2)}</div>}
+                    {r.realCost > 0 && <div style={{ color: "#4ade80", fontSize: 14, fontWeight: 700 }}>💵 −${Number(r.realCost).toFixed(2)}</div>}
                   </div>
                 </div>
-                <div style={{ color: "#a78bfa", fontSize: 14, fontWeight: 700 }}>-${Number(r.creditCost).toFixed(2)}</div>
               </div>
             ))}
           </div>
@@ -2431,18 +2548,35 @@ export default function App() {
             );
           })()}
 
-          {/* Odds table */}
+          {/* Multipliers table — winrate based */}
           <div style={{ background: "#242428", border: "1px solid #2D2D32", borderRadius: 8, padding: "18px 16px" }}>
-            <div style={{ fontSize: 12, letterSpacing: 3, color: "#C8AA6E", marginBottom: 14 }}>MULTIPLIERS</div>
-            {[["IRON","1.60x"],["BRONZE","1.55x"],["SILVER","1.50x"],["GOLD","1.45x"],["PLATINUM","1.40x"],["EMERALD","1.38x"],["DIAMOND","1.35x"],["MASTER+","1.15x"]].map(([r,o]) => {
-              const isMyRank = user.rank?.toUpperCase().startsWith(r.split("+")[0]);
+            <div style={{ fontSize: 13, letterSpacing: 2, color: "#C8AA6E", marginBottom: 4, fontWeight: 700 }}>MULTIPLIERS</div>
+            <div style={{ fontSize: 12, color: "#A0A0A8", fontFamily: "DM Sans, sans-serif", marginBottom: 12 }}>Based on your winrate</div>
+            {WR_BRACKETS.map(({ range, odds, desc }) => {
+              const wr = user.winrate;
+              const isMe = wr != null && (
+                (range === "65%+" && wr >= 65) ||
+                (range === "58–64%" && wr >= 58 && wr < 65) ||
+                (range === "52–57%" && wr >= 52 && wr < 58) ||
+                (range === "48–51%" && wr >= 48 && wr < 52) ||
+                (range === "42–47%" && wr >= 42 && wr < 48) ||
+                (range === "<42%" && wr < 42)
+              );
               return (
-                <div key={r} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 8px", marginBottom: 2, borderRadius: 3, background: isMyRank ? "#C8AA6E11" : "transparent", border: isMyRank ? "1px solid #C8AA6E22" : "1px solid transparent" }}>
-                  <span style={{ fontSize: 11, color: isMyRank ? "#C8AA6E" : "#785A2866", fontWeight: isMyRank ? 700 : 400 }}>{r}</span>
-                  <span style={{ fontSize: 12, color: isMyRank ? "#C8AA6E" : "#785A2844", fontWeight: 700 }}>{o}</span>
+                <div key={range} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "7px 8px", marginBottom: 2, borderRadius: 3, background: isMe ? "#C8AA6E11" : "transparent", border: isMe ? "1px solid #C8AA6E33" : "1px solid transparent" }}>
+                  <div>
+                    <div style={{ fontSize: 12, color: isMe ? "#C8AA6E" : "#A0A0A8", fontWeight: isMe ? 700 : 400, fontFamily: "DM Sans, sans-serif" }}>{range}</div>
+                    <div style={{ fontSize: 11, color: isMe ? "#C8AA6E99" : "#5A5A62", fontFamily: "DM Sans, sans-serif" }}>{desc}</div>
+                  </div>
+                  <span style={{ fontSize: 14, color: isMe ? "#C8AA6E" : "#785A2899", fontWeight: 700 }}>{odds.toFixed(2)}x</span>
                 </div>
               );
             })}
+            {user.winrate == null && (
+              <div style={{ fontSize: 12, color: "#A0A0A8", fontFamily: "DM Sans, sans-serif", fontStyle: "italic", marginTop: 8, textAlign: "center" }}>
+                Link your LoL account to see your bracket
+              </div>
+            )}
           </div>
         </div>
 
@@ -2488,16 +2622,16 @@ export default function App() {
             )}
           </div>
           <div style={{ background: "#242428", border: "1px solid #2D2D32", borderRadius: 8, padding: "18px 16px" }}>
-            <div style={{ fontSize: 12, letterSpacing: 3, color: "#C8AA6E", marginBottom: 14 }}>HOUSE RULES</div>
+            <div style={{ fontSize: 13, letterSpacing: 2, color: "#C8AA6E", marginBottom: 14, fontWeight: 700 }}>HOUSE RULES</div>
             {[
               ["Virtual bets: $1–$30", "5% rake on winnings"],
               ["Real bets: max $1.00", "Stake returned if you win"],
               ["Profit → Skin Credits", "Spend in 💜 Shop tab"],
-              ["Results via Riot API", "Solo/Duo ranked only"],
+              ["Odds based on WR", "Solo/Duo ranked only"],
             ].map(([rule, sub], i) => (
               <div key={i} style={{ paddingBottom: 10, marginBottom: 10, borderBottom: i < 3 ? "1px solid #222225" : "none" }}>
                 <div style={{ fontSize: 15, color: "#FFFFFF", fontWeight: 600 }}>{rule}</div>
-                <div style={{ fontSize: 13, color: "#C0C0C8", marginTop: 3 }}>{sub}</div>
+                <div style={{ fontSize: 13, color: "#C0C0C8", marginTop: 3, fontFamily: "DM Sans, sans-serif" }}>{sub}</div>
               </div>
             ))}
           </div>
