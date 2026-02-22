@@ -279,7 +279,7 @@ function AuthStatsBar() {
         { label: "BIGGEST WIN TODAY", value: 47.25, prefix: "$", isFloat: true },
       ].map((s, i) => (
         <div key={i} style={{ flex: 1, textAlign: "center", padding: "0 16px", borderRight: i < 3 ? "1px solid #252528" : "none" }}>
-          <div style={{ color: "#C8AA6E", fontSize: 22, fontWeight: 700, fontFamily: "Barlow Condensed, sans-serif" }}>
+          <div style={{ color: "#C8AA6E", fontSize: 18, fontWeight: 700, fontFamily: "Barlow Condensed, sans-serif" }}>
             {s.isFloat ? `$${s.value.toFixed(2)}` : <AnimatedCounter target={s.value} prefix={s.prefix || ""} suffix={s.suffix || ""} />}
           </div>
           <div style={{ color: "#C0C0C8", fontSize: 9, letterSpacing: 3, marginTop: 4 }}>{s.label}</div>
@@ -390,7 +390,7 @@ function AuthPage({ onLogin }) {
       `}</style>
 
       {/* Top brand bar */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 48px", borderBottom: "1px solid #2D2D32" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 48px", borderBottom: "1px solid #2D2D32" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <img src="/logo.png" alt="Runeterra Wagers" style={{ width: 128, height: 128, objectFit: "contain" }} />
           <div>
@@ -410,9 +410,9 @@ function AuthPage({ onLogin }) {
       <div style={{ display: "grid", gridTemplateColumns: "1fr 420px 1fr", gap: 0, minHeight: "calc(100vh - 73px)", alignItems: "start" }}>
 
         {/* LEFT PANEL · How it works */}
-        <div style={{ padding: "60px 40px 60px 48px", animation: "fadeInLeft 0.7s ease" }}>
+        <div style={{ padding: "28px 40px 28px 48px", animation: "fadeInLeft 0.7s ease" }}>
           <div style={{ fontSize: 12, letterSpacing: 3, color: "#C8AA6E", marginBottom: 8 }}>HOW IT WORKS</div>
-          <h2 style={{ fontSize: 30, fontWeight: 800, color: "#F0F0F0", fontFamily: "Barlow Condensed, sans-serif", marginBottom: 32, lineHeight: 1.2 }}>
+          <h2 style={{ fontSize: 26, fontWeight: 800, color: "#F0F0F0", fontFamily: "Barlow Condensed, sans-serif", marginBottom: 20, lineHeight: 1.2 }}>
             Bet on yourself.<br/><span style={{ color: "#C8AA6E" }}>Win real rewards.</span>
           </h2>
           <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
@@ -451,17 +451,17 @@ function AuthPage({ onLogin }) {
         </div>
 
         {/* CENTER · Login form */}
-        <div style={{ padding: "60px 0", borderLeft: "1px solid #252528", borderRight: "1px solid #252528" }}>
+        <div style={{ padding: "28px 0", borderLeft: "1px solid #252528", borderRight: "1px solid #252528" }}>
           <div style={{ padding: "0 36px" }}>
             {/* Hero */}
             <div style={{ textAlign: "center", marginBottom: 36 }}>
-              <div style={{ marginBottom: 12, animation: "float 4s ease-in-out infinite" }}>
-              <img src="/logo.png" alt="Runeterra Wagers" style={{ width: 400, height: 400, objectFit: "contain", filter: "drop-shadow(0 0 60px #C8AA6E77)" }} />
+              <div style={{ marginBottom: 4, animation: "float 4s ease-in-out infinite" }}>
+              <img src="/logo.png" alt="Runeterra Wagers" style={{ width: 220, height: 220, objectFit: "contain", filter: "drop-shadow(0 0 40px #C8AA6E66)" }} />
             </div>
-              <h1 style={{ fontSize: 42, fontWeight: 900, color: "#C8AA6E", margin: "0 0 4px", animation: "glow 3s ease-in-out infinite", lineHeight: 1, fontFamily: "Barlow Condensed, sans-serif" }}>
+              <h1 style={{ fontSize: 38, fontWeight: 900, color: "#C8AA6E", margin: "0 0 2px", animation: "glow 3s ease-in-out infinite", lineHeight: 1, fontFamily: "Barlow Condensed, sans-serif" }}>
                 BET ON<br /><span style={{ color: "#F0F0F0" }}>YOURSELF</span>
               </h1>
-              <div style={{ width: 60, height: 1, background: "linear-gradient(90deg, transparent, #C8AA6E, transparent)", margin: "12px auto" }} />
+              <div style={{ width: 60, height: 1, background: "linear-gradient(90deg, transparent, #C8AA6E, transparent)", margin: "8px auto" }} />
             </div>
 
             {/* Tabs */}
@@ -544,9 +544,9 @@ function AuthPage({ onLogin }) {
         </div>
 
         {/* RIGHT PANEL · Features / rewards */}
-        <div style={{ padding: "60px 48px 60px 40px", animation: "fadeInRight 0.7s ease" }}>
+        <div style={{ padding: "28px 48px 28px 40px", animation: "fadeInRight 0.7s ease" }}>
           <div style={{ fontSize: 12, letterSpacing: 3, color: "#C8AA6E", marginBottom: 8 }}>FEATURES</div>
-          <h2 style={{ fontSize: 30, fontWeight: 800, color: "#F0F0F0", fontFamily: "Barlow Condensed, sans-serif", marginBottom: 32, lineHeight: 1.2 }}>
+          <h2 style={{ fontSize: 26, fontWeight: 800, color: "#F0F0F0", fontFamily: "Barlow Condensed, sans-serif", marginBottom: 20, lineHeight: 1.2 }}>
             What you can<br/><span style={{ color: "#C8AA6E" }}>win & earn.</span>
           </h2>
 
@@ -597,6 +597,185 @@ function AuthPage({ onLogin }) {
   );
 }
 
+// ─── PERSONALIZED ACCOUNT PHRASES ────────────────────────────────────────────
+function getAccountPhrase(profile, rank) {
+  if (!profile) return null;
+  const tier = rank?.split(" ")[0]?.toUpperCase() || "UNRANKED";
+  const div = rank?.split(" ")[1] || "";
+  const wr = profile.winrate;
+  const wins = profile.wins;
+  const losses = profile.losses;
+  const games = wins + losses;
+  const topChamp = profile.topChamps?.[0]?.name;
+  const topPts = profile.topChamps?.[0]?.points || 0;
+  const topLevel = profile.topChamps?.[0]?.level || 0;
+  const level = profile.level;
+  const lp = profile.lp;
+
+  const phrases = [];
+
+  // ── Rank-based ──────────────────────────────────────────────────────────────
+  if (tier === "IRON") phrases.push(
+    "Iron ranked. Either this is a smurf account or we genuinely respect the dedication.",
+    "You're Iron. The algorithm isn't rigged, we checked. Twice.",
+    `Iron ${div}. At this point the losing streak IS the grind.`
+  );
+  if (tier === "BRONZE") phrases.push(
+    "Bronze. You graduated from Iron, which means you definitely deserve to bet on yourself.",
+    `Bronze ${div}. Somewhere between 'I just installed this' and 'I belong here'.`,
+    "Bronze. Your teammates would say it's not your fault. They'd be lying."
+  );
+  if (tier === "SILVER") phrases.push(
+    "Silver. The most populated rank in the game. You are statistically average. Congratulations.",
+    `Silver ${div}. You know exactly what everyone is doing wrong. You are also doing it.`,
+    "Silver. You've watched enough YouTube guides to know what you should be doing. Yet."
+  );
+  if (tier === "GOLD") phrases.push(
+    "Gold. You've escaped Silver, which puts you ahead of 60% of the playerbase. Humble yourself.",
+    `Gold ${div}. The rank where everyone thinks they're secretly Platinum.`,
+    "Gold. You peak at this rank every season and you know it."
+  );
+  if (tier === "PLATINUM") phrases.push(
+    "Platinum. You are statistically better than most players and worse than everyone you play with.",
+    `Plat ${div}. One patch away from either Diamond or a full mental breakdown.`,
+    "Platinum. You're good. Not 'good enough to say you're good' good, but good."
+  );
+  if (tier === "EMERALD") phrases.push(
+    "Emerald. The rank Riot invented so Plats could feel better about themselves.",
+    `Emerald ${div}. You tell people you're 'almost Diamond'. That's technically true.`,
+    "Emerald. Unironically closer to Diamond than most people will ever get. Respect."
+  );
+  if (tier === "DIAMOND") phrases.push(
+    "Diamond. Top 2% of players and somehow still flaming your jungler.",
+    `Diamond ${div}. At this point League is either your hobby or your problem. Possibly both.`,
+    "Diamond. You have no excuse for bad plays and you know it."
+  );
+  if (tier === "MASTER") phrases.push(
+    "Master tier. You have sacrificed sleep, social life, and sunlight for this.",
+    "Master. You are genuinely cracked and we're a little scared to bet against you.",
+    "Master tier. Your MMR is higher than your vitamin D levels."
+  );
+  if (tier === "GRANDMASTER") phrases.push(
+    "Grandmaster. At this point just go pro or touch grass. No in-between.",
+    "Grandmaster. You are better at this video game than 99.9% of humans alive. Seek help."
+  );
+  if (tier === "CHALLENGER") phrases.push(
+    "Challenger. We didn't expect to see you here. Your odds are basically 1.15x because you shouldn't be losing.",
+    "Challenger. You are the reason other players uninstall. Welcome to Runeterra Wagers."
+  );
+  if (tier === "UNRANKED") phrases.push(
+    "No ranked games found. Either you just installed or you're too scared to queue. Both are valid.",
+    "Unranked. Every Diamond player was once where you are. Most stayed there."
+  );
+
+  // ── LP-based ────────────────────────────────────────────────────────────────
+  if (lp !== null && lp >= 90) phrases.push(
+    `${lp} LP. You are one good game away from promotion. Or one bad one from a breakdown.`
+  );
+  if (lp !== null && lp <= 10 && games > 0) phrases.push(
+    `${lp} LP. You are clinging to this rank by your fingernails. We see you.`
+  );
+
+  // ── Winrate-based ────────────────────────────────────────────────────────────
+  if (wr !== null && wr >= 60) phrases.push(
+    `${wr}% winrate. You're a menace in the best way. Betting on you makes sense.`,
+    `${wr}% winrate. That's not luck, that's a pattern. A beautiful, profitable pattern.`
+  );
+  if (wr !== null && wr >= 55 && wr < 60) phrases.push(
+    `${wr}% winrate. Consistently winning more than losing. Boring, effective, bankable.`
+  );
+  if (wr !== null && wr >= 50 && wr < 55) phrases.push(
+    `${wr}% winrate. You win just barely more than you lose. The market is pricing you correctly.`
+  );
+  if (wr !== null && wr >= 45 && wr < 50) phrases.push(
+    `${wr}% winrate. You lose more than you win. We're still taking your money either way.`
+  );
+  if (wr !== null && wr < 45 && games > 20) phrases.push(
+    `${wr}% winrate. Honestly respect the consistency. Consistently below 50%, but consistent.`
+  );
+
+  // ── Games played ─────────────────────────────────────────────────────────────
+  if (games >= 500) phrases.push(
+    `${games} ranked games this season. At some point this stopped being a game and became a lifestyle.`
+  );
+  if (games >= 200 && games < 500) phrases.push(
+    `${games} ranked games. You have logged more hours in the Rift than at the gym. Probably.`
+  );
+  if (games >= 100 && games < 200) phrases.push(
+    `${games} games. You're committed. Not to therapy, but to ranked. We'll take it.`
+  );
+  if (games < 20 && games > 0) phrases.push(
+    `Only ${games} ranked games. Either new season or you're pacing yourself. Smart.`
+  );
+
+  // ── Champion-based ───────────────────────────────────────────────────────────
+  if (topChamp === "Yasuo") phrases.push(
+    "Your most played is Yasuo. We respect the chaos. We do not trust the team comp.",
+    "Yasuo main detected. Wind Wall at the worst possible moment, guaranteed."
+  );
+  if (topChamp === "Zed") phrases.push(
+    "Zed one-trick. You have a montage. It has 47 views, 43 of which are yours."
+  );
+  if (topChamp === "Lux") phrases.push(
+    "Lux main. You're either the most annoying support or a mid laner who never roams. No in-between."
+  );
+  if (topChamp === "Thresh") phrases.push(
+    "Thresh main. You've hit a hook that made someone uninstall. You know exactly which one."
+  );
+  if (topChamp === "Ahri") phrases.push(
+    "Ahri main. You probably have a wallpaper of her. Your winrate is not as charming as she is."
+  );
+  if (topChamp === "Jinx") phrases.push(
+    "Jinx main. You love to int early and hypercarry late. Your support hates you."
+  );
+  if (topChamp === "Teemo") phrases.push(
+    "Teemo main. You are the villain and you have fully accepted this. Respect."
+  );
+  if (topChamp === "Darius") phrases.push(
+    "Darius main. NOXUS WILL PREVAIL. You have dunked on someone today. We can tell."
+  );
+  if (topChamp === "Katarina") phrases.push(
+    "Katarina main. When you're fed you're unstoppable. When you're not, it's the jungle's fault."
+  );
+  if (topChamp === "Vayne") phrases.push(
+    "Vayne main. Early game invisible, late game terrifying. Your laning phase is a bet in itself."
+  );
+  if (topChamp === "Master Yi") phrases.push(
+    "Master Yi main. Press R, click on someone, repeat. A bold strategy."
+  );
+
+  // ── Mastery points ───────────────────────────────────────────────────────────
+  if (topPts >= 1000000) phrases.push(
+    `${(topPts/1000000).toFixed(1)}M mastery points on ${topChamp}. At this point you and ${topChamp} are the same person.`
+  );
+  if (topPts >= 500000 && topPts < 1000000) phrases.push(
+    `${Math.round(topPts/1000)}K mastery on ${topChamp}. You have devoted an embarrassing amount of time to this champion. We're not judging.`
+  );
+  if (topLevel === 7) phrases.push(
+    `Mastery 7 on ${topChamp}. Riot officially certified you as a ${topChamp} abuser. Congratulations.`
+  );
+
+  // ── Summoner level ───────────────────────────────────────────────────────────
+  if (level >= 500) phrases.push(
+    `Level ${level}. You have been playing League since before some of your opponents were born.`
+  );
+  if (level >= 300 && level < 500) phrases.push(
+    `Level ${level}. Veteran status confirmed. The game has changed. You have not.`
+  );
+  if (level < 50 && level > 0) phrases.push(
+    `Level ${level}. Fresh account. We see you. Everyone sees you.`
+  );
+
+  // Fallback
+  if (phrases.length === 0) phrases.push(
+    "Account linked. Riot says you exist. We'll take their word for it.",
+    "Stats loaded. The numbers are... numbers. Place your bet."
+  );
+
+  // Pick the most specific one (last relevant match wins, gives priority to specific conditions)
+  return phrases[phrases.length - 1];
+}
+
 // ─── LINKED PLAYER CARD ───────────────────────────────────────────────────────
 function LinkedPlayerCard({ user, setUser, region }) {
   const [profile, setProfile] = useState(null);
@@ -637,7 +816,7 @@ function LinkedPlayerCard({ user, setUser, region }) {
           }))
         : [];
 
-      setProfile({
+      const profileData = {
         iconId: summoner.profileIconId,
         level: summoner.summonerLevel,
         version: champData.version || DDRAGON_VERSION,
@@ -647,7 +826,9 @@ function LinkedPlayerCard({ user, setUser, region }) {
         topChamps,
         rank: soloQ ? `${soloQ.tier} ${soloQ.rank}` : "UNRANKED",
         lp: soloQ?.leaguePoints ?? null,
-      });
+      };
+      profileData.phrase = getAccountPhrase(profileData, profileData.rank);
+      setProfile(profileData);
     } catch (e) {
       console.error("Profile load error", e);
     }
@@ -795,6 +976,14 @@ function LinkedPlayerCard({ user, setUser, region }) {
         <div style={{ padding: "20px 24px", display: "flex", alignItems: "center", gap: 10 }}>
           <div style={{ width: 16, height: 16, border: "2px solid #C8AA6E33", borderTop: "2px solid #C8AA6E", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
           <span style={{ color: "#A0A0A8", fontSize: 13 }}>Loading champion data...</span>
+        </div>
+      )}
+
+      {!loading && profile?.phrase && (
+        <div style={{ padding: "12px 24px", borderTop: "1px solid #2D2D32", background: "#1A1A1E" }}>
+          <div style={{ fontSize: 13, color: "#C8AA6E", fontStyle: "italic", lineHeight: 1.5, fontFamily: "DM Sans, sans-serif" }}>
+            "{profile.phrase}"
+          </div>
         </div>
       )}
     </div>
@@ -1433,7 +1622,7 @@ function ResultScreen({ result, bet, onClose }) {
             borderRadius: 8, padding: "20px 24px", marginBottom: 24
           }}>
             <div style={{ color: "#A0A0A8", fontSize: 10, letterSpacing: 3, marginBottom: 12 }}>MATCH RESULT</div>
-            <div style={{ color: "#C8AA6E", fontSize: 22, fontWeight: 700, fontFamily: "Barlow Condensed, sans-serif", marginBottom: 16 }}>
+            <div style={{ color: "#C8AA6E", fontSize: 18, fontWeight: 700, fontFamily: "Barlow Condensed, sans-serif", marginBottom: 16 }}>
               {result.champion}
             </div>
             <div style={{ display: "flex", justifyContent: "center", gap: 0, marginBottom: 16 }}>
