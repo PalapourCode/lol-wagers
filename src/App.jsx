@@ -122,6 +122,149 @@ function Toast({ message, type, onClose }) {
 }
 
 
+// ─── AUTH DYNAMIC COMPONENTS ─────────────────────────────────────────────────
+const TICKER_EVENTS = [
+  "palapourheal won $18.50 on Jinx — GOLD IV",
+  "xXSlayerXx lost $10.00 on Yasuo — SILVER II",
+  "MidOrFeed won $25.65 on Ahri — PLATINUM I",
+  "TopLaner99 won $12.35 on Darius — BRONZE III",
+  "JungleKing lost $20.00 on Vi — GOLD II",
+  "ADCarry won $28.50 on Caitlyn — DIAMOND IV",
+  "SupportMain won $9.50 on Thresh — SILVER I",
+  "CarryDiff won $14.25 on Akali — EMERALD II",
+  "OnetrICK lost $15.00 on Zed — PLATINUM III",
+  "RiftWalker won $22.80 on Orianna — MASTER",
+];
+
+function LiveTicker() {
+  const [offset, setOffset] = useState(0);
+  const text = TICKER_EVENTS.join("   ·   ");
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setOffset(prev => (prev + 1) % (text.length * 8));
+    }, 30);
+    return () => clearInterval(interval);
+  }, [text]);
+
+  return (
+    <div style={{ overflow: "hidden", background: "#0A1628", borderTop: "1px solid #785A2818", borderBottom: "1px solid #785A2818", padding: "8px 0", position: "relative" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 0, whiteSpace: "nowrap", transform: `translateX(-${offset}px)`, transition: "none" }}>
+        {[...TICKER_EVENTS, ...TICKER_EVENTS].map((e, i) => (
+          <span key={i} style={{ fontSize: 11, color: e.includes("won") ? "#0BC4AA" : "#C8464A", fontFamily: "Crimson Text, serif", padding: "0 24px", flexShrink: 0 }}>
+            <span style={{ color: "#785A28", marginRight: 8 }}>◆</span>{e}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function FloatingParticles() {
+  const particles = Array.from({ length: 20 }, (_, i) => ({
+    id: i,
+    x: Math.random() * 100,
+    y: Math.random() * 100,
+    size: 1 + Math.random() * 3,
+    duration: 6 + Math.random() * 10,
+    delay: Math.random() * 8,
+    opacity: 0.1 + Math.random() * 0.25,
+  }));
+  return (
+    <div style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 0, overflow: "hidden" }}>
+      {particles.map(p => (
+        <div key={p.id} style={{
+          position: "absolute", left: `${p.x}%`, top: `${p.y}%`,
+          width: p.size, height: p.size, borderRadius: "50%",
+          background: "#C8AA6E", opacity: p.opacity,
+          animation: `particleFloat ${p.duration}s ${p.delay}s ease-in-out infinite`
+        }} />
+      ))}
+    </div>
+  );
+}
+
+function AnimatedCounter({ target, duration = 2000, prefix = "", suffix = "" }) {
+  const [val, setVal] = useState(0);
+  useEffect(() => {
+    let start = null;
+    const step = (ts) => {
+      if (!start) start = ts;
+      const progress = Math.min((ts - start) / duration, 1);
+      setVal(Math.floor(progress * target));
+      if (progress < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }, [target, duration]);
+  return <span>{prefix}{val.toLocaleString()}{suffix}</span>;
+}
+
+function AuthStatsBar() {
+  return (
+    <div style={{ display: "flex", justifyContent: "center", gap: 0, padding: "16px 48px", borderBottom: "1px solid #785A2811" }}>
+      {[
+        { label: "TOTAL BETS PLACED", value: 1847, suffix: "" },
+        { label: "GOLD WAGERED", value: 24390, prefix: "$" },
+        { label: "ACTIVE PLAYERS", value: 312, suffix: "" },
+        { label: "BIGGEST WIN TODAY", value: 47.25, prefix: "$", isFloat: true },
+      ].map((s, i) => (
+        <div key={i} style={{ flex: 1, textAlign: "center", padding: "0 16px", borderRight: i < 3 ? "1px solid #785A2818" : "none" }}>
+          <div style={{ color: "#C8AA6E", fontSize: 20, fontWeight: 900, fontFamily: "Cinzel, serif" }}>
+            {s.isFloat ? `$${s.value.toFixed(2)}` : <AnimatedCounter target={s.value} prefix={s.prefix || ""} suffix={s.suffix || ""} />}
+          </div>
+          <div style={{ color: "#785A28", fontSize: 9, letterSpacing: 3, marginTop: 4 }}>{s.label}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function RecentWinsScroll() {
+  const wins = [
+    { player: "xXSlayerXx", champ: "Yasuo", rank: "GOLD II", amount: "$18.50", won: true },
+    { player: "MidOrFeed", champ: "Ahri", rank: "PLAT I", amount: "$25.65", won: true },
+    { player: "TopLaner99", champ: "Darius", rank: "SILVER III", amount: "$12.00", won: false },
+    { player: "CarryDiff", champ: "Akali", rank: "EMERALD II", amount: "$14.25", won: true },
+    { player: "JungleKing", champ: "Vi", rank: "GOLD II", amount: "$20.00", won: false },
+    { player: "ADCarry", champ: "Caitlyn", rank: "DIAMOND IV", amount: "$28.50", won: true },
+  ];
+  const [visible, setVisible] = useState(0);
+
+  useEffect(() => {
+    const t = setInterval(() => setVisible(v => (v + 1) % wins.length), 2200);
+    return () => clearInterval(t);
+  }, []);
+
+  return (
+    <div style={{ background: "#010A13", border: "1px solid #785A2822", borderRadius: 6, overflow: "hidden", marginTop: 16 }}>
+      <div style={{ padding: "8px 14px", borderBottom: "1px solid #785A2811", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <span style={{ fontSize: 9, letterSpacing: 3, color: "#785A28" }}>RECENT ACTIVITY</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+          <div style={{ width: 5, height: 5, borderRadius: "50%", background: "#C8464A", animation: "pulse 1.5s ease-in-out infinite" }} />
+          <span style={{ fontSize: 9, color: "#C8464A", letterSpacing: 2 }}>LIVE</span>
+        </div>
+      </div>
+      {wins.map((w, i) => (
+        <div key={i} style={{
+          padding: "10px 14px", borderBottom: "1px solid #785A2811",
+          display: "flex", justifyContent: "space-between", alignItems: "center",
+          opacity: i === visible ? 1 : i === (visible - 1 + wins.length) % wins.length ? 0.5 : 0.2,
+          transition: "opacity 0.5s ease",
+          background: i === visible ? (w.won ? "#0BC4AA06" : "#C8464A06") : "transparent"
+        }}>
+          <div>
+            <div style={{ fontSize: 12, color: "#F0E6D3", fontWeight: 600 }}>{w.player}</div>
+            <div style={{ fontSize: 11, color: "#785A28", fontFamily: "Crimson Text, serif" }}>{w.champ} · {w.rank}</div>
+          </div>
+          <div style={{ fontSize: 14, fontWeight: 900, color: w.won ? "#0BC4AA" : "#C8464A" }}>
+            {w.won ? "+" : "-"}{w.amount}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // ─── AUTH PAGE ───────────────────────────────────────────────────────────────
 function AuthPage({ onLogin }) {
   const [mode, setMode] = useState("login");
@@ -169,6 +312,7 @@ function AuthPage({ onLogin }) {
         @keyframes fadeInRight { from { opacity: 0; transform: translateX(30px); } to { opacity: 1; transform: translateX(0); } }
         @keyframes glow { 0%,100% { text-shadow: 0 0 20px #C8AA6E44; } 50% { text-shadow: 0 0 60px #C8AA6E99; } }
         @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+        @keyframes particleFloat { 0%,100% { transform: translateY(0) scale(1); opacity: 0.15; } 50% { transform: translateY(-40px) scale(1.5); opacity: 0.3; } }
         input::placeholder { color: #785A2844; }
         ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: #010A13; } ::-webkit-scrollbar-thumb { background: #785A28; border-radius: 3px; }
         .auth-feature-card:hover { border-color: #C8AA6E44 !important; background: #0d1f3c !important; }
@@ -189,6 +333,9 @@ function AuthPage({ onLogin }) {
         </div>
       </div>
 
+      <FloatingParticles />
+      <LiveTicker />
+      <AuthStatsBar />
       {/* Main split layout */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 420px 1fr", gap: 0, minHeight: "calc(100vh - 73px)", alignItems: "start" }}>
 
@@ -370,6 +517,7 @@ function AuthPage({ onLogin }) {
               * Rewards are virtual and for demonstration purposes
             </div>
           </div>
+          <RecentWinsScroll />
         </div>
       </div>
     </div>
@@ -837,10 +985,10 @@ function LiveFeed() {
     <div style={{ background: "#0A1628", border: "1px solid #785A2833", borderRadius: 8, overflow: "hidden" }}>
       {/* Header */}
       <div style={{ padding: "14px 16px", borderBottom: "1px solid #785A2818", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <div style={{ fontSize: 9, letterSpacing: 4, color: "#785A2877" }}>LIVE GAMES</div>
+        <div style={{ fontSize: 10, letterSpacing: 4, color: "#C8AA6E99" }}>LIVE GAMES</div>
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#C8464A", boxShadow: "0 0 6px #C8464A", animation: "pulse 1.5s ease-in-out infinite" }} />
-          <span style={{ fontSize: 9, color: "#C8464A", letterSpacing: 2 }}>LIVE</span>
+          <span style={{ fontSize: 10, color: "#C8464A", letterSpacing: 2, fontWeight: 700 }}>LIVE</span>
         </div>
       </div>
 
@@ -855,8 +1003,8 @@ function LiveFeed() {
           }}>
             {/* Top row: champion + bet */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 4 }}>
-              <span style={{ fontSize: 13, fontWeight: 700, color: "#F0E6D3", letterSpacing: 0.5 }}>{g.champ}</span>
-              <span style={{ fontSize: 12, fontWeight: 900, color: "#C8AA6E" }}>${g.bet}</span>
+              <span style={{ fontSize: 14, fontWeight: 700, color: "#F0E6D3", letterSpacing: 0.5 }}>{g.champ}</span>
+              <span style={{ fontSize: 13, fontWeight: 900, color: "#C8AA6E" }}>${g.bet}</span>
             </div>
             {/* Bottom row: rank + game time + kda */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -864,8 +1012,8 @@ function LiveFeed() {
                 {g.rank}{g.div}
               </span>
               <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                <span style={{ fontSize: 10, color: "#785A2866", fontFamily: "Crimson Text, serif" }}>{g.mins}m</span>
-                <span style={{ fontSize: 10, color: "#785A2855" }}>{g.k}/{g.d}/{g.a}</span>
+                <span style={{ fontSize: 11, color: "#F0E6D355", fontFamily: "Crimson Text, serif" }}>{g.mins}m</span>
+                <span style={{ fontSize: 11, color: "#F0E6D344" }}>{g.k}/{g.d}/{g.a}</span>
               </div>
             </div>
             {/* Progress bar showing game time */}
@@ -877,7 +1025,7 @@ function LiveFeed() {
       </div>
 
       <div style={{ padding: "8px 16px", borderTop: "1px solid #785A2811", textAlign: "center" }}>
-        <span style={{ fontSize: 9, color: "#785A2844", letterSpacing: 2 }}>UPDATES EVERY FEW SECONDS</span>
+        <span style={{ fontSize: 10, color: "#785A28", letterSpacing: 2 }}>UPDATES EVERY FEW SECONDS</span>
       </div>
     </div>
   );
@@ -1244,11 +1392,11 @@ export default function App() {
 
           {/* Player card */}
           <div style={{ background: "#0A1628", border: "1px solid #785A2833", borderRadius: 8, padding: "18px 16px" }}>
-            <div style={{ fontSize: 9, letterSpacing: 4, color: "#785A2877", marginBottom: 10 }}>SUMMONER</div>
-            <div style={{ color: "#C8AA6E", fontSize: 17, fontWeight: 900, letterSpacing: 1, marginBottom: 4 }}>{user.username}</div>
+            <div style={{ fontSize: 10, letterSpacing: 4, color: "#C8AA6E99", marginBottom: 10 }}>SUMMONER</div>
+            <div style={{ color: "#F0E6D3", fontSize: 18, fontWeight: 900, letterSpacing: 1, marginBottom: 4 }}>{user.username}</div>
             {user.lolAccount ? (
               <>
-                <div style={{ color: "#F0E6D388", fontSize: 13, fontFamily: "Crimson Text, serif", marginBottom: 10 }}>{user.lolAccount}</div>
+                <div style={{ color: "#C8AA6E", fontSize: 13, fontFamily: "Crimson Text, serif", marginBottom: 10 }}>{user.lolAccount}</div>
                 <div style={{
                   display: "inline-block", background: "linear-gradient(135deg, #C8AA6E22, #785A2811)",
                   border: "1px solid #C8AA6E55", borderRadius: 3, padding: "4px 12px",
@@ -1274,18 +1422,18 @@ export default function App() {
                 </div>
               </>
             ) : (
-              <div style={{ color: "#785A2866", fontSize: 13, fontFamily: "Crimson Text, serif", fontStyle: "italic", marginTop: 4 }}>No account linked</div>
+              <div style={{ color: "#785A28", fontSize: 13, fontFamily: "Crimson Text, serif", fontStyle: "italic", marginTop: 4 }}>No account linked</div>
             )}
           </div>
 
           {/* Balance card */}
           <div style={{ background: "linear-gradient(135deg, #0d1f3c, #0A1628)", border: "1px solid #C8AA6E22", borderRadius: 8, padding: "18px 16px" }}>
-            <div style={{ fontSize: 9, letterSpacing: 4, color: "#785A2877", marginBottom: 6 }}>BALANCE</div>
+            <div style={{ fontSize: 10, letterSpacing: 4, color: "#C8AA6E99", marginBottom: 6 }}>BALANCE</div>
             <div style={{ color: "#C8AA6E", fontSize: 28, fontWeight: 900, letterSpacing: 1 }}>{formatMoney(user.balance)}</div>
             <div style={{ marginTop: 10, height: 2, background: "#785A2818", borderRadius: 2 }}>
               <div style={{ height: "100%", width: `${Math.min(100, (user.balance / 500) * 100)}%`, background: "linear-gradient(90deg, #785A28, #C8AA6E)", borderRadius: 2, transition: "width 0.5s ease" }} />
             </div>
-            <div style={{ color: "#785A2866", fontSize: 10, marginTop: 6, fontFamily: "Crimson Text, serif" }}>of $500.00 starting gold</div>
+            <div style={{ color: "#785A28", fontSize: 12, marginTop: 6, fontFamily: "Crimson Text, serif" }}>of $500.00 starting gold</div>
           </div>
 
           {/* Active bet */}
@@ -1294,14 +1442,14 @@ export default function App() {
             return activeBet ? (
               <div style={{ background: "#0A1628", border: "1px solid #C8AA6E44", borderRadius: 8, padding: "18px 16px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-                  <div style={{ fontSize: 9, letterSpacing: 4, color: "#C8AA6E88" }}>ACTIVE BET</div>
+                  <div style={{ fontSize: 10, letterSpacing: 4, color: "#C8AA6E" }}>ACTIVE BET</div>
                   <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#C8AA6E", boxShadow: "0 0 8px #C8AA6E", animation: "pulse 1.5s ease-in-out infinite" }} />
                 </div>
                 <div style={{ color: "#C8AA6E", fontSize: 26, fontWeight: 900 }}>{formatMoney(activeBet.amount)}</div>
-                <div style={{ color: "#785A28", fontSize: 13, marginTop: 4, fontFamily: "Crimson Text, serif" }}>
+                <div style={{ color: "#F0E6D3", fontSize: 13, marginTop: 4, fontFamily: "Crimson Text, serif" }}>
                   Potential win: <span style={{ color: "#0BC4AA", fontWeight: 700 }}>{formatMoney(activeBet.potentialWin)}</span>
                 </div>
-                <div style={{ color: "#785A2855", fontSize: 11, marginTop: 4, fontFamily: "Crimson Text, serif" }}>{timeAgo(activeBet.placedAt)}</div>
+                <div style={{ color: "#785A28", fontSize: 12, marginTop: 4, fontFamily: "Crimson Text, serif" }}>{timeAgo(activeBet.placedAt)}</div>
               </div>
             ) : (
               <div style={{ background: "#0A162844", border: "1px solid #785A2818", borderRadius: 8, padding: "18px 16px", textAlign: "center" }}>
@@ -1315,7 +1463,7 @@ export default function App() {
 
           {/* Odds table */}
           <div style={{ background: "#0A1628", border: "1px solid #785A2833", borderRadius: 8, padding: "18px 16px" }}>
-            <div style={{ fontSize: 9, letterSpacing: 4, color: "#785A2877", marginBottom: 14 }}>MULTIPLIERS</div>
+            <div style={{ fontSize: 10, letterSpacing: 4, color: "#C8AA6E99", marginBottom: 14 }}>MULTIPLIERS</div>
             {[["IRON","1.60x"],["BRONZE","1.55x"],["SILVER","1.50x"],["GOLD","1.45x"],["PLATINUM","1.40x"],["EMERALD","1.38x"],["DIAMOND","1.35x"],["MASTER+","1.15x"]].map(([r,o]) => {
               const isMyRank = user.rank?.toUpperCase().startsWith(r.split("+")[0]);
               return (
@@ -1356,7 +1504,7 @@ export default function App() {
 
           {/* Recent bets */}
           <div style={{ background: "#0A1628", border: "1px solid #785A2833", borderRadius: 8, padding: "18px 16px" }}>
-            <div style={{ fontSize: 9, letterSpacing: 4, color: "#785A2877", marginBottom: 14 }}>YOUR RECENT BETS</div>
+            <div style={{ fontSize: 10, letterSpacing: 4, color: "#C8AA6E99", marginBottom: 14 }}>YOUR RECENT BETS</div>
             {user.bets?.filter(b => b.status !== "pending").length ? (
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                 {[...user.bets].reverse().filter(b => b.status !== "pending").slice(0, 4).map(bet => (
@@ -1374,7 +1522,7 @@ export default function App() {
                 ))}
               </div>
             ) : (
-              <div style={{ color: "#785A2844", fontSize: 13, fontFamily: "Crimson Text, serif", fontStyle: "italic", textAlign: "center", padding: "16px 0" }}>
+              <div style={{ color: "#785A28", fontSize: 13, fontFamily: "Crimson Text, serif", fontStyle: "italic", textAlign: "center", padding: "16px 0" }}>
                 No completed bets yet
               </div>
             )}
@@ -1382,7 +1530,7 @@ export default function App() {
 
           {/* Rules card */}
           <div style={{ background: "#0A1628", border: "1px solid #785A2833", borderRadius: 8, padding: "18px 16px" }}>
-            <div style={{ fontSize: 9, letterSpacing: 4, color: "#785A2877", marginBottom: 14 }}>HOUSE RULES</div>
+            <div style={{ fontSize: 10, letterSpacing: 4, color: "#C8AA6E99", marginBottom: 14 }}>HOUSE RULES</div>
             {[
               ["Solo/Duo ranked only", "Flex & normals don't count"],
               ["$1 — $30 per bet", "One active bet at a time"],
@@ -1390,8 +1538,8 @@ export default function App() {
               ["Results via Riot API", "No disputes possible"],
             ].map(([rule, sub], i) => (
               <div key={i} style={{ paddingBottom: 10, marginBottom: 10, borderBottom: i < 3 ? "1px solid #785A2811" : "none" }}>
-                <div style={{ fontSize: 12, color: "#F0E6D388", fontWeight: 600 }}>{rule}</div>
-                <div style={{ fontSize: 11, color: "#785A2866", fontFamily: "Crimson Text, serif", marginTop: 2 }}>{sub}</div>
+                <div style={{ fontSize: 13, color: "#F0E6D3", fontWeight: 600 }}>{rule}</div>
+                <div style={{ fontSize: 12, color: "#785A28", fontFamily: "Crimson Text, serif", marginTop: 2 }}>{sub}</div>
               </div>
             ))}
           </div>
