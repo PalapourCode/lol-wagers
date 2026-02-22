@@ -507,7 +507,7 @@ function PlaceBet({ user, setUser, toast }) {
 }
 
 // ─── RESOLVE BET ─────────────────────────────────────────────────────────────
-function ResolveBet({ user, setUser, region, toast }) {
+function ResolveBet({ user, setUser, region, toast, showResult }) {
   const [loading, setLoading] = useState(false);
   const activeBet = user.bets?.find(b => b.status === "pending");
 
@@ -534,11 +534,7 @@ function ResolveBet({ user, setUser, region, toast }) {
       });
       setUser(data.user);
 
-      if (won) {
-        toast(`🏆 You won! +${formatMoney(activeBet.potentialWin)} added to your balance!`, "success");
-      } else {
-        toast(`💀 You lost. Better luck next time, summoner.`, "error");
-      }
+      showResult({ result: match, bet: activeBet });
     } catch (e) {
       toast(`Error: ${e.message}`, "error");
     }
@@ -664,8 +660,200 @@ function Leaderboard() {
 }
 
 
+
+// ─── VICTORY / DEFEAT SCREEN ─────────────────────────────────────────────────
+function ResultScreen({ result, bet, onClose }) {
+  const won = result?.win;
+
+  useEffect(() => {
+    const t = setTimeout(onClose, 12000);
+    return () => clearTimeout(t);
+  }, [onClose]);
+
+  // Confetti particles
+  const confetti = won ? Array.from({length: 80}, (_, i) => ({
+    id: i,
+    x: Math.random() * 100,
+    delay: Math.random() * 2,
+    duration: 2 + Math.random() * 3,
+    color: ["#C8AA6E","#0BC4AA","#F0E6D3","#C8464A","#785A28","#FFD700","#FF6B6B","#4ECDC4"][Math.floor(Math.random() * 8)],
+    size: 6 + Math.random() * 10,
+    rotation: Math.random() * 360
+  })) : [];
+
+  return (
+    <div style={{
+      position: "fixed", inset: 0, zIndex: 99999,
+      background: won ? "rgba(0,0,0,0.92)" : "rgba(0,0,0,0.95)",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      animation: "fadeIn 0.4s ease",
+      overflow: "hidden"
+    }}>
+      <style>{`
+        @keyframes confettiFall {
+          0% { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+          100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+        }
+        @keyframes victoryPulse {
+          0%, 100% { transform: scale(1); text-shadow: 0 0 40px #C8AA6E88; }
+          50% { transform: scale(1.05); text-shadow: 0 0 80px #C8AA6Ecc; }
+        }
+        @keyframes slideUpBig {
+          from { transform: translateY(60px); opacity: 0; }
+          to { transform: translateY(0); opacity: 1; }
+        }
+        @keyframes shimmer {
+          0% { background-position: -200% center; }
+          100% { background-position: 200% center; }
+        }
+        @keyframes floatIcon {
+          0%, 100% { transform: translateY(0px) scale(1); }
+          50% { transform: translateY(-10px) scale(1.05); }
+        }
+      `}</style>
+
+      {/* Confetti */}
+      {confetti.map(p => (
+        <div key={p.id} style={{
+          position: "absolute",
+          left: `${p.x}%`,
+          top: -20,
+          width: p.size,
+          height: p.size,
+          background: p.color,
+          borderRadius: Math.random() > 0.5 ? "50%" : "2px",
+          animation: `confettiFall ${p.duration}s ${p.delay}s linear infinite`,
+          transform: `rotate(${p.rotation}deg)`,
+          pointerEvents: "none"
+        }} />
+      ))}
+
+      {/* Main card */}
+      <div style={{
+        background: won
+          ? "linear-gradient(145deg, #0A1628 0%, #0d1f3c 50%, #0A1628 100%)"
+          : "linear-gradient(145deg, #1a0505 0%, #0A1628 50%, #1a0505 100%)",
+        border: `2px solid ${won ? "#C8AA6E" : "#C8464A"}`,
+        borderRadius: 12,
+        padding: "48px 56px",
+        maxWidth: 480,
+        width: "90%",
+        textAlign: "center",
+        animation: "slideUpBig 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)",
+        position: "relative",
+        boxShadow: won ? "0 0 80px #C8AA6E33, 0 0 160px #C8AA6E11" : "0 0 80px #C8464A22"
+      }}>
+
+        {/* Big icon */}
+        <div style={{
+          fontSize: 80, marginBottom: 16, lineHeight: 1,
+          animation: "floatIcon 3s ease-in-out infinite"
+        }}>
+          {won ? "🏆" : "💀"}
+        </div>
+
+        {/* Win/Loss title */}
+        <div style={{
+          fontFamily: "Cinzel, serif",
+          fontSize: 42, fontWeight: 900,
+          color: won ? "transparent" : "#C8464A",
+          background: won ? "linear-gradient(90deg, #C8AA6E, #FFD700, #C8AA6E, #785A28, #C8AA6E)" : "none",
+          backgroundSize: won ? "200% auto" : "auto",
+          WebkitBackgroundClip: won ? "text" : "unset",
+          WebkitTextFillColor: won ? "transparent" : "#C8464A",
+          animation: won ? "shimmer 3s linear infinite, victoryPulse 2s ease-in-out infinite" : "none",
+          marginBottom: 8, letterSpacing: 4
+        }}>
+          {won ? "VICTORY" : "DEFEAT"}
+        </div>
+
+        <div style={{
+          width: 80, height: 2,
+          background: `linear-gradient(90deg, transparent, ${won ? "#C8AA6E" : "#C8464A"}, transparent)`,
+          margin: "0 auto 28px"
+        }} />
+
+        {/* Game stats card */}
+        {result && (
+          <div style={{
+            background: "#010A13",
+            border: `1px solid ${won ? "#C8AA6E33" : "#C8464A33"}`,
+            borderRadius: 8, padding: "20px 24px", marginBottom: 24
+          }}>
+            <div style={{ color: "#785A28", fontSize: 10, letterSpacing: 3, marginBottom: 12 }}>MATCH RESULT</div>
+            <div style={{ color: "#C8AA6E", fontSize: 22, fontWeight: 700, fontFamily: "Cinzel, serif", marginBottom: 16 }}>
+              {result.champion}
+            </div>
+            <div style={{ display: "flex", justifyContent: "center", gap: 0, marginBottom: 16 }}>
+              {[
+                { label: "KILLS", value: result.kills, color: "#0BC4AA" },
+                { label: "DEATHS", value: result.deaths, color: "#C8464A" },
+                { label: "ASSISTS", value: result.assists, color: "#C8AA6E" }
+              ].map((s, i) => (
+                <div key={s.label} style={{
+                  flex: 1,
+                  borderRight: i < 2 ? "1px solid #785A2833" : "none",
+                  padding: "0 16px"
+                }}>
+                  <div style={{ fontSize: 28, fontWeight: 900, color: s.color, fontFamily: "Cinzel, serif" }}>{s.value}</div>
+                  <div style={{ fontSize: 9, letterSpacing: 2, color: "#785A28", marginTop: 2 }}>{s.label}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{ fontSize: 11, color: "#785A28", fontFamily: "Crimson Text, serif" }}>
+              KDA: <span style={{ color: "#F0E6D3" }}>
+                {result.deaths === 0 ? "Perfect" : ((result.kills + result.assists) / result.deaths).toFixed(2)}
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Payout info */}
+        <div style={{
+          background: won ? "#C8AA6E11" : "#C8464A11",
+          border: `1px solid ${won ? "#C8AA6E33" : "#C8464A33"}`,
+          borderRadius: 6, padding: "16px 20px", marginBottom: 28
+        }}>
+          {won ? (
+            <>
+              <div style={{ color: "#785A28", fontSize: 11, letterSpacing: 2, marginBottom: 4 }}>WINNINGS</div>
+              <div style={{ color: "#0BC4AA", fontSize: 32, fontWeight: 900, fontFamily: "Cinzel, serif" }}>
+                +${Number(bet?.potentialWin || 0).toFixed(2)}
+              </div>
+              <div style={{ color: "#785A28", fontSize: 11, marginTop: 4 }}>added to your balance</div>
+            </>
+          ) : (
+            <>
+              <div style={{ color: "#785A28", fontSize: 11, letterSpacing: 2, marginBottom: 4 }}>LOST</div>
+              <div style={{ color: "#C8464A", fontSize: 32, fontWeight: 900, fontFamily: "Cinzel, serif" }}>
+                -${Number(bet?.amount || 0).toFixed(2)}
+              </div>
+              <div style={{ color: "#785A28", fontSize: 11, marginTop: 4 }}>better luck next time, summoner</div>
+            </>
+          )}
+        </div>
+
+        <button onClick={onClose} style={{
+          background: won ? "linear-gradient(135deg, #C8AA6E, #785A28)" : "transparent",
+          border: won ? "none" : "1px solid #C8464A55",
+          color: won ? "#010A13" : "#C8464A",
+          padding: "12px 40px", borderRadius: 4,
+          fontFamily: "Cinzel, serif", fontSize: 13, fontWeight: 700,
+          cursor: "pointer", letterSpacing: 2, textTransform: "uppercase"
+        }}>
+          {won ? "Claim Victory" : "Try Again"}
+        </button>
+
+        <div style={{ color: "#785A2855", fontSize: 10, marginTop: 12, fontFamily: "Crimson Text, serif" }}>
+          closes automatically in 12 seconds
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── DEBUG PANEL (admin only) ────────────────────────────────────────────────
-function DebugPanel({ user, setUser, toast }) {
+function DebugPanel({ user, setUser, toast, showResult }) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const activeBet = user.bets?.find(b => b.status === "pending");
@@ -691,7 +879,7 @@ function DebugPanel({ user, setUser, toast }) {
         result: fakeMatch
       });
       setUser(data.user);
-      toast(won ? "🏆 Simulated WIN!" : "💀 Simulated LOSS!", won ? "success" : "error");
+      showResult({ result: fakeMatch, bet: activeBet });
     } catch(e) {
       toast(e.message, "error");
     }
@@ -751,6 +939,7 @@ export default function App() {
   const [tab, setTab] = useState("dashboard");
   const [toast, setToast] = useState(null);
   const [region, setRegion] = useState("euw1");
+  const [resultScreen, setResultScreen] = useState(null); // { result, bet }
 
   const showToast = useCallback((message, type = "info") => {
     setToast({ message, type, id: Date.now() });
@@ -844,7 +1033,7 @@ export default function App() {
             </div>
             <LinkAccount user={user} setUser={updateUser} region={region} setRegion={setRegion} toast={showToast} />
             <PlaceBet user={user} setUser={updateUser} toast={showToast} />
-            <ResolveBet user={user} setUser={updateUser} region={region} toast={showToast} />
+            <ResolveBet user={user} setUser={updateUser} region={region} toast={showToast} showResult={setResultScreen} />
           </div>
         )}
 
@@ -852,7 +1041,7 @@ export default function App() {
           <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
             <LinkAccount user={user} setUser={updateUser} region={region} setRegion={setRegion} toast={showToast} />
             <PlaceBet user={user} setUser={updateUser} toast={showToast} />
-            <ResolveBet user={user} setUser={updateUser} region={region} toast={showToast} />
+            <ResolveBet user={user} setUser={updateUser} region={region} toast={showToast} showResult={setResultScreen} />
           </div>
         )}
 
@@ -861,7 +1050,8 @@ export default function App() {
       </div>
 
       {toast && <Toast key={toast.id} message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
-      <DebugPanel user={user} setUser={updateUser} toast={showToast} />
+      <DebugPanel user={user} setUser={updateUser} toast={showToast} showResult={setResultScreen} />
+      {resultScreen && <ResultScreen result={resultScreen.result} bet={resultScreen.bet} onClose={() => setResultScreen(null)} />}
     </div>
   );
 }
