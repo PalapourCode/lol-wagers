@@ -95,7 +95,7 @@ function Loader({ text = "Loading..." }) {
         borderTop: "3px solid #C8AA6E", borderRadius: "50%",
         animation: "spin 0.8s linear infinite"
       }} />
-      <span style={{ color: "#785A28", fontSize: 13, fontFamily: "Cinzel, serif" }}>{text}</span>
+      <span style={{ color: "#A0A0A8", fontSize: 13, fontFamily: "Cinzel, serif" }}>{text}</span>
     </div>
   );
 }
@@ -110,8 +110,8 @@ function Toast({ message, type, onClose }) {
   return (
     <div style={{
       position: "fixed", bottom: 24, right: 24, zIndex: 9999,
-      background: "#010A13", border: `1px solid ${colors[type] || colors.info}`,
-      color: "#F0E6D3", padding: "14px 20px", borderRadius: 4,
+      background: "#1A1A1E", border: `1px solid ${colors[type] || colors.info}`,
+      color: "#F0F0F0", padding: "14px 20px", borderRadius: 4,
       fontFamily: "Cinzel, serif", fontSize: 13, maxWidth: 320,
       boxShadow: `0 4px 24px ${colors[type] || colors.info}44`,
       animation: "slideUp 0.3s ease"
@@ -148,11 +148,11 @@ function LiveTicker() {
   }, [text]);
 
   return (
-    <div style={{ overflow: "hidden", background: "#0A1628", borderTop: "1px solid #785A2818", borderBottom: "1px solid #785A2818", padding: "8px 0", position: "relative" }}>
+    <div style={{ overflow: "hidden", background: "#141416", borderTop: "1px solid #2D2D32", borderBottom: "1px solid #2D2D32", padding: "8px 0", position: "relative" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 0, whiteSpace: "nowrap", transform: `translateX(-${offset}px)`, transition: "none" }}>
         {[...TICKER_EVENTS, ...TICKER_EVENTS].map((e, i) => (
-          <span key={i} style={{ fontSize: 11, color: e.includes("won") ? "#0BC4AA" : "#C8464A", fontFamily: "Crimson Text, serif", padding: "0 24px", flexShrink: 0 }}>
-            <span style={{ color: "#785A28", marginRight: 8 }}>◆</span>{e}
+          <span key={i} style={{ fontSize: 12, color: e.includes("won") ? "#3FB950" : "#F85149", fontFamily: "Crimson Text, serif", padding: "0 24px", flexShrink: 0 }}>
+            <span style={{ color: "#C8AA6E88", marginRight: 8 }}>◆</span>{e}
           </span>
         ))}
       </div>
@@ -201,18 +201,18 @@ function AnimatedCounter({ target, duration = 2000, prefix = "", suffix = "" }) 
 
 function AuthStatsBar() {
   return (
-    <div style={{ display: "flex", justifyContent: "center", gap: 0, padding: "16px 48px", borderBottom: "1px solid #785A2811" }}>
+    <div style={{ display: "flex", justifyContent: "center", gap: 0, padding: "16px 48px", borderBottom: "1px solid #222225" }}>
       {[
         { label: "TOTAL BETS PLACED", value: 1847, suffix: "" },
         { label: "GOLD WAGERED", value: 24390, prefix: "$" },
         { label: "ACTIVE PLAYERS", value: 312, suffix: "" },
         { label: "BIGGEST WIN TODAY", value: 47.25, prefix: "$", isFloat: true },
       ].map((s, i) => (
-        <div key={i} style={{ flex: 1, textAlign: "center", padding: "0 16px", borderRight: i < 3 ? "1px solid #785A2818" : "none" }}>
+        <div key={i} style={{ flex: 1, textAlign: "center", padding: "0 16px", borderRight: i < 3 ? "1px solid #252528" : "none" }}>
           <div style={{ color: "#C8AA6E", fontSize: 20, fontWeight: 900, fontFamily: "Cinzel, serif" }}>
             {s.isFloat ? `$${s.value.toFixed(2)}` : <AnimatedCounter target={s.value} prefix={s.prefix || ""} suffix={s.suffix || ""} />}
           </div>
-          <div style={{ color: "#785A28", fontSize: 9, letterSpacing: 3, marginTop: 4 }}>{s.label}</div>
+          <div style={{ color: "#C0C0C8", fontSize: 9, letterSpacing: 3, marginTop: 4 }}>{s.label}</div>
         </div>
       ))}
     </div>
@@ -236,9 +236,9 @@ function RecentWinsScroll() {
   }, []);
 
   return (
-    <div style={{ background: "#010A13", border: "1px solid #785A2822", borderRadius: 6, overflow: "hidden", marginTop: 16 }}>
-      <div style={{ padding: "8px 14px", borderBottom: "1px solid #785A2811", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <span style={{ fontSize: 9, letterSpacing: 3, color: "#785A28" }}>RECENT ACTIVITY</span>
+    <div style={{ background: "#1A1A1E", border: "1px solid #2A2A2E", borderRadius: 6, overflow: "hidden", marginTop: 16 }}>
+      <div style={{ padding: "8px 14px", borderBottom: "1px solid #222225", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <span style={{ fontSize: 9, letterSpacing: 3, color: "#A0A0A8" }}>RECENT ACTIVITY</span>
         <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
           <div style={{ width: 5, height: 5, borderRadius: "50%", background: "#C8464A", animation: "pulse 1.5s ease-in-out infinite" }} />
           <span style={{ fontSize: 9, color: "#C8464A", letterSpacing: 2 }}>LIVE</span>
@@ -246,17 +246,17 @@ function RecentWinsScroll() {
       </div>
       {wins.map((w, i) => (
         <div key={i} style={{
-          padding: "10px 14px", borderBottom: "1px solid #785A2811",
+          padding: "10px 14px", borderBottom: "1px solid #222225",
           display: "flex", justifyContent: "space-between", alignItems: "center",
           opacity: i === visible ? 1 : i === (visible - 1 + wins.length) % wins.length ? 0.5 : 0.2,
           transition: "opacity 0.5s ease",
           background: i === visible ? (w.won ? "#0BC4AA06" : "#C8464A06") : "transparent"
         }}>
           <div>
-            <div style={{ fontSize: 12, color: "#F0E6D3", fontWeight: 600 }}>{w.player}</div>
-            <div style={{ fontSize: 11, color: "#785A28", fontFamily: "Crimson Text, serif" }}>{w.champ} · {w.rank}</div>
+            <div style={{ fontSize: 13, color: "#FFFFFF", fontWeight: 600 }}>{w.player}</div>
+            <div style={{ fontSize: 12, color: "#8B949E", fontFamily: "Crimson Text, serif" }}>{w.champ} · {w.rank}</div>
           </div>
-          <div style={{ fontSize: 14, fontWeight: 900, color: w.won ? "#0BC4AA" : "#C8464A" }}>
+          <div style={{ fontSize: 14, fontWeight: 900, color: w.won ? "#3FB950" : "#F85149" }}>
             {w.won ? "+" : "-"}{w.amount}
           </div>
         </div>
@@ -299,8 +299,8 @@ function AuthPage({ onLogin }) {
 
   return (
     <div style={{
-      minHeight: "100vh", background: "#010A13", fontFamily: "Cinzel, serif",
-      backgroundImage: "radial-gradient(ellipse at 20% 50%, #0d1f3c 0%, #010A13 60%), radial-gradient(ellipse at 80% 20%, #1a0d05 0%, transparent 50%)"
+      minHeight: "100vh", background: "#1A1A1E", fontFamily: "Cinzel, serif",
+      backgroundImage: "radial-gradient(ellipse at 15% 40%, #2A2010 0%, transparent 55%), radial-gradient(ellipse at 85% 15%, #1E1E28 0%, transparent 50%)"
     }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap');
@@ -313,22 +313,22 @@ function AuthPage({ onLogin }) {
         @keyframes glow { 0%,100% { text-shadow: 0 0 20px #C8AA6E44; } 50% { text-shadow: 0 0 60px #C8AA6E99; } }
         @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
         @keyframes particleFloat { 0%,100% { transform: translateY(0) scale(1); opacity: 0.15; } 50% { transform: translateY(-40px) scale(1.5); opacity: 0.3; } }
-        input::placeholder { color: #785A2844; }
+        input::placeholder { color: #FFFFFF33; }
         ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: #010A13; } ::-webkit-scrollbar-thumb { background: #785A28; border-radius: 3px; }
         .auth-feature-card:hover { border-color: #C8AA6E44 !important; background: #0d1f3c !important; }
         .auth-input:focus { border-color: #C8AA6E !important; }
       `}</style>
 
       {/* Top brand bar */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 48px", borderBottom: "1px solid #785A2811" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 48px", borderBottom: "1px solid #2D2D32" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <div style={{ width: 32, height: 32, background: "linear-gradient(135deg, #C8AA6E, #785A28)", borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>⚔</div>
           <div>
-            <div style={{ fontSize: 9, letterSpacing: 5, color: "#785A28" }}>RUNETERRA</div>
+            <div style={{ fontSize: 9, letterSpacing: 5, color: "#A0A0A8" }}>RUNETERRA</div>
             <div style={{ fontSize: 15, fontWeight: 700, color: "#C8AA6E", lineHeight: 1 }}>WAGERS</div>
           </div>
         </div>
-        <div style={{ fontSize: 11, color: "#785A2888", fontFamily: "Crimson Text, serif", fontStyle: "italic" }}>
+        <div style={{ fontSize: 13, color: "#C0C0C8", fontFamily: "Crimson Text, serif", fontStyle: "italic" }}>
           Stake your gold. Prove your rank.
         </div>
       </div>
@@ -341,8 +341,8 @@ function AuthPage({ onLogin }) {
 
         {/* LEFT PANEL — How it works */}
         <div style={{ padding: "60px 40px 60px 48px", animation: "fadeInLeft 0.7s ease" }}>
-          <div style={{ fontSize: 9, letterSpacing: 5, color: "#785A28", marginBottom: 8 }}>HOW IT WORKS</div>
-          <h2 style={{ fontSize: 28, fontWeight: 900, color: "#F0E6D3", marginBottom: 32, lineHeight: 1.2 }}>
+          <div style={{ fontSize: 10, letterSpacing: 5, color: "#C8AA6E", marginBottom: 8 }}>HOW IT WORKS</div>
+          <h2 style={{ fontSize: 28, fontWeight: 900, color: "#F0F0F0", marginBottom: 32, lineHeight: 1.2 }}>
             Bet on yourself.<br/><span style={{ color: "#C8AA6E" }}>Win real rewards.</span>
           </h2>
           <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
@@ -350,12 +350,12 @@ function AuthPage({ onLogin }) {
               <div key={i} style={{ display: "flex", gap: 16, alignItems: "flex-start", animation: `fadeInLeft 0.7s ease ${0.1 * i}s both` }}>
                 <div style={{
                   width: 36, height: 36, borderRadius: 6, flexShrink: 0,
-                  background: "linear-gradient(135deg, #C8AA6E22, #785A2811)",
-                  border: "1px solid #C8AA6E33",
+                  background: "linear-gradient(135deg, #C8AA6E22, #C8AA6E08)",
+                  border: "1px solid #C8AA6E44",
                   display: "flex", alignItems: "center", justifyContent: "center",
                   color: "#C8AA6E", fontSize: 11, fontWeight: 700, letterSpacing: 1
                 }}>{item.step}</div>
-                <div style={{ color: "#785A28", fontSize: 13, fontFamily: "Crimson Text, serif", lineHeight: 1.6, paddingTop: 8 }}>
+                <div style={{ color: "#E0E0E0", fontSize: 15, fontFamily: "Crimson Text, serif", lineHeight: 1.7, paddingTop: 6 }}>
                   {item.text}
                 </div>
               </div>
@@ -363,15 +363,15 @@ function AuthPage({ onLogin }) {
           </div>
 
           {/* Rank odds table */}
-          <div style={{ marginTop: 40, background: "#0A162888", border: "1px solid #785A2822", borderRadius: 8, padding: 20 }}>
-            <div style={{ fontSize: 9, letterSpacing: 4, color: "#785A28", marginBottom: 16 }}>PAYOUT MULTIPLIERS BY RANK</div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px 24px" }}>
+          <div style={{ marginTop: 40, background: "#24242888", border: "1px solid #2A2A2E", borderRadius: 8, padding: 20 }}>
+            <div style={{ fontSize: 10, letterSpacing: 4, color: "#C8AA6E", marginBottom: 16 }}>PAYOUT MULTIPLIERS BY RANK</div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px 24px" }}>
               {[
                 ["Iron", "1.60x"], ["Bronze", "1.55x"], ["Silver", "1.50x"], ["Gold", "1.45x"],
                 ["Platinum", "1.40x"], ["Emerald", "1.38x"], ["Diamond", "1.35x"], ["Master+", "1.15–1.25x"]
               ].map(([rank, odds]) => (
-                <div key={rank} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "4px 0", borderBottom: "1px solid #785A2811" }}>
-                  <span style={{ fontSize: 11, color: "#785A2888", fontFamily: "Crimson Text, serif" }}>{rank}</span>
+                <div key={rank} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "4px 0", borderBottom: "1px solid #222225" }}>
+                  <span style={{ fontSize: 11, color: "#A0A0A8", fontFamily: "Crimson Text, serif" }}>{rank}</span>
                   <span style={{ fontSize: 12, color: "#C8AA6E", fontWeight: 700 }}>{odds}</span>
                 </div>
               ))}
@@ -380,24 +380,24 @@ function AuthPage({ onLogin }) {
         </div>
 
         {/* CENTER — Login form */}
-        <div style={{ padding: "60px 0", borderLeft: "1px solid #785A2818", borderRight: "1px solid #785A2818" }}>
+        <div style={{ padding: "60px 0", borderLeft: "1px solid #252528", borderRight: "1px solid #252528" }}>
           <div style={{ padding: "0 36px" }}>
             {/* Hero */}
             <div style={{ textAlign: "center", marginBottom: 36 }}>
               <div style={{ fontSize: 64, marginBottom: 8, animation: "float 4s ease-in-out infinite" }}>⚔️</div>
               <h1 style={{ fontSize: 36, fontWeight: 900, color: "#C8AA6E", margin: "0 0 4px", animation: "glow 3s ease-in-out infinite", lineHeight: 1 }}>
-                BET ON<br /><span style={{ color: "#F0E6D3" }}>YOURSELF</span>
+                BET ON<br /><span style={{ color: "#F0F0F0" }}>YOURSELF</span>
               </h1>
               <div style={{ width: 60, height: 1, background: "linear-gradient(90deg, transparent, #C8AA6E, transparent)", margin: "12px auto" }} />
             </div>
 
             {/* Tabs */}
-            <div style={{ display: "flex", marginBottom: 24, border: "1px solid #785A2833", borderRadius: 4, overflow: "hidden" }}>
+            <div style={{ display: "flex", marginBottom: 24, border: "1px solid #2D2D32", borderRadius: 4, overflow: "hidden" }}>
               {["login", "register"].map(m => (
                 <button key={m} onClick={() => { setMode(m); setError(""); }} style={{
                   flex: 1, padding: "11px", border: "none", cursor: "pointer",
                   background: mode === m ? "#C8AA6E" : "transparent",
-                  color: mode === m ? "#010A13" : "#785A28",
+                  color: mode === m ? "#1A1A1E" : "#C0C0C8",
                   fontFamily: "Cinzel, serif", fontSize: 11, fontWeight: 700,
                   textTransform: "uppercase", letterSpacing: 2, transition: "all 0.2s"
                 }}>{m}</button>
@@ -410,7 +410,7 @@ function AuthPage({ onLogin }) {
               { label: "Password", value: password, set: setPassword, type: "password", placeholder: "••••••••" }
             ].map(f => (
               <div key={f.label} style={{ marginBottom: 14 }}>
-                <label style={{ display: "block", fontSize: 9, letterSpacing: 3, color: "#785A28", marginBottom: 6 }}>
+                <label style={{ display: "block", fontSize: 9, letterSpacing: 3, color: "#A0A0A8", marginBottom: 6 }}>
                   {f.label.toUpperCase()}
                 </label>
                 <input
@@ -419,8 +419,8 @@ function AuthPage({ onLogin }) {
                   onChange={e => f.set(e.target.value)}
                   onKeyDown={e => e.key === "Enter" && handle()}
                   style={{
-                    width: "100%", background: "#010A13", border: "1px solid #785A2833",
-                    color: "#F0E6D3", padding: "11px 14px", borderRadius: 4,
+                    width: "100%", background: "#1A1A1E", border: "1px solid #2D2D32",
+                    color: "#F0F0F0", padding: "11px 14px", borderRadius: 4,
                     fontFamily: "Cinzel, serif", fontSize: 13, outline: "none",
                     transition: "border-color 0.2s"
                   }}
@@ -451,18 +451,18 @@ function AuthPage({ onLogin }) {
 
             {mode === "register" && (
               <div style={{ background: "#C8AA6E11", border: "1px solid #C8AA6E22", borderRadius: 4, padding: "12px 16px", textAlign: "center" }}>
-                <p style={{ color: "#C8AA6E", fontSize: 12, margin: 0, fontFamily: "Crimson Text, serif" }}>
+                <p style={{ color: "#C8AA6E", fontSize: 13, margin: 0, fontFamily: "Crimson Text, serif" }}>
                   🎁 You start with <strong>$500 in virtual gold</strong> — no real money needed
                 </p>
               </div>
             )}
 
-            <div style={{ marginTop: 24, padding: "16px", background: "#0A162866", borderRadius: 4, border: "1px solid #785A2811" }}>
-              <div style={{ fontSize: 9, letterSpacing: 3, color: "#785A2866", marginBottom: 8 }}>PLATFORM INFO</div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+            <div style={{ marginTop: 24, padding: "16px", background: "#24242866", borderRadius: 4, border: "1px solid #2D2D32" }}>
+              <div style={{ fontSize: 10, letterSpacing: 3, color: "#C8AA6E88", marginBottom: 10 }}>PLATFORM INFO</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                 {["Virtual currency only — no real money", "Solo/Duo ranked games only", "$30 max bet per game", "5% platform rake on winnings"].map(t => (
-                  <div key={t} style={{ fontSize: 11, color: "#785A2888", fontFamily: "Crimson Text, serif", display: "flex", gap: 6, alignItems: "center" }}>
-                    <span style={{ color: "#C8AA6E44" }}>◆</span> {t}
+                  <div key={t} style={{ fontSize: 13, color: "#D0D0D8", fontFamily: "Crimson Text, serif", display: "flex", gap: 8, alignItems: "center" }}>
+                    <span style={{ color: "#C8AA6E" }}>◆</span> {t}
                   </div>
                 ))}
               </div>
@@ -472,23 +472,23 @@ function AuthPage({ onLogin }) {
 
         {/* RIGHT PANEL — Features / rewards */}
         <div style={{ padding: "60px 48px 60px 40px", animation: "fadeInRight 0.7s ease" }}>
-          <div style={{ fontSize: 9, letterSpacing: 5, color: "#785A28", marginBottom: 8 }}>FEATURES</div>
-          <h2 style={{ fontSize: 28, fontWeight: 900, color: "#F0E6D3", marginBottom: 32, lineHeight: 1.2 }}>
+          <div style={{ fontSize: 10, letterSpacing: 5, color: "#C8AA6E", marginBottom: 8 }}>FEATURES</div>
+          <h2 style={{ fontSize: 28, fontWeight: 900, color: "#F0F0F0", marginBottom: 32, lineHeight: 1.2 }}>
             What you can<br/><span style={{ color: "#C8AA6E" }}>win & earn.</span>
           </h2>
 
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             {features.map((f, i) => (
               <div key={i} className="auth-feature-card" style={{
-                background: "#0A162866", border: "1px solid #785A2822", borderRadius: 8,
+                background: "#24242888", border: "1px solid #2A2A2E", borderRadius: 8,
                 padding: "16px 20px", transition: "all 0.2s", cursor: "default",
                 animation: `fadeInRight 0.7s ease ${0.1 * i}s both`
               }}>
                 <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
                   <span style={{ fontSize: 20, flexShrink: 0 }}>{f.icon}</span>
                   <div>
-                    <div style={{ color: "#C8AA6E", fontSize: 12, fontWeight: 700, marginBottom: 4 }}>{f.title}</div>
-                    <div style={{ color: "#785A28", fontSize: 12, fontFamily: "Crimson Text, serif", lineHeight: 1.5 }}>{f.desc}</div>
+                    <div style={{ color: "#C8AA6E", fontSize: 13, fontWeight: 700, marginBottom: 4 }}>{f.title}</div>
+                    <div style={{ color: "#E0E0E0", fontSize: 13, fontFamily: "Crimson Text, serif", lineHeight: 1.6 }}>{f.desc}</div>
                   </div>
                 </div>
               </div>
@@ -504,16 +504,16 @@ function AuthPage({ onLogin }) {
                 { item: "Riot Points Pack (650 RP)", price: "$500 gold", emoji: "💎" },
                 { item: "Champion Bundle", price: "$800 gold", emoji: "⚔️" },
               ].map(r => (
-                <div key={r.item} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid #785A2811" }}>
+                <div key={r.item} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid #222225" }}>
                   <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                     <span>{r.emoji}</span>
-                    <span style={{ fontSize: 12, color: "#F0E6D388", fontFamily: "Crimson Text, serif" }}>{r.item}</span>
+                    <span style={{ fontSize: 13, color: "#E0E0E0", fontFamily: "Crimson Text, serif" }}>{r.item}</span>
                   </div>
-                  <span style={{ fontSize: 11, color: "#C8AA6E", fontWeight: 700 }}>{r.price}</span>
+                  <span style={{ fontSize: 12, color: "#C8AA6E", fontWeight: 700 }}>{r.price}</span>
                 </div>
               ))}
             </div>
-            <div style={{ marginTop: 12, fontSize: 10, color: "#785A2855", fontFamily: "Crimson Text, serif", fontStyle: "italic" }}>
+            <div style={{ marginTop: 12, fontSize: 12, color: "#A0A0A8", fontFamily: "Crimson Text, serif", fontStyle: "italic" }}>
               * Rewards are virtual and for demonstration purposes
             </div>
           </div>
@@ -589,30 +589,30 @@ function LinkAccount({ user, setUser, region, setRegion, toast }) {
   };
 
   if (user.lolAccount) return (
-    <div style={{ background: "#0A1628", border: "1px solid #C8AA6E44", borderRadius: 4, padding: 24 }}>
-      <div style={{ fontSize: 10, letterSpacing: 3, color: "#785A28", marginBottom: 12 }}>LINKED ACCOUNT</div>
+    <div style={{ background: "#242428", border: "1px solid #C8AA6E44", borderRadius: 4, padding: 24 }}>
+      <div style={{ fontSize: 10, letterSpacing: 3, color: "#A0A0A8", marginBottom: 12 }}>LINKED ACCOUNT</div>
       <div style={{ fontSize: 20, color: "#C8AA6E", fontWeight: 700 }}>{user.lolAccount}</div>
-      <div style={{ color: "#785A28", fontSize: 13, marginTop: 4, fontFamily: "Crimson Text, serif" }}>
-        Rank: <span style={{ color: "#F0E6D3" }}>{user.rank || "UNRANKED"}</span>
+      <div style={{ color: "#A0A0A8", fontSize: 13, marginTop: 4, fontFamily: "Crimson Text, serif" }}>
+        Rank: <span style={{ color: "#F0F0F0" }}>{user.rank || "UNRANKED"}</span>
       </div>
-      <div style={{ color: "#785A28", fontSize: 13 }}>
+      <div style={{ color: "#A0A0A8", fontSize: 13 }}>
         Odds multiplier: <span style={{ color: "#0BC4AA" }}>{getOdds(user.rank)}x</span>
       </div>
       <button onClick={async () => { const data = await apiCall("/api/user", { action: "unlinkAccount", username: user.username }); setUser(data.user); setStep("input"); }}
-        style={{ marginTop: 12, background: "none", border: "1px solid #785A2855", color: "#785A28", padding: "6px 14px", borderRadius: 3, cursor: "pointer", fontFamily: "Cinzel, serif", fontSize: 11 }}>
+        style={{ marginTop: 12, background: "none", border: "1px solid #35353A", color: "#A0A0A8", padding: "6px 14px", borderRadius: 3, cursor: "pointer", fontFamily: "Cinzel, serif", fontSize: 11 }}>
         Unlink Account
       </button>
     </div>
   );
 
   if (step === "verify" && pendingAccount && requiredIconId !== null) return (
-    <div style={{ background: "#0A1628", border: "1px solid #C8AA6E44", borderRadius: 4, padding: 24 }}>
+    <div style={{ background: "#242428", border: "1px solid #C8AA6E44", borderRadius: 4, padding: 24 }}>
       <div style={{ fontSize: 10, letterSpacing: 3, color: "#C8AA6E", marginBottom: 16 }}>VERIFY ACCOUNT OWNERSHIP</div>
-      <p style={{ color: "#F0E6D388", fontSize: 13, fontFamily: "Crimson Text, serif", marginBottom: 20 }}>
+      <p style={{ color: "#FFFFFF88", fontSize: 13, fontFamily: "Crimson Text, serif", marginBottom: 20 }}>
         To prove you own <strong style={{color:"#C8AA6E"}}>{pendingAccount.gameName}#{pendingAccount.tagLine}</strong>, 
         set this icon as your profile picture in the League client, then click Verify:
       </p>
-      <div style={{ display: "flex", alignItems: "center", gap: 20, marginBottom: 24, background: "#010A13", padding: 16, borderRadius: 4, border: "1px solid #C8AA6E33" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 20, marginBottom: 24, background: "#1A1A1E", padding: 16, borderRadius: 4, border: "1px solid #C8AA6E33" }}>
         <img 
           src={getIconUrl(requiredIconId)} 
           alt={`Icon ${requiredIconId}`}
@@ -621,7 +621,7 @@ function LinkAccount({ user, setUser, region, setRegion, toast }) {
         />
         <div>
           <div style={{ color: "#C8AA6E", fontSize: 16, fontWeight: 700, marginBottom: 4 }}>Icon #{requiredIconId}</div>
-          <div style={{ color: "#785A28", fontSize: 12, fontFamily: "Crimson Text, serif" }}>
+          <div style={{ color: "#A0A0A8", fontSize: 12, fontFamily: "Crimson Text, serif" }}>
             1. Open League of Legends client<br/>
             2. Click your profile icon (top right)<br/>
             3. Select "Customize Identity"<br/>
@@ -639,7 +639,7 @@ function LinkAccount({ user, setUser, region, setRegion, toast }) {
           {loading ? "Verifying..." : "✓ Verify & Link"}
         </button>
         <button onClick={() => { setStep("input"); setPendingAccount(null); setRequiredIconId(null); }} style={{
-          background: "none", border: "1px solid #785A2855", color: "#785A28",
+          background: "none", border: "1px solid #35353A", color: "#A0A0A8",
           padding: "12px 20px", borderRadius: 3, fontFamily: "Cinzel, serif", fontSize: 12, cursor: "pointer"
         }}>Cancel</button>
       </div>
@@ -647,21 +647,21 @@ function LinkAccount({ user, setUser, region, setRegion, toast }) {
   );
 
   return (
-    <div style={{ background: "#0A1628", border: "1px solid #785A2844", borderRadius: 4, padding: 24 }}>
-      <div style={{ fontSize: 10, letterSpacing: 3, color: "#785A28", marginBottom: 16 }}>LINK YOUR LOL ACCOUNT</div>
+    <div style={{ background: "#242428", border: "1px solid #2D2D32", borderRadius: 4, padding: 24 }}>
+      <div style={{ fontSize: 10, letterSpacing: 3, color: "#A0A0A8", marginBottom: 16 }}>LINK YOUR LOL ACCOUNT</div>
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
         <input
           placeholder="Game Name (e.g. Faker)"
           value={gameName} onChange={e => setGameName(e.target.value)}
-          style={{ flex: 2, minWidth: 150, background: "#010A13", border: "1px solid #785A2855", color: "#F0E6D3", padding: "10px 12px", borderRadius: 3, fontFamily: "Cinzel, serif", fontSize: 13 }}
+          style={{ flex: 2, minWidth: 150, background: "#1A1A1E", border: "1px solid #35353A", color: "#F0F0F0", padding: "10px 12px", borderRadius: 3, fontFamily: "Cinzel, serif", fontSize: 13 }}
         />
         <input
           placeholder="Tag (e.g. EUW, NA1, 1234)"
           value={tagLine} onChange={e => setTagLine(e.target.value)}
-          style={{ flex: 1, minWidth: 80, background: "#010A13", border: "1px solid #785A2855", color: "#F0E6D3", padding: "10px 12px", borderRadius: 3, fontFamily: "Cinzel, serif", fontSize: 13 }}
+          style={{ flex: 1, minWidth: 80, background: "#1A1A1E", border: "1px solid #35353A", color: "#F0F0F0", padding: "10px 12px", borderRadius: 3, fontFamily: "Cinzel, serif", fontSize: 13 }}
         />
         <select value={region} onChange={e => setRegion(e.target.value)}
-          style={{ background: "#010A13", border: "1px solid #785A2855", color: "#F0E6D3", padding: "10px 12px", borderRadius: 3, fontFamily: "Cinzel, serif", fontSize: 13 }}>
+          style={{ background: "#1A1A1E", border: "1px solid #35353A", color: "#F0F0F0", padding: "10px 12px", borderRadius: 3, fontFamily: "Cinzel, serif", fontSize: 13 }}>
           <option value="euw1">EUW</option>
           <option value="na1">NA</option>
           <option value="kr">KR</option>
@@ -713,23 +713,23 @@ function PlaceBet({ user, setUser, toast }) {
   };
 
   return (
-    <div style={{ background: "#0A1628", border: "1px solid #785A2844", borderRadius: 4, padding: 24 }}>
-      <div style={{ fontSize: 10, letterSpacing: 3, color: "#785A28", marginBottom: 20 }}>PLACE BET — NEXT RANKED GAME</div>
+    <div style={{ background: "#242428", border: "1px solid #2D2D32", borderRadius: 4, padding: 24 }}>
+      <div style={{ fontSize: 10, letterSpacing: 3, color: "#A0A0A8", marginBottom: 20 }}>PLACE BET — NEXT RANKED GAME</div>
 
       {activeBet ? (
-        <div style={{ background: "#010A13", border: "1px solid #C8AA6E44", borderRadius: 3, padding: 20 }}>
+        <div style={{ background: "#1A1A1E", border: "1px solid #C8AA6E44", borderRadius: 3, padding: 20 }}>
           <div style={{ color: "#C8AA6E", fontSize: 13, marginBottom: 8 }}>⏳ Active Bet</div>
-          <div style={{ color: "#F0E6D3", fontSize: 24, fontWeight: 700 }}>{formatMoney(activeBet.amount)}</div>
-          <div style={{ color: "#785A28", fontSize: 13, marginTop: 4 }}>
+          <div style={{ color: "#F0F0F0", fontSize: 24, fontWeight: 700 }}>{formatMoney(activeBet.amount)}</div>
+          <div style={{ color: "#A0A0A8", fontSize: 13, marginTop: 4 }}>
             Win to earn <span style={{ color: "#0BC4AA" }}>{formatMoney(activeBet.potentialWin)}</span>
           </div>
-          <div style={{ color: "#785A2888", fontSize: 11, marginTop: 8 }}>Placed {timeAgo(activeBet.placedAt)}</div>
+          <div style={{ color: "#A0A0A8", fontSize: 11, marginTop: 8 }}>Placed {timeAgo(activeBet.placedAt)}</div>
         </div>
       ) : (
         <div>
           <div style={{ marginBottom: 20 }}>
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
-              <label style={{ fontSize: 10, letterSpacing: 2, color: "#785A28" }}>BET AMOUNT</label>
+              <label style={{ fontSize: 10, letterSpacing: 2, color: "#A0A0A8" }}>BET AMOUNT</label>
               <span style={{ fontSize: 12, color: "#C8AA6E" }}>Max: ${MAX_BET}</span>
             </div>
             <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
@@ -738,7 +738,7 @@ function PlaceBet({ user, setUser, toast }) {
                 type="number" min={1} max={MAX_BET} value={amount}
                 onChange={e => setAmount(Math.min(MAX_BET, Math.max(1, Number(e.target.value))))}
                 style={{
-                  flex: 1, background: "#010A13", border: "1px solid #C8AA6E44", color: "#F0E6D3",
+                  flex: 1, background: "#1A1A1E", border: "1px solid #C8AA6E44", color: "#F0F0F0",
                   padding: "12px", borderRadius: 3, fontFamily: "Cinzel, serif", fontSize: 20,
                   fontWeight: 700, textAlign: "center", outline: "none"
                 }}
@@ -749,7 +749,7 @@ function PlaceBet({ user, setUser, toast }) {
               onChange={e => setAmount(Number(e.target.value))}
               style={{ width: "100%", marginTop: 12, accentColor: "#C8AA6E" }}
             />
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "#785A28" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "#A0A0A8" }}>
               <span>$1</span><span>${MAX_BET}</span>
             </div>
           </div>
@@ -758,23 +758,23 @@ function PlaceBet({ user, setUser, toast }) {
             {[5, 10, 20, 30].map(v => (
               <button key={v} onClick={() => setAmount(v)} style={{
                 flex: 1, background: amount === v ? "#C8AA6E" : "#010A13",
-                color: amount === v ? "#010A13" : "#785A28",
-                border: "1px solid #785A2855", borderRadius: 3, padding: "6px",
+                color: amount === v ? "#1A1A1E" : "#C0C0C8",
+                border: "1px solid #35353A", borderRadius: 3, padding: "6px",
                 fontFamily: "Cinzel, serif", fontSize: 12, cursor: "pointer"
               }}>${v}</button>
             ))}
           </div>
 
-          <div style={{ background: "#010A13", borderRadius: 3, padding: 16, marginBottom: 20, display: "flex", justifyContent: "space-between" }}>
+          <div style={{ background: "#1A1A1E", borderRadius: 3, padding: 16, marginBottom: 20, display: "flex", justifyContent: "space-between" }}>
             <div>
-              <div style={{ fontSize: 10, letterSpacing: 2, color: "#785A28" }}>YOUR ODDS</div>
+              <div style={{ fontSize: 10, letterSpacing: 2, color: "#A0A0A8" }}>YOUR ODDS</div>
               <div style={{ color: "#C8AA6E", fontSize: 18, fontWeight: 700 }}>{odds}x</div>
-              <div style={{ color: "#785A28", fontSize: 10 }}>{user.rank || "UNRANKED"}</div>
+              <div style={{ color: "#A0A0A8", fontSize: 10 }}>{user.rank || "UNRANKED"}</div>
             </div>
             <div style={{ textAlign: "right" }}>
-              <div style={{ fontSize: 10, letterSpacing: 2, color: "#785A28" }}>IF YOU WIN</div>
+              <div style={{ fontSize: 10, letterSpacing: 2, color: "#A0A0A8" }}>IF YOU WIN</div>
               <div style={{ color: "#0BC4AA", fontSize: 24, fontWeight: 700 }}>{formatMoney(potentialWin)}</div>
-              <div style={{ color: "#785A28", fontSize: 10 }}>{RAKE * 100}% rake applied</div>
+              <div style={{ color: "#A0A0A8", fontSize: 10 }}>{RAKE * 100}% rake applied</div>
             </div>
           </div>
 
@@ -831,9 +831,9 @@ function ResolveBet({ user, setUser, region, toast, showResult }) {
   if (!activeBet) return null;
 
   return (
-    <div style={{ background: "#0A1628", border: "1px solid #C8AA6E44", borderRadius: 4, padding: 24 }}>
-      <div style={{ fontSize: 10, letterSpacing: 3, color: "#785A28", marginBottom: 12 }}>RESOLVE YOUR BET</div>
-      <p style={{ color: "#F0E6D388", fontSize: 13, fontFamily: "Crimson Text, serif", marginBottom: 16 }}>
+    <div style={{ background: "#242428", border: "1px solid #C8AA6E44", borderRadius: 4, padding: 24 }}>
+      <div style={{ fontSize: 10, letterSpacing: 3, color: "#A0A0A8", marginBottom: 12 }}>RESOLVE YOUR BET</div>
+      <p style={{ color: "#FFFFFF88", fontSize: 13, fontFamily: "Crimson Text, serif", marginBottom: 16 }}>
         After finishing a ranked game, click below to check the result automatically via Riot's API.
       </p>
       <button onClick={resolve} disabled={loading} style={{
@@ -854,19 +854,19 @@ function ResolveBet({ user, setUser, region, toast, showResult }) {
 // ─── BET HISTORY ─────────────────────────────────────────────────────────────
 function BetHistory({ bets }) {
   if (!bets?.length) return (
-    <div style={{ background: "#0A1628", border: "1px solid #785A2844", borderRadius: 4, padding: 24, textAlign: "center" }}>
-      <div style={{ fontSize: 10, letterSpacing: 3, color: "#785A28", marginBottom: 12 }}>BET HISTORY</div>
-      <p style={{ color: "#785A2888", fontFamily: "Crimson Text, serif", fontStyle: "italic" }}>No bets yet. Place your first wager.</p>
+    <div style={{ background: "#242428", border: "1px solid #2D2D32", borderRadius: 4, padding: 24, textAlign: "center" }}>
+      <div style={{ fontSize: 10, letterSpacing: 3, color: "#A0A0A8", marginBottom: 12 }}>BET HISTORY</div>
+      <p style={{ color: "#A0A0A8", fontFamily: "Crimson Text, serif", fontStyle: "italic" }}>No bets yet. Place your first wager.</p>
     </div>
   );
 
   return (
-    <div style={{ background: "#0A1628", border: "1px solid #785A2844", borderRadius: 4, padding: 24 }}>
-      <div style={{ fontSize: 10, letterSpacing: 3, color: "#785A28", marginBottom: 16 }}>BET HISTORY</div>
+    <div style={{ background: "#242428", border: "1px solid #2D2D32", borderRadius: 4, padding: 24 }}>
+      <div style={{ fontSize: 10, letterSpacing: 3, color: "#A0A0A8", marginBottom: 16 }}>BET HISTORY</div>
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
         {[...bets].reverse().map(bet => (
           <div key={bet.id} style={{
-            background: "#010A13", border: `1px solid ${bet.status === "won" ? "#0BC4AA33" : bet.status === "lost" ? "#C8464A33" : "#785A2833"}`,
+            background: "#1A1A1E", border: `1px solid ${bet.status === "won" ? "#0BC4AA33" : bet.status === "lost" ? "#C8464A33" : "#785A2833"}`,
             borderRadius: 3, padding: "14px 16px",
             display: "flex", justifyContent: "space-between", alignItems: "center"
           }}>
@@ -880,17 +880,17 @@ function BetHistory({ bets }) {
                 }}>
                   {bet.status.toUpperCase()}
                 </span>
-                {bet.result && <span style={{ color: "#785A28", fontSize: 12, fontFamily: "Crimson Text, serif" }}>
+                {bet.result && <span style={{ color: "#A0A0A8", fontSize: 12, fontFamily: "Crimson Text, serif" }}>
                   {bet.result.champion} — {bet.result.kills}/{bet.result.deaths}/{bet.result.assists}
                 </span>}
               </div>
-              <div style={{ color: "#785A2888", fontSize: 11, marginTop: 4 }}>{timeAgo(bet.placedAt)}</div>
+              <div style={{ color: "#A0A0A8", fontSize: 11, marginTop: 4 }}>{timeAgo(bet.placedAt)}</div>
             </div>
             <div style={{ textAlign: "right" }}>
-              <div style={{ color: "#F0E6D3", fontSize: 16, fontWeight: 700 }}>
+              <div style={{ color: "#F0F0F0", fontSize: 16, fontWeight: 700 }}>
                 {bet.status === "won" ? "+" : bet.status === "pending" ? "" : "-"}{formatMoney(bet.status === "won" ? bet.potentialWin : bet.amount)}
               </div>
-              <div style={{ color: "#785A28", fontSize: 11 }}>bet: {formatMoney(bet.amount)}</div>
+              <div style={{ color: "#A0A0A8", fontSize: 11 }}>bet: {formatMoney(bet.amount)}</div>
             </div>
           </div>
         ))}
@@ -912,34 +912,34 @@ function Leaderboard() {
   }, []);
 
   return (
-    <div style={{ background: "#0A1628", border: "1px solid #785A2844", borderRadius: 4, padding: 24 }}>
-      <div style={{ fontSize: 10, letterSpacing: 3, color: "#785A28", marginBottom: 20 }}>LEADERBOARD</div>
+    <div style={{ background: "#242428", border: "1px solid #2D2D32", borderRadius: 4, padding: 24 }}>
+      <div style={{ fontSize: 10, letterSpacing: 3, color: "#A0A0A8", marginBottom: 20 }}>LEADERBOARD</div>
       {loading ? <Loader /> : (
         <div>
           {users.map((u, i) => (
             <div key={u.username} style={{
               display: "flex", alignItems: "center", gap: 16,
-              padding: "12px 0", borderBottom: "1px solid #785A2822"
+              padding: "12px 0", borderBottom: "1px solid #2A2A2E"
             }}>
               <div style={{
                 width: 28, height: 28, borderRadius: "50%",
-                background: i === 0 ? "#C8AA6E" : i === 1 ? "#A0A0A0" : i === 2 ? "#CD7F32" : "#785A2833",
+                background: i === 0 ? "#C8AA6E" : i === 1 ? "#A0A0A0" : i === 2 ? "#CD7F32" : "#35353A",
                 display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 12, fontWeight: 700, color: i < 3 ? "#010A13" : "#785A28", flexShrink: 0
+                fontSize: 12, fontWeight: 700, color: i < 3 ? "#1A1A1E" : "#C0C0C8", flexShrink: 0
               }}>{i + 1}</div>
               <div style={{ flex: 1 }}>
-                <div style={{ color: "#F0E6D3", fontSize: 14, fontWeight: 600 }}>{u.username}</div>
-                <div style={{ color: "#785A28", fontSize: 11, fontFamily: "Crimson Text, serif" }}>
+                <div style={{ color: "#F0F0F0", fontSize: 14, fontWeight: 600 }}>{u.username}</div>
+                <div style={{ color: "#A0A0A8", fontSize: 11, fontFamily: "Crimson Text, serif" }}>
                   {u.lolAccount || "No LoL account"} {u.rank && `• ${u.rank}`}
                 </div>
               </div>
               <div style={{ textAlign: "right" }}>
                 <div style={{ color: "#C8AA6E", fontSize: 16, fontWeight: 700 }}>{formatMoney(u.balance)}</div>
-                <div style={{ color: "#785A28", fontSize: 11 }}>{u.wins}W / {u.total - u.wins}L</div>
+                <div style={{ color: "#A0A0A8", fontSize: 11 }}>{u.wins}W / {u.total - u.wins}L</div>
               </div>
             </div>
           ))}
-          {!users.length && <p style={{ color: "#785A2888", textAlign: "center", fontFamily: "Crimson Text, serif" }}>No players yet</p>}
+          {!users.length && <p style={{ color: "#A0A0A8", textAlign: "center", fontFamily: "Crimson Text, serif" }}>No players yet</p>}
         </div>
       )}
     </div>
@@ -982,9 +982,9 @@ function LiveFeed() {
   }, []);
 
   return (
-    <div style={{ background: "#0A1628", border: "1px solid #785A2833", borderRadius: 8, overflow: "hidden" }}>
+    <div style={{ background: "#242428", border: "1px solid #2D2D32", borderRadius: 8, overflow: "hidden" }}>
       {/* Header */}
-      <div style={{ padding: "14px 16px", borderBottom: "1px solid #785A2818", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+      <div style={{ padding: "14px 16px", borderBottom: "1px solid #252528", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div style={{ fontSize: 10, letterSpacing: 4, color: "#C8AA6E99" }}>LIVE GAMES</div>
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#C8464A", boxShadow: "0 0 6px #C8464A", animation: "pulse 1.5s ease-in-out infinite" }} />
@@ -997,23 +997,23 @@ function LiveFeed() {
         {games.map((g, i) => (
           <div key={g.id} style={{
             padding: "10px 16px",
-            borderBottom: i < 3 ? "1px solid #785A2811" : "none",
+            borderBottom: i < 3 ? "1px solid #222225" : "none",
             background: flash === i ? "#C8AA6E06" : "transparent",
             transition: "background 0.3s ease"
           }}>
             {/* Top row: champion + bet */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 4 }}>
-              <span style={{ fontSize: 14, fontWeight: 700, color: "#F0E6D3", letterSpacing: 0.5 }}>{g.champ}</span>
+              <span style={{ fontSize: 14, fontWeight: 700, color: "#F0F0F0", letterSpacing: 0.5 }}>{g.champ}</span>
               <span style={{ fontSize: 13, fontWeight: 900, color: "#C8AA6E" }}>${g.bet}</span>
             </div>
             {/* Bottom row: rank + game time + kda */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontSize: 10, color: RANK_COLORS[g.rank] || "#785A28", letterSpacing: 1, fontWeight: 600 }}>
+              <span style={{ fontSize: 10, color: RANK_COLORS[g.rank] || "#C0C0C8", letterSpacing: 1, fontWeight: 600 }}>
                 {g.rank}{g.div}
               </span>
               <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                <span style={{ fontSize: 11, color: "#F0E6D355", fontFamily: "Crimson Text, serif" }}>{g.mins}m</span>
-                <span style={{ fontSize: 11, color: "#F0E6D344" }}>{g.k}/{g.d}/{g.a}</span>
+                <span style={{ fontSize: 11, color: "#FFFFFF55", fontFamily: "Crimson Text, serif" }}>{g.mins}m</span>
+                <span style={{ fontSize: 11, color: "#FFFFFF44" }}>{g.k}/{g.d}/{g.a}</span>
               </div>
             </div>
             {/* Progress bar showing game time */}
@@ -1024,8 +1024,8 @@ function LiveFeed() {
         ))}
       </div>
 
-      <div style={{ padding: "8px 16px", borderTop: "1px solid #785A2811", textAlign: "center" }}>
-        <span style={{ fontSize: 10, color: "#785A28", letterSpacing: 2 }}>UPDATES EVERY FEW SECONDS</span>
+      <div style={{ padding: "8px 16px", borderTop: "1px solid #222225", textAlign: "center" }}>
+        <span style={{ fontSize: 10, color: "#A0A0A8", letterSpacing: 2 }}>UPDATES EVERY FEW SECONDS</span>
       </div>
     </div>
   );
@@ -1146,11 +1146,11 @@ function ResultScreen({ result, bet, onClose }) {
         {/* Game stats card */}
         {result && (
           <div style={{
-            background: "#010A13",
+            background: "#1A1A1E",
             border: `1px solid ${won ? "#C8AA6E33" : "#C8464A33"}`,
             borderRadius: 8, padding: "20px 24px", marginBottom: 24
           }}>
-            <div style={{ color: "#785A28", fontSize: 10, letterSpacing: 3, marginBottom: 12 }}>MATCH RESULT</div>
+            <div style={{ color: "#A0A0A8", fontSize: 10, letterSpacing: 3, marginBottom: 12 }}>MATCH RESULT</div>
             <div style={{ color: "#C8AA6E", fontSize: 22, fontWeight: 700, fontFamily: "Cinzel, serif", marginBottom: 16 }}>
               {result.champion}
             </div>
@@ -1162,16 +1162,16 @@ function ResultScreen({ result, bet, onClose }) {
               ].map((s, i) => (
                 <div key={s.label} style={{
                   flex: 1,
-                  borderRight: i < 2 ? "1px solid #785A2833" : "none",
+                  borderRight: i < 2 ? "1px solid #2D2D32" : "none",
                   padding: "0 16px"
                 }}>
                   <div style={{ fontSize: 28, fontWeight: 900, color: s.color, fontFamily: "Cinzel, serif" }}>{s.value}</div>
-                  <div style={{ fontSize: 9, letterSpacing: 2, color: "#785A28", marginTop: 2 }}>{s.label}</div>
+                  <div style={{ fontSize: 9, letterSpacing: 2, color: "#A0A0A8", marginTop: 2 }}>{s.label}</div>
                 </div>
               ))}
             </div>
-            <div style={{ fontSize: 11, color: "#785A28", fontFamily: "Crimson Text, serif" }}>
-              KDA: <span style={{ color: "#F0E6D3" }}>
+            <div style={{ fontSize: 11, color: "#A0A0A8", fontFamily: "Crimson Text, serif" }}>
+              KDA: <span style={{ color: "#F0F0F0" }}>
                 {result.deaths === 0 ? "Perfect" : ((result.kills + result.assists) / result.deaths).toFixed(2)}
               </span>
             </div>
@@ -1186,19 +1186,19 @@ function ResultScreen({ result, bet, onClose }) {
         }}>
           {won ? (
             <>
-              <div style={{ color: "#785A28", fontSize: 11, letterSpacing: 2, marginBottom: 4 }}>WINNINGS</div>
+              <div style={{ color: "#A0A0A8", fontSize: 11, letterSpacing: 2, marginBottom: 4 }}>WINNINGS</div>
               <div style={{ color: "#0BC4AA", fontSize: 32, fontWeight: 900, fontFamily: "Cinzel, serif" }}>
                 +${Number(bet?.potentialWin || 0).toFixed(2)}
               </div>
-              <div style={{ color: "#785A28", fontSize: 11, marginTop: 4 }}>added to your balance</div>
+              <div style={{ color: "#A0A0A8", fontSize: 11, marginTop: 4 }}>added to your balance</div>
             </>
           ) : (
             <>
-              <div style={{ color: "#785A28", fontSize: 11, letterSpacing: 2, marginBottom: 4 }}>LOST</div>
+              <div style={{ color: "#A0A0A8", fontSize: 11, letterSpacing: 2, marginBottom: 4 }}>LOST</div>
               <div style={{ color: "#C8464A", fontSize: 32, fontWeight: 900, fontFamily: "Cinzel, serif" }}>
                 -${Number(bet?.amount || 0).toFixed(2)}
               </div>
-              <div style={{ color: "#785A28", fontSize: 11, marginTop: 4 }}>better luck next time, summoner</div>
+              <div style={{ color: "#A0A0A8", fontSize: 11, marginTop: 4 }}>better luck next time, summoner</div>
             </>
           )}
         </div>
@@ -1214,7 +1214,7 @@ function ResultScreen({ result, bet, onClose }) {
           {won ? "Claim Victory" : "Try Again"}
         </button>
 
-        <div style={{ color: "#785A2855", fontSize: 10, marginTop: 12, fontFamily: "Crimson Text, serif" }}>
+        <div style={{ color: "#7A7A82", fontSize: 10, marginTop: 12, fontFamily: "Crimson Text, serif" }}>
           closes automatically in 12 seconds
         </div>
       </div>
@@ -1331,7 +1331,7 @@ export default function App() {
   const tabs = ["dashboard", "bet", "history", "leaderboard"];
 
   return (
-    <div style={{ minHeight: "100vh", background: "#010A13", fontFamily: "Cinzel, serif", color: "#F0E6D3" }}>
+    <div style={{ minHeight: "100vh", background: "#1A1A1E", fontFamily: "Cinzel, serif", color: "#E0E0E0" }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -1346,23 +1346,23 @@ export default function App() {
       `}</style>
 
       {/* Top bar */}
-      <div style={{ borderBottom: "1px solid #785A2833", background: "#0A1628" }}>
+      <div style={{ borderBottom: "1px solid #2D2D32", background: "#141416" }}>
 
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 24px", height: 56 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <span style={{ fontSize: 10, letterSpacing: 4, color: "#785A28" }}>RUNETERRA</span>
-            <span style={{ color: "#785A2844" }}>|</span>
+            <span style={{ fontSize: 10, letterSpacing: 4, color: "#A0A0A8" }}>RUNETERRA</span>
+            <span style={{ color: "#6A6A72" }}>|</span>
             <span style={{ fontSize: 16, fontWeight: 700, color: "#C8AA6E" }}>WAGERS</span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
             <div style={{ textAlign: "right" }}>
-              <div style={{ fontSize: 10, letterSpacing: 2, color: "#785A28" }}>BALANCE</div>
+              <div style={{ fontSize: 10, letterSpacing: 2, color: "#A0A0A8" }}>BALANCE</div>
               <div style={{ fontSize: 16, fontWeight: 700, color: "#C8AA6E" }}>{formatMoney(user.balance)}</div>
             </div>
             <div style={{ width: 1, height: 32, background: "#785A2833" }} />
-            <div style={{ fontSize: 12, color: "#785A28" }}>{user.username}</div>
+            <div style={{ fontSize: 12, color: "#A0A0A8" }}>{user.username}</div>
             <button onClick={() => setUser(null)} style={{
-              background: "none", border: "1px solid #785A2855", color: "#785A28",
+              background: "none", border: "1px solid #35353A", color: "#A0A0A8",
               padding: "4px 10px", borderRadius: 3, cursor: "pointer",
               fontFamily: "Cinzel, serif", fontSize: 10, letterSpacing: 1
             }}>LOGOUT</button>
@@ -1388,15 +1388,15 @@ export default function App() {
       <div style={{ display: "grid", gridTemplateColumns: "220px 1fr 220px", gap: 0, minHeight: "calc(100vh - 100px)", animation: "fadeIn 0.3s ease" }}>
 
         {/* LEFT SIDEBAR */}
-        <div style={{ padding: "24px 16px 24px 24px", borderRight: "1px solid #785A2818", display: "flex", flexDirection: "column", gap: 14 }}>
+        <div style={{ padding: "24px 16px 24px 24px", borderRight: "1px solid #252528", display: "flex", flexDirection: "column", gap: 14 }}>
 
           {/* Player card */}
-          <div style={{ background: "#0A1628", border: "1px solid #785A2833", borderRadius: 8, padding: "18px 16px" }}>
+          <div style={{ background: "#242428", border: "1px solid #2D2D32", borderRadius: 8, padding: "18px 16px" }}>
             <div style={{ fontSize: 10, letterSpacing: 4, color: "#C8AA6E99", marginBottom: 10 }}>SUMMONER</div>
-            <div style={{ color: "#F0E6D3", fontSize: 18, fontWeight: 900, letterSpacing: 1, marginBottom: 4 }}>{user.username}</div>
+            <div style={{ color: "#F0F0F0", fontSize: 18, fontWeight: 900, letterSpacing: 1, marginBottom: 4 }}>{user.username}</div>
             {user.lolAccount ? (
               <>
-                <div style={{ color: "#C8AA6E", fontSize: 13, fontFamily: "Crimson Text, serif", marginBottom: 10 }}>{user.lolAccount}</div>
+                <div style={{ color: "#D0D0D8", fontSize: 13, fontFamily: "Crimson Text, serif", marginBottom: 10 }}>{user.lolAccount}</div>
                 <div style={{
                   display: "inline-block", background: "linear-gradient(135deg, #C8AA6E22, #785A2811)",
                   border: "1px solid #C8AA6E55", borderRadius: 3, padding: "4px 12px",
@@ -1405,24 +1405,24 @@ export default function App() {
                   {user.rank || "UNRANKED"}
                 </div>
                 <div style={{ marginTop: 10, display: "flex", gap: 8 }}>
-                  <div style={{ flex: 1, textAlign: "center", background: "#010A13", borderRadius: 4, padding: "8px 4px" }}>
+                  <div style={{ flex: 1, textAlign: "center", background: "#1A1A1E", borderRadius: 4, padding: "8px 4px" }}>
                     <div style={{ color: "#0BC4AA", fontSize: 18, fontWeight: 900 }}>{stats.wins}</div>
-                    <div style={{ color: "#785A2877", fontSize: 9, letterSpacing: 2, marginTop: 2 }}>WINS</div>
+                    <div style={{ color: "#8A8A92", fontSize: 9, letterSpacing: 2, marginTop: 2 }}>WINS</div>
                   </div>
-                  <div style={{ flex: 1, textAlign: "center", background: "#010A13", borderRadius: 4, padding: "8px 4px" }}>
+                  <div style={{ flex: 1, textAlign: "center", background: "#1A1A1E", borderRadius: 4, padding: "8px 4px" }}>
                     <div style={{ color: "#C8464A", fontSize: 18, fontWeight: 900 }}>{stats.losses}</div>
-                    <div style={{ color: "#785A2877", fontSize: 9, letterSpacing: 2, marginTop: 2 }}>LOSSES</div>
+                    <div style={{ color: "#8A8A92", fontSize: 9, letterSpacing: 2, marginTop: 2 }}>LOSSES</div>
                   </div>
-                  <div style={{ flex: 1, textAlign: "center", background: "#010A13", borderRadius: 4, padding: "8px 4px" }}>
+                  <div style={{ flex: 1, textAlign: "center", background: "#1A1A1E", borderRadius: 4, padding: "8px 4px" }}>
                     <div style={{ color: "#C8AA6E", fontSize: 18, fontWeight: 900 }}>
                       {stats.wins + stats.losses > 0 ? `${Math.round(stats.wins / (stats.wins + stats.losses) * 100)}%` : "--"}
                     </div>
-                    <div style={{ color: "#785A2877", fontSize: 9, letterSpacing: 2, marginTop: 2 }}>W/R</div>
+                    <div style={{ color: "#8A8A92", fontSize: 9, letterSpacing: 2, marginTop: 2 }}>W/R</div>
                   </div>
                 </div>
               </>
             ) : (
-              <div style={{ color: "#785A28", fontSize: 13, fontFamily: "Crimson Text, serif", fontStyle: "italic", marginTop: 4 }}>No account linked</div>
+              <div style={{ color: "#A0A0A8", fontSize: 13, fontFamily: "Crimson Text, serif", fontStyle: "italic", marginTop: 4 }}>No account linked</div>
             )}
           </div>
 
@@ -1433,36 +1433,36 @@ export default function App() {
             <div style={{ marginTop: 10, height: 2, background: "#785A2818", borderRadius: 2 }}>
               <div style={{ height: "100%", width: `${Math.min(100, (user.balance / 500) * 100)}%`, background: "linear-gradient(90deg, #785A28, #C8AA6E)", borderRadius: 2, transition: "width 0.5s ease" }} />
             </div>
-            <div style={{ color: "#785A28", fontSize: 12, marginTop: 6, fontFamily: "Crimson Text, serif" }}>of $500.00 starting gold</div>
+            <div style={{ color: "#C0C0C8", fontSize: 12, marginTop: 6, fontFamily: "Crimson Text, serif" }}>of $500.00 starting gold</div>
           </div>
 
           {/* Active bet */}
           {(() => {
             const activeBet = user.bets?.find(b => b.status === "pending");
             return activeBet ? (
-              <div style={{ background: "#0A1628", border: "1px solid #C8AA6E44", borderRadius: 8, padding: "18px 16px" }}>
+              <div style={{ background: "#242428", border: "1px solid #C8AA6E44", borderRadius: 8, padding: "18px 16px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
                   <div style={{ fontSize: 10, letterSpacing: 4, color: "#C8AA6E" }}>ACTIVE BET</div>
                   <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#C8AA6E", boxShadow: "0 0 8px #C8AA6E", animation: "pulse 1.5s ease-in-out infinite" }} />
                 </div>
                 <div style={{ color: "#C8AA6E", fontSize: 26, fontWeight: 900 }}>{formatMoney(activeBet.amount)}</div>
-                <div style={{ color: "#F0E6D3", fontSize: 13, marginTop: 4, fontFamily: "Crimson Text, serif" }}>
+                <div style={{ color: "#E0E0E0", fontSize: 13, marginTop: 4, fontFamily: "Crimson Text, serif" }}>
                   Potential win: <span style={{ color: "#0BC4AA", fontWeight: 700 }}>{formatMoney(activeBet.potentialWin)}</span>
                 </div>
-                <div style={{ color: "#785A28", fontSize: 12, marginTop: 4, fontFamily: "Crimson Text, serif" }}>{timeAgo(activeBet.placedAt)}</div>
+                <div style={{ color: "#A0A0A8", fontSize: 12, marginTop: 4, fontFamily: "Crimson Text, serif" }}>{timeAgo(activeBet.placedAt)}</div>
               </div>
             ) : (
-              <div style={{ background: "#0A162844", border: "1px solid #785A2818", borderRadius: 8, padding: "18px 16px", textAlign: "center" }}>
+              <div style={{ background: "#24242866", border: "1px solid #252528", borderRadius: 8, padding: "18px 16px", textAlign: "center" }}>
                 <div style={{ width: 32, height: 32, borderRadius: "50%", border: "2px dashed #785A2833", margin: "0 auto 10px", display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <div style={{ width: 10, height: 10, background: "#785A2833", borderRadius: "50%" }} />
                 </div>
-                <div style={{ color: "#785A2866", fontSize: 13, fontFamily: "Crimson Text, serif" }}>No active bet</div>
+                <div style={{ color: "#7A7A82", fontSize: 13, fontFamily: "Crimson Text, serif" }}>No active bet</div>
               </div>
             );
           })()}
 
           {/* Odds table */}
-          <div style={{ background: "#0A1628", border: "1px solid #785A2833", borderRadius: 8, padding: "18px 16px" }}>
+          <div style={{ background: "#242428", border: "1px solid #2D2D32", borderRadius: 8, padding: "18px 16px" }}>
             <div style={{ fontSize: 10, letterSpacing: 4, color: "#C8AA6E99", marginBottom: 14 }}>MULTIPLIERS</div>
             {[["IRON","1.60x"],["BRONZE","1.55x"],["SILVER","1.50x"],["GOLD","1.45x"],["PLATINUM","1.40x"],["EMERALD","1.38x"],["DIAMOND","1.35x"],["MASTER+","1.15x"]].map(([r,o]) => {
               const isMyRank = user.rank?.toUpperCase().startsWith(r.split("+")[0]);
@@ -1497,13 +1497,13 @@ export default function App() {
         </div>
 
         {/* RIGHT SIDEBAR */}
-        <div style={{ padding: "24px 24px 24px 16px", borderLeft: "1px solid #785A2818", display: "flex", flexDirection: "column", gap: 14 }}>
+        <div style={{ padding: "24px 24px 24px 16px", borderLeft: "1px solid #252528", display: "flex", flexDirection: "column", gap: 14 }}>
 
           {/* Live Games Feed */}
           <LiveFeed />
 
           {/* Recent bets */}
-          <div style={{ background: "#0A1628", border: "1px solid #785A2833", borderRadius: 8, padding: "18px 16px" }}>
+          <div style={{ background: "#242428", border: "1px solid #2D2D32", borderRadius: 8, padding: "18px 16px" }}>
             <div style={{ fontSize: 10, letterSpacing: 4, color: "#C8AA6E99", marginBottom: 14 }}>YOUR RECENT BETS</div>
             {user.bets?.filter(b => b.status !== "pending").length ? (
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
@@ -1513,7 +1513,7 @@ export default function App() {
                       <div style={{ fontSize: 12, color: bet.status === "won" ? "#0BC4AA" : "#C8464A", fontWeight: 700, letterSpacing: 1 }}>
                         {bet.status === "won" ? "WIN" : "LOSS"}
                       </div>
-                      {bet.result?.champion && <div style={{ fontSize: 11, color: "#785A28", fontFamily: "Crimson Text, serif", marginTop: 1 }}>{bet.result.champion} · {bet.result.kills}/{bet.result.deaths}/{bet.result.assists}</div>}
+                      {bet.result?.champion && <div style={{ fontSize: 11, color: "#A0A0A8", fontFamily: "Crimson Text, serif", marginTop: 1 }}>{bet.result.champion} · {bet.result.kills}/{bet.result.deaths}/{bet.result.assists}</div>}
                     </div>
                     <div style={{ fontSize: 14, fontWeight: 900, color: bet.status === "won" ? "#0BC4AA" : "#C8464A" }}>
                       {bet.status === "won" ? "+" : "-"}{formatMoney(bet.status === "won" ? bet.potentialWin : bet.amount)}
@@ -1522,14 +1522,14 @@ export default function App() {
                 ))}
               </div>
             ) : (
-              <div style={{ color: "#785A28", fontSize: 13, fontFamily: "Crimson Text, serif", fontStyle: "italic", textAlign: "center", padding: "16px 0" }}>
+              <div style={{ color: "#C0C0C8", fontSize: 13, fontFamily: "Crimson Text, serif", fontStyle: "italic", textAlign: "center", padding: "16px 0" }}>
                 No completed bets yet
               </div>
             )}
           </div>
 
           {/* Rules card */}
-          <div style={{ background: "#0A1628", border: "1px solid #785A2833", borderRadius: 8, padding: "18px 16px" }}>
+          <div style={{ background: "#242428", border: "1px solid #2D2D32", borderRadius: 8, padding: "18px 16px" }}>
             <div style={{ fontSize: 10, letterSpacing: 4, color: "#C8AA6E99", marginBottom: 14 }}>HOUSE RULES</div>
             {[
               ["Solo/Duo ranked only", "Flex & normals don't count"],
@@ -1537,9 +1537,9 @@ export default function App() {
               ["5% rake on winnings", "Losses return nothing"],
               ["Results via Riot API", "No disputes possible"],
             ].map(([rule, sub], i) => (
-              <div key={i} style={{ paddingBottom: 10, marginBottom: 10, borderBottom: i < 3 ? "1px solid #785A2811" : "none" }}>
-                <div style={{ fontSize: 13, color: "#F0E6D3", fontWeight: 600 }}>{rule}</div>
-                <div style={{ fontSize: 12, color: "#785A28", fontFamily: "Crimson Text, serif", marginTop: 2 }}>{sub}</div>
+              <div key={i} style={{ paddingBottom: 10, marginBottom: 10, borderBottom: i < 3 ? "1px solid #222225" : "none" }}>
+                <div style={{ fontSize: 13, color: "#FFFFFF", fontWeight: 600 }}>{rule}</div>
+                <div style={{ fontSize: 12, color: "#C0C0C8", fontFamily: "Crimson Text, serif", marginTop: 2 }}>{sub}</div>
               </div>
             ))}
           </div>
