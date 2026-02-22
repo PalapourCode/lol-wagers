@@ -606,174 +606,254 @@ function getAccountPhrase(profile, rank) {
   const wins = profile.wins;
   const losses = profile.losses;
   const games = wins + losses;
-  const topChamp = profile.topChamps?.[0]?.name;
-  const topPts = profile.topChamps?.[0]?.points || 0;
-  const topLevel = profile.topChamps?.[0]?.level || 0;
-  const level = profile.level;
+  const top = profile.topChamps || [];
+  const topChamp = top[0]?.name;
+  const topPts = top[0]?.points || 0;
+  const topLevel = top[0]?.level || 0;
+  const secondChamp = top[1]?.name;
+  const thirdChamp = top[2]?.name;
   const lp = profile.lp;
 
-  const phrases = [];
+  // Each entry: { tag, text }
+  // tag = bold label shown before the phrase
+  // text = the sarcastic sentence
+  const matches = [];
 
-  // ── Rank-based ──────────────────────────────────────────────────────────────
-  if (tier === "IRON") phrases.push(
-    "Iron ranked. Either this is a smurf account or we genuinely respect the dedication.",
-    "You're Iron. The algorithm isn't rigged, we checked. Twice.",
-    `Iron ${div}. At this point the losing streak IS the grind.`
-  );
-  if (tier === "BRONZE") phrases.push(
-    "Bronze. You graduated from Iron, which means you definitely deserve to bet on yourself.",
-    `Bronze ${div}. Somewhere between 'I just installed this' and 'I belong here'.`,
-    "Bronze. Your teammates would say it's not your fault. They'd be lying."
-  );
-  if (tier === "SILVER") phrases.push(
-    "Silver. The most populated rank in the game. You are statistically average. Congratulations.",
-    `Silver ${div}. You know exactly what everyone is doing wrong. You are also doing it.`,
-    "Silver. You've watched enough YouTube guides to know what you should be doing. Yet."
-  );
-  if (tier === "GOLD") phrases.push(
-    "Gold. You've escaped Silver, which puts you ahead of 60% of the playerbase. Humble yourself.",
-    `Gold ${div}. The rank where everyone thinks they're secretly Platinum.`,
-    "Gold. You peak at this rank every season and you know it."
-  );
-  if (tier === "PLATINUM") phrases.push(
-    "Platinum. You are statistically better than most players and worse than everyone you play with.",
-    `Plat ${div}. One patch away from either Diamond or a full mental breakdown.`,
-    "Platinum. You're good. Not 'good enough to say you're good' good, but good."
-  );
-  if (tier === "EMERALD") phrases.push(
-    "Emerald. The rank Riot invented so Plats could feel better about themselves.",
-    `Emerald ${div}. You tell people you're 'almost Diamond'. That's technically true.`,
-    "Emerald. Unironically closer to Diamond than most people will ever get. Respect."
-  );
-  if (tier === "DIAMOND") phrases.push(
-    "Diamond. Top 2% of players and somehow still flaming your jungler.",
-    `Diamond ${div}. At this point League is either your hobby or your problem. Possibly both.`,
-    "Diamond. You have no excuse for bad plays and you know it."
-  );
-  if (tier === "MASTER") phrases.push(
-    "Master tier. You have sacrificed sleep, social life, and sunlight for this.",
-    "Master. You are genuinely cracked and we're a little scared to bet against you.",
-    "Master tier. Your MMR is higher than your vitamin D levels."
-  );
-  if (tier === "GRANDMASTER") phrases.push(
-    "Grandmaster. At this point just go pro or touch grass. No in-between.",
-    "Grandmaster. You are better at this video game than 99.9% of humans alive. Seek help."
-  );
-  if (tier === "CHALLENGER") phrases.push(
-    "Challenger. We didn't expect to see you here. Your odds are basically 1.15x because you shouldn't be losing.",
-    "Challenger. You are the reason other players uninstall. Welcome to Runeterra Wagers."
-  );
-  if (tier === "UNRANKED") phrases.push(
-    "No ranked games found. Either you just installed or you're too scared to queue. Both are valid.",
-    "Unranked. Every Diamond player was once where you are. Most stayed there."
-  );
+  // ── CHAMPION-SPECIFIC (most important, prioritized) ───────────────────────
 
-  // ── LP-based ────────────────────────────────────────────────────────────────
-  if (lp !== null && lp >= 90) phrases.push(
-    `${lp} LP. You are one good game away from promotion. Or one bad one from a breakdown.`
-  );
-  if (lp !== null && lp <= 10 && games > 0) phrases.push(
-    `${lp} LP. You are clinging to this rank by your fingernails. We see you.`
-  );
+  // Stealth/Invisible champs
+  if (["Twitch","Evelynn","Shaco","Akshan","Talon","Kha'Zix","Khazix","Rengar"].includes(topChamp)) {
+    if (wr >= 55) matches.push({ tag: `${wr}% winrate on ${topChamp}`, text: `You win ${wr}% of your games by being completely invisible. Bold strategy. Cowardly, but bold.` });
+    else if (wr < 50) matches.push({ tag: `${topChamp} main`, text: `You picked the invisible champion and somehow still got found. Impressive in the worst way.` });
+    else matches.push({ tag: `${topChamp} main`, text: `Playing ${topChamp} means your opponents shouldn't see you coming. They do. Every time.` });
+  }
 
-  // ── Winrate-based ────────────────────────────────────────────────────────────
-  if (wr !== null && wr >= 60) phrases.push(
-    `${wr}% winrate. You're a menace in the best way. Betting on you makes sense.`,
-    `${wr}% winrate. That's not luck, that's a pattern. A beautiful, profitable pattern.`
-  );
-  if (wr !== null && wr >= 55 && wr < 60) phrases.push(
-    `${wr}% winrate. Consistently winning more than losing. Boring, effective, bankable.`
-  );
-  if (wr !== null && wr >= 50 && wr < 55) phrases.push(
-    `${wr}% winrate. You win just barely more than you lose. The market is pricing you correctly.`
-  );
-  if (wr !== null && wr >= 45 && wr < 50) phrases.push(
-    `${wr}% winrate. You lose more than you win. We're still taking your money either way.`
-  );
-  if (wr !== null && wr < 45 && games > 20) phrases.push(
-    `${wr}% winrate. Honestly respect the consistency. Consistently below 50%, but consistent.`
-  );
+  // Yasuo / Yone
+  if (topChamp === "Yasuo") {
+    if (wr >= 55) matches.push({ tag: `${wr}% winrate on Yasuo`, text: `You have a genuinely good winrate on Yasuo. You are the reason every Yasuo ban exists.` });
+    else if (wr < 45) matches.push({ tag: `Yasuo main`, text: `You have mastered the art of dying to your own Wind Wall. The 0/10 power spike is real.` });
+    else matches.push({ tag: `Yasuo main`, text: `Wind Wall saved a teammate once. You've been chasing that feeling ever since. You'll never find it again.` });
+  }
+  if (topChamp === "Yone") {
+    if (wr >= 55) matches.push({ tag: `${wr}% winrate on Yone`, text: `${wr}% on Yone. Yasuo's dead brother is somehow your path to success. Dark.` });
+    else matches.push({ tag: `Yone main`, text: `You killed Yasuo, came back as Yone, and somehow got worse. The lore is accurate.` });
+  }
 
-  // ── Games played ─────────────────────────────────────────────────────────────
-  if (games >= 500) phrases.push(
-    `${games} ranked games this season. At some point this stopped being a game and became a lifestyle.`
-  );
-  if (games >= 200 && games < 500) phrases.push(
-    `${games} ranked games. You have logged more hours in the Rift than at the gym. Probably.`
-  );
-  if (games >= 100 && games < 200) phrases.push(
-    `${games} games. You're committed. Not to therapy, but to ranked. We'll take it.`
-  );
-  if (games < 20 && games > 0) phrases.push(
-    `Only ${games} ranked games. Either new season or you're pacing yourself. Smart.`
-  );
+  // Teemo
+  if (topChamp === "Teemo") {
+    if (wr >= 55) matches.push({ tag: `${wr}% winrate on Teemo`, text: `You are winning ${wr}% of your games by being the most hated entity in the game. You have chosen violence. Correctly.` });
+    else matches.push({ tag: `Teemo main`, text: `You play Teemo, the most reported champion in history, and you still lose. That takes a special kind of commitment.` });
+  }
 
-  // ── Champion-based ───────────────────────────────────────────────────────────
-  if (topChamp === "Yasuo") phrases.push(
-    "Your most played is Yasuo. We respect the chaos. We do not trust the team comp.",
-    "Yasuo main detected. Wind Wall at the worst possible moment, guaranteed."
-  );
-  if (topChamp === "Zed") phrases.push(
-    "Zed one-trick. You have a montage. It has 47 views, 43 of which are yours."
-  );
-  if (topChamp === "Lux") phrases.push(
-    "Lux main. You're either the most annoying support or a mid laner who never roams. No in-between."
-  );
-  if (topChamp === "Thresh") phrases.push(
-    "Thresh main. You've hit a hook that made someone uninstall. You know exactly which one."
-  );
-  if (topChamp === "Ahri") phrases.push(
-    "Ahri main. You probably have a wallpaper of her. Your winrate is not as charming as she is."
-  );
-  if (topChamp === "Jinx") phrases.push(
-    "Jinx main. You love to int early and hypercarry late. Your support hates you."
-  );
-  if (topChamp === "Teemo") phrases.push(
-    "Teemo main. You are the villain and you have fully accepted this. Respect."
-  );
-  if (topChamp === "Darius") phrases.push(
-    "Darius main. NOXUS WILL PREVAIL. You have dunked on someone today. We can tell."
-  );
-  if (topChamp === "Katarina") phrases.push(
-    "Katarina main. When you're fed you're unstoppable. When you're not, it's the jungle's fault."
-  );
-  if (topChamp === "Vayne") phrases.push(
-    "Vayne main. Early game invisible, late game terrifying. Your laning phase is a bet in itself."
-  );
-  if (topChamp === "Master Yi") phrases.push(
-    "Master Yi main. Press R, click on someone, repeat. A bold strategy."
-  );
+  // Zed
+  if (topChamp === "Zed") {
+    if (wr >= 55) matches.push({ tag: `${wr}% winrate on Zed`, text: `${wr}% on Zed. You have a montage. It has exactly 47 views. 43 are yours.` });
+    else if (wr < 45) matches.push({ tag: `Zed main`, text: `You picked the assassin that's supposed to one-shot people and you still lose lane. The shadows cannot hide your MMR.` });
+    else matches.push({ tag: `Zed main`, text: `Zed main. You live by the blade. You also die by it, repeatedly, to the support.` });
+  }
 
-  // ── Mastery points ───────────────────────────────────────────────────────────
-  if (topPts >= 1000000) phrases.push(
-    `${(topPts/1000000).toFixed(1)}M mastery points on ${topChamp}. At this point you and ${topChamp} are the same person.`
-  );
-  if (topPts >= 500000 && topPts < 1000000) phrases.push(
-    `${Math.round(topPts/1000)}K mastery on ${topChamp}. You have devoted an embarrassing amount of time to this champion. We're not judging.`
-  );
-  if (topLevel === 7) phrases.push(
-    `Mastery 7 on ${topChamp}. Riot officially certified you as a ${topChamp} abuser. Congratulations.`
-  );
+  // Katarina
+  if (topChamp === "Katarina") {
+    if (wr >= 55) matches.push({ tag: `${wr}% winrate on Katarina`, text: `${wr}% on Katarina. You wait until everyone is at 10% HP and then press R. You call this skill. We call it profitable.` });
+    else matches.push({ tag: `Katarina main`, text: `Katarina requires zero deaths to be useful. Your KDA suggests a different playstyle.` });
+  }
 
-  // ── Summoner level ───────────────────────────────────────────────────────────
-  if (level >= 500) phrases.push(
-    `Level ${level}. You have been playing League since before some of your opponents were born.`
-  );
-  if (level >= 300 && level < 500) phrases.push(
-    `Level ${level}. Veteran status confirmed. The game has changed. You have not.`
-  );
-  if (level < 50 && level > 0) phrases.push(
-    `Level ${level}. Fresh account. We see you. Everyone sees you.`
-  );
+  // Vayne
+  if (topChamp === "Vayne") {
+    if (wr >= 55) matches.push({ tag: `${wr}% winrate on Vayne`, text: `${wr}% winrate on Vayne. You survived 15 minutes of being useless every game. The mental strength alone is impressive.` });
+    else matches.push({ tag: `Vayne main`, text: `Vayne is only good late game. You haven't reached late game without feeding in ${losses} attempts. Statistically fascinating.` });
+  }
 
-  // Fallback
-  if (phrases.length === 0) phrases.push(
-    "Account linked. Riot says you exist. We'll take their word for it.",
-    "Stats loaded. The numbers are... numbers. Place your bet."
-  );
+  // Lux
+  if (topChamp === "Lux") {
+    if (wr >= 55) matches.push({ tag: `${wr}% winrate on Lux`, text: `${wr}% on Lux. One ability. Point. Click. Win. You have optimized laziness into a career.` });
+    else matches.push({ tag: `Lux main`, text: `Your Lux misses the root but always hits the finisher on a teammate's kill. Every. Single. Game.` });
+  }
 
-  // Pick the most specific one (last relevant match wins, gives priority to specific conditions)
-  return phrases[phrases.length - 1];
+  // Thresh
+  if (topChamp === "Thresh") {
+    if (wr >= 55) matches.push({ tag: `${wr}% winrate on Thresh`, text: `${wr}% winrate on Thresh. One good hook every 5 minutes and your ADC thinks you're a god. Efficient.` });
+    else matches.push({ tag: `Thresh main`, text: `You play Thresh, the highest skill cap support, because you like having an excuse when the hook misses. Which is often.` });
+  }
+
+  // Blitzcrank
+  if (topChamp === "Blitzcrank") {
+    if (wr >= 55) matches.push({ tag: `${wr}% winrate on Blitzcrank`, text: `${wr}% on Blitzcrank. You press Q and something dies. You have convinced yourself this is strategy.` });
+    else matches.push({ tag: `Blitzcrank main`, text: `You play the champion with a literal grab ability and your ADC is still alone in lane. Remarkable.` });
+  }
+
+  // Darius
+  if (topChamp === "Darius") {
+    if (wr >= 55) matches.push({ tag: `${wr}% winrate on Darius`, text: `${wr}% on Darius. NOXUS WILL PREVAIL. You have not touched a skill shot in ${games} games and you're winning. Respect.` });
+    else matches.push({ tag: `Darius main`, text: `Darius is the champion designed for people who find clicking difficult. You are still losing. The game respects your courage.` });
+  }
+
+  // Garen
+  if (topChamp === "Garen") {
+    if (wr >= 55) matches.push({ tag: `${wr}% winrate on Garen`, text: `${wr}% winrate on Garen. Q. E. R. No skill shots. No excuses. Just results. We respect the simplicity.` });
+    else matches.push({ tag: `Garen main`, text: `Garen has three buttons and a passive that heals you. You are losing with this. The bush is not the problem.` });
+  }
+
+  // Master Yi
+  if (topChamp === "Master Yi") {
+    if (wr >= 55) matches.push({ tag: `${wr}% winrate on Master Yi`, text: `${wr}% on Master Yi. Press R. Left click. Repeat. You have found the exploit and you are not apologizing.` });
+    else matches.push({ tag: `Master Yi main`, text: `Master Yi only needs one kill to snowball. You haven't gotten that kill in ${losses} games. The jungle timers remain a mystery.` });
+  }
+
+  // Jinx
+  if (topChamp === "Jinx") {
+    if (wr >= 55) matches.push({ tag: `${wr}% winrate on Jinx`, text: `${wr}% on Jinx. You int the first 20 minutes then hypercarry. Your support has anxiety because of you specifically.` });
+    else matches.push({ tag: `Jinx main`, text: `Jinx needs to survive the early game. You do not survive the early game. The stats confirm what your support already knows.` });
+  }
+
+  // Ahri
+  if (topChamp === "Ahri") {
+    if (wr >= 55) matches.push({ tag: `${wr}% winrate on Ahri`, text: `${wr}% on Ahri. Your charm hits when it matters and misses when it doesn't. That's the whole champion distilled.` });
+    else matches.push({ tag: `Ahri main`, text: `Ahri has a 3-second dash with 3 charges and you still die to the immobile support. The skill expression is hiding from you.` });
+  }
+
+  // Fizz
+  if (topChamp === "Fizz") {
+    if (wr >= 55) matches.push({ tag: `${wr}% winrate on Fizz`, text: `${wr}% on Fizz. You press E when someone points a mouse at you and call it mechanics. It works though.` });
+    else matches.push({ tag: `Fizz main`, text: `Fizz's E makes you literally untargetable. You still die during it. We have questions.` });
+  }
+
+  // Nautilus
+  if (topChamp === "Nautilus") {
+    if (wr >= 55) matches.push({ tag: `${wr}% winrate on Nautilus`, text: `${wr}% on Nautilus. You press R and an entire team goes to sleep. This is technically strategy.` });
+    else matches.push({ tag: `Nautilus main`, text: `Every ability Nautilus has roots or knocks up. Your ADC is still 0-7. There is no saving some people.` });
+  }
+
+  // Draven
+  if (topChamp === "Draven") {
+    if (wr >= 55) matches.push({ tag: `${wr}% winrate on Draven`, text: `${wr}% on Draven. You catch the axes, you win the game, you collect the gold. The league of Draven is real and you live in it.` });
+    else matches.push({ tag: `Draven main`, text: `Draven literally gives you extra gold for catching axes. You drop them, you lose gold, you lose games. The math is not helping you.` });
+  }
+
+  // Nasus
+  if (topChamp === "Nasus") {
+    if (wr >= 55) matches.push({ tag: `${wr}% winrate on Nasus`, text: `${wr}% on Nasus. You farmed 800 stacks and became unkillable. Your opponents had 40 minutes to stop this. They did not.` });
+    else matches.push({ tag: `Nasus main`, text: `Nasus gets stronger every single minute by pressing Q on a minion. Your stack count suggests you have found ways to make this hard.` });
+  }
+
+  // Caitlyn
+  if (topChamp === "Caitlyn") {
+    if (wr >= 55) matches.push({ tag: `${wr}% winrate on Caitlyn`, text: `${wr}% on Caitlyn. You stand behind your team and shoot things from maximum range. Efficient. Safe. Boring. Effective.` });
+    else matches.push({ tag: `Caitlyn main`, text: `Caitlyn has the longest range in the game and you still find ways to get caught out. The traps are for your opponents, not yourself.` });
+  }
+
+  // Orianna
+  if (topChamp === "Orianna") {
+    if (wr >= 55) matches.push({ tag: `${wr}% winrate on Orianna`, text: `${wr}% on Orianna. One perfectly placed ultimate and an entire team disappears. You have done this ${wins} times.` });
+    else matches.push({ tag: `Orianna main`, text: `The ball is not where you think it is. It never is. That's the Orianna experience and you signed up for it.` });
+  }
+
+  // Soraka
+  if (topChamp === "Soraka") {
+    if (wr >= 55) matches.push({ tag: `${wr}% winrate on Soraka`, text: `${wr}% on Soraka. You have kept people alive who had no business surviving. You are a medical professional of the Rift.` });
+    else matches.push({ tag: `Soraka main`, text: `Soraka's entire job is to heal. Your ADC is still dying. The banana is missing its target.` });
+  }
+
+  // Pyke
+  if (topChamp === "Pyke") {
+    if (wr >= 55) matches.push({ tag: `${wr}% winrate on Pyke`, text: `${wr}% on Pyke. You play a support that steals kills and gets rich doing it. You are the problem and you are thriving.` });
+    else matches.push({ tag: `Pyke main`, text: `Pyke is an assassin who gives gold to teammates. You are losing gold and teammates simultaneously. Impressive balance.` });
+  }
+
+  // Ezreal
+  if (topChamp === "Ezreal") {
+    if (wr >= 55) matches.push({ tag: `${wr}% winrate on Ezreal`, text: `${wr}% on Ezreal. You hit skill shots for 40 minutes and slowly whittle down entire teams. Patience as a weapon.` });
+    else matches.push({ tag: `Ezreal main`, text: `Ezreal has a built-in dash and a global ultimate. You are neither escaping nor contributing globally. The Q hits minions well though.` });
+  }
+
+  // Lee Sin
+  if (topChamp === "Lee Sin") {
+    if (wr >= 55) matches.push({ tag: `${wr}% winrate on Lee Sin`, text: `${wr}% on Lee Sin. The insec works more than it should. Your opponents can hear the click and they are still not ready.` });
+    else matches.push({ tag: `Lee Sin main`, text: `Lee Sin has a skill floor so high that most players spend their career underneath it looking up. Welcome.` });
+  }
+
+  // Vi
+  if (topChamp === "Vi") {
+    if (wr >= 55) matches.push({ tag: `${wr}% winrate on Vi`, text: `${wr}% on Vi. You picked a target, pressed R, and made it their problem. Simple. Direct. Winning.` });
+    else matches.push({ tag: `Vi main`, text: `Vi locks on to one person with her ultimate and cannot be stopped. You somehow are. Every game.` });
+  }
+
+  // Shaco
+  if (topChamp === "Shaco") {
+    if (wr >= 55) matches.push({ tag: `${wr}% winrate on Shaco`, text: `${wr}% on Shaco. You have made ${wins} people paranoid about boxes in bushes. You are the reason people don't ward properly.` });
+    else matches.push({ tag: `Shaco main`, text: `Shaco requires deceiving the enemy. You are being deceived by your own win rate. The boxes are working against you now.` });
+  }
+
+  // Viktor
+  if (topChamp === "Viktor") {
+    if (wr >= 55) matches.push({ tag: `${wr}% winrate on Viktor`, text: `${wr}% on Viktor. You have embraced the glorious evolution and it is paying dividends. The machine wins.` });
+    else matches.push({ tag: `Viktor main`, text: `Viktor scales to become unstoppable. You have not reached the scale. The evolution is on hold.` });
+  }
+
+  // Syndra
+  if (topChamp === "Syndra") {
+    if (wr >= 55) matches.push({ tag: `${wr}% winrate on Syndra`, text: `${wr}% on Syndra. You collect balls and then throw them at someone's face for lethal damage. Art.` });
+    else matches.push({ tag: `Syndra main`, text: `Syndra's ultimate does more damage the more balls she has. You have been losing them. Literally.` });
+  }
+
+  // Vex
+  if (topChamp === "Vex") {
+    if (wr >= 55) matches.push({ tag: `${wr}% winrate on Vex`, text: `${wr}% on Vex. You are winning by being a depressed goth who hates dashes. The lane opponent had 3 dashes. You did not care.` });
+    else matches.push({ tag: `Vex main`, text: `Vex counter-dashes every mobility champion in the game. Your opponents apparently don't dash enough for you.` });
+  }
+
+  // Rengar
+  if (topChamp === "Rengar") {
+    if (wr >= 55) matches.push({ tag: `${wr}% winrate on Rengar`, text: `${wr}% on Rengar. One-shot from the bush. They never see it coming. ${wins} times they did not see it coming.` });
+    else matches.push({ tag: `Rengar main`, text: `Rengar is invisible before he jumps. They are still somehow ready. Your audio settings may need adjustment.` });
+  }
+
+  // Jhin
+  if (topChamp === "Jhin") {
+    if (wr >= 55) matches.push({ tag: `${wr}% winrate on Jhin`, text: `${wr}% on Jhin. Four bullets. Four kills. The performance continues and the critics are dead.` });
+    else matches.push({ tag: `Jhin main`, text: `Jhin reloads after 4 shots. In those 2 seconds you have managed to lose every game. The fourth shot carries theatrical weight you cannot support.` });
+  }
+
+  // ── WINRATE-FOCUSED when no specific champion match ──────────────────────
+  if (matches.length === 0 && topChamp && wr !== null) {
+    if (wr >= 60) matches.push({ tag: `${wr}% winrate on ${topChamp}`, text: `${wr}% on ${topChamp}. At this point you are not playing the game, you are farming it. The bet feels rigged. In your favour.` });
+    else if (wr >= 55) matches.push({ tag: `${wr}% winrate on ${topChamp}`, text: `${wr}% on ${topChamp}. Consistently better than average. You know something your opponents don't. They will figure it out eventually. Probably.` });
+    else if (wr >= 50) matches.push({ tag: `${wr}% winrate on ${topChamp}`, text: `${wr}% on ${topChamp}. You win just barely more than you lose. The universe is in fragile equilibrium and it depends on you.` });
+    else if (wr >= 45) matches.push({ tag: `${wr}% winrate on ${topChamp}`, text: `${wr}% on ${topChamp}. You are statistically feeding more than you're winning on your main. We're still taking your bet.` });
+    else matches.push({ tag: `${wr}% winrate on ${topChamp}`, text: `${wr}% on ${topChamp}. That's your main champion. That winrate. On your most played. We are not going to comment further.` });
+  }
+
+  // ── SECOND + THIRD CHAMP combos (if we still have no match) ─────────────
+  if (matches.length === 0 && topChamp && secondChamp) {
+    matches.push({ tag: `${topChamp} / ${secondChamp} main`, text: `Your top two champions are ${topChamp} and ${secondChamp}. No one has ever described themselves as a ${topChamp}/${secondChamp} main out loud. You are a pioneer.` });
+  }
+
+  // ── MASTERY POINTS ────────────────────────────────────────────────────────
+  if (topPts >= 1000000 && topChamp) {
+    matches.push({ tag: `${(topPts/1000000).toFixed(1)}M mastery on ${topChamp}`, text: `You have played ${topChamp} long enough to accumulate ${(topPts/1000000).toFixed(1)} million mastery points. This is either dedication or a cry for help. We're not qualified to say which.` });
+  } else if (topPts >= 500000 && topChamp) {
+    matches.push({ tag: `${Math.round(topPts/1000)}K mastery on ${topChamp}`, text: `${Math.round(topPts/1000)}K mastery points on ${topChamp}. You have devoted a statistically concerning amount of your life to this champion.` });
+  } else if (topLevel === 7 && topChamp) {
+    matches.push({ tag: `Mastery 7 on ${topChamp}`, text: `Riot has officially certified you as a ${topChamp} enthusiast. The grey border confirms what your opponents already feared.` });
+  }
+
+  // ── RANK-BASED FALLBACK ───────────────────────────────────────────────────
+  if (matches.length === 0) {
+    if (tier === "IRON") matches.push({ tag: "Iron ranked", text: "The algorithm has seen your games and placed you carefully. We respect the honesty of the system." });
+    else if (tier === "BRONZE") matches.push({ tag: "Bronze ranked", text: "Bronze. The rank of people who are 100% sure it's their teammates. It is not their teammates." });
+    else if (tier === "SILVER") matches.push({ tag: "Silver ranked", text: "Silver. You are average. This is fine. Most people are. The bet is still yours to place." });
+    else if (tier === "GOLD") matches.push({ tag: "Gold ranked", text: "Gold. You escaped Silver, which statistically 40% of players never do. Take the win." });
+    else if (tier === "PLATINUM") matches.push({ tag: "Platinum ranked", text: "Platinum. You are good at this game and insufferable at parties when it comes up." });
+    else if (tier === "EMERALD") matches.push({ tag: "Emerald ranked", text: "Emerald. The rank Riot invented so Platinum players could feel like they climbed." });
+    else if (tier === "DIAMOND") matches.push({ tag: "Diamond ranked", text: "Diamond. Top 2% of players. Still blaming teammates. Both things are true." });
+    else if (tier === "MASTER") matches.push({ tag: "Master tier", text: "Master tier. You have no social life and your MMR is proof that the sacrifice was worth it." });
+    else if (tier === "GRANDMASTER") matches.push({ tag: "Grandmaster", text: "Grandmaster. Just go pro or get some sunlight. The in-between no longer exists for you." });
+    else if (tier === "CHALLENGER") matches.push({ tag: "Challenger", text: "Challenger. Your odds are 1.15x because Riot's data says you should not be losing. Do not lose." });
+    else matches.push({ tag: "Account linked", text: "Your account exists and Riot confirms it. That's a start. The rest is up to you." });
+  }
+
+  // Return the last (most specific) match
+  return matches[matches.length - 1];
 }
 
 // ─── LINKED PLAYER CARD ───────────────────────────────────────────────────────
@@ -980,9 +1060,12 @@ function LinkedPlayerCard({ user, setUser, region }) {
       )}
 
       {!loading && profile?.phrase && (
-        <div style={{ padding: "12px 24px", borderTop: "1px solid #2D2D32", background: "#1A1A1E" }}>
-          <div style={{ fontSize: 13, color: "#C8AA6E", fontStyle: "italic", lineHeight: 1.5, fontFamily: "DM Sans, sans-serif" }}>
-            "{profile.phrase}"
+        <div style={{ padding: "14px 24px", borderTop: "1px solid #2D2D32", background: "#1A1A1E", display: "flex", gap: 12, alignItems: "flex-start" }}>
+          <div style={{ flexShrink: 0, background: "#C8AA6E18", border: "1px solid #C8AA6E33", borderRadius: 4, padding: "3px 10px", fontSize: 11, color: "#C8AA6E", fontWeight: 700, letterSpacing: 0.5, whiteSpace: "nowrap", marginTop: 2 }}>
+            {profile.phrase.tag}
+          </div>
+          <div style={{ fontSize: 13, color: "#C0C0C8", fontStyle: "italic", lineHeight: 1.6 }}>
+            {profile.phrase.text}
           </div>
         </div>
       )}
