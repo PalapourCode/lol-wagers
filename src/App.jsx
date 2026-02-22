@@ -2,16 +2,10 @@ import { useState, useEffect, useCallback } from "react";
 
 // ─── CONSTANTS ───────────────────────────────────────────────────────────────
 const STARTING_BALANCE = 500;
+const spendableBalance = (balance) => Math.max(0, balance - STARTING_BALANCE);
 const MAX_BET = 30;
 const RAKE = 0.05; // 5%
 // API key is handled server-side via /api/riot
-
-// Rank multipliers for odds (lower rank = higher payout potential)
-const RANK_ODDS = {
-  IRON: 1.6, BRONZE: 1.55, SILVER: 1.5, GOLD: 1.45,
-  PLATINUM: 1.4, EMERALD: 1.38, DIAMOND: 1.35,
-  MASTER: 1.25, GRANDMASTER: 1.2, CHALLENGER: 1.15, UNRANKED: 1.5
-};
 
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
 const getRankTier = (rankStr) => {
@@ -19,9 +13,27 @@ const getRankTier = (rankStr) => {
   return rankStr.split(" ")[0].toUpperCase();
 };
 
-const getOdds = (rankStr) => {
-  const tier = getRankTier(rankStr);
-  return RANK_ODDS[tier] || 1.5;
+// Pure winrate-based odds — higher WR = lower multiplier (you're favoured)
+// No ranked data or unranked = 1.60x flat
+const getOdds = (rankStr, winrate) => {
+  if (winrate == null) return 1.60;
+  if (winrate >= 65) return 1.25;  // Smurf Tax
+  if (winrate >= 58) return 1.50;  // Favoured
+  if (winrate >= 52) return 1.70;  // Balanced  ← bumped from 1.50
+  if (winrate >= 47) return 2.00;  // Coin Flip ← bumped from 1.75
+  if (winrate >= 40) return 2.50;  // Underdog  ← bumped from 2.10
+  return 3.00;                     // Chaos      ← bumped from 2.50
+};
+
+// Describe the odds tier in plain english for UI
+const getOddsLabel = (winrate) => {
+  if (winrate == null) return "Standard";
+  if (winrate >= 65) return "Smurf Tax";
+  if (winrate >= 58) return "Favoured";
+  if (winrate >= 52) return "Balanced";
+  if (winrate >= 47) return "Coin Flip";
+  if (winrate >= 40) return "Underdog";
+  return "Chaos";
 };
 
 const formatMoney = (n) => `$${Number(n).toFixed(2)}`;
@@ -338,8 +350,9 @@ function RecentWinsScroll() {
 // ─── AUTH PAGE ───────────────────────────────────────────────────────────────
 function AuthPage({ onLogin }) {
   const [mode, setMode] = useState("login");
-  const [username, setUsername] = useState("");
+  const [username, setUsername] = useState(() => localStorage.getItem("rw_saved_username") || "");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(() => !!localStorage.getItem("rw_saved_username"));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -348,6 +361,13 @@ function AuthPage({ onLogin }) {
     setLoading(true); setError("");
     try {
       const data = await apiCall("/api/auth", { action: mode === "register" ? "register" : "login", username: username.trim(), password });
+      if (rememberMe) {
+        localStorage.setItem("rw_saved_username", username.trim());
+        localStorage.setItem("rw_session_user", JSON.stringify(data.user));
+      } else {
+        localStorage.removeItem("rw_saved_username");
+        localStorage.removeItem("rw_session_user");
+      }
       onLogin(data.user);
     } catch (e) { setError(e.message); }
     finally { setLoading(false); }
@@ -355,7 +375,7 @@ function AuthPage({ onLogin }) {
 
   const features = [
     { icon: "target", title: "Bet on Your Own Games", desc: "Wager on your next ranked Solo/Duo match. Only wins count · no match fixing possible." },
-    { icon: "coin", title: "Earn Virtual Gold", desc: "Win games, stack gold. Your rank determines your odds · Iron players earn up to 1.6x." },
+    { icon: "coin", title: "Earn Virtual Gold", desc: "Win games, stack gold. Your winrate determines your odds · below 40% WR earns up to 3.00x." },
     { icon: "gift", title: "Redeem for Rewards", desc: "Use your gold balance to claim RP, skins, or champion bundles. Coming soon." },
     { icon: "chart", title: "Compete on Leaderboards", desc: "See where you rank among your friends. Who's the best at backing themselves?" },
   ];
@@ -507,6 +527,32 @@ function AuthPage({ onLogin }) {
               </div>
             )}
 
+            {/* Remember me */}
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+              <div
+                onClick={() => setRememberMe(v => !v)}
+                style={{
+                  width: 18, height: 18, borderRadius: 3, flexShrink: 0, cursor: "pointer",
+                  border: `1px solid ${rememberMe ? "#C8AA6E" : "#35353A"}`,
+                  background: rememberMe ? "#C8AA6E" : "transparent",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  transition: "all 0.15s"
+                }}
+              >
+                {rememberMe && (
+                  <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                    <path d="M1 4L3.5 6.5L9 1" stroke="#1A1A1E" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                )}
+              </div>
+              <span
+                onClick={() => setRememberMe(v => !v)}
+                style={{ fontSize: 13, color: "#C0C0C8", cursor: "pointer", userSelect: "none" }}
+              >
+                Remember me on this device
+              </span>
+            </div>
+
             {loading ? <Loader text="Authenticating..." /> : (
               <button onClick={handle} style={{
                 width: "100%", background: "linear-gradient(135deg, #C8AA6E, #785A28)",
@@ -573,8 +619,8 @@ function AuthPage({ onLogin }) {
             <div style={{ fontSize: 13, letterSpacing: 2, color: "#C8AA6E", marginBottom: 14, fontFamily: "Barlow Condensed, sans-serif", fontWeight: 600 }}>COMING SOON · REWARDS SHOP</div>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {[
-                { item: "Champion Skin", price: "$1,250 gold", icon: "diamond" },
-                { item: "Riot Points Pack (650 RP)", price: "$500 gold", icon: "rp" },
+                { item: "Champion Skin", price: "$800 gold", icon: "diamond" },
+                { item: "Riot Points Pack (650 RP)", price: "$350 gold", icon: "rp" },
                 { item: "Champion Bundle", price: "$800 gold", emoji: "⚔" },
               ].map(r => (
                 <div key={r.item} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid #222225" }}>
@@ -998,7 +1044,7 @@ function LinkedPlayerCard({ user, setUser, region }) {
                 </div>
               )}
               <div style={{ fontSize: 13, color: "#A0A0A8" }}>
-                Odds: <span style={{ color: "#C8AA6E", fontWeight: 700 }}>{getOdds(user.rank)}x</span>
+                Odds: <span style={{ color: "#C8AA6E", fontWeight: 700 }}>{getOdds(user.rank, profile?.winrate)}x</span> <span style={{ fontSize: 11, color: "#7A7A82", marginLeft: 4 }}>({getOddsLabel(profile?.winrate)})</span>
               </div>
             </div>
           ) : null}
@@ -1219,7 +1265,7 @@ function PlaceBet({ user, setUser, toast }) {
   const [loading, setLoading] = useState(false);
 
   const activeBet = user.bets?.find(b => b.status === "pending");
-  const odds = getOdds(user.rank);
+  const odds = getOdds(user.rank, user.winrate);
   const potentialWin = ((amount * odds) * (1 - RAKE)).toFixed(2);
 
   const place = async () => {
@@ -1859,7 +1905,12 @@ function DebugPanel({ user, setUser, toast, showResult }) {
 
 // ─── MAIN APP ─────────────────────────────────────────────────────────────────
 export default function App() {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(() => {
+    try {
+      const saved = localStorage.getItem("rw_session_user");
+      return saved ? JSON.parse(saved) : null;
+    } catch { return null; }
+  });
   const [tab, setTab] = useState("dashboard");
   const [toast, setToast] = useState(null);
   const [region, setRegion] = useState("euw1");
