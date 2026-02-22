@@ -9,6 +9,8 @@ async function getUser(username) {
   return {
     username: u.username,
     balance: Number(u.balance),
+    realBalance: Number(u.real_balance || 0),
+    skinCredits: Number(u.skin_credits || 0),
     lolAccount: u.lol_account,
     puuid: u.puuid,
     rank: u.rank,
@@ -22,7 +24,8 @@ async function getUser(username) {
       placedAt: Number(b.placed_at),
       resolvedAt: b.resolved_at ? Number(b.resolved_at) : null,
       matchId: b.match_id,
-      result: b.result
+      result: b.result,
+      mode: b.mode || "virtual"
     }))
   };
 }
