@@ -419,13 +419,14 @@ function AuthPage({ onLogin }) {
             {howItWorks.map((item, i) => (
               <div key={i} style={{ display: "flex", gap: 16, alignItems: "flex-start", animation: `fadeInLeft 0.7s ease ${0.1 * i}s both` }}>
                 <div style={{
-                  width: 36, height: 36, borderRadius: 6, flexShrink: 0,
+                  width: 40, height: 40, borderRadius: 6, flexShrink: 0,
                   background: "linear-gradient(135deg, #C8AA6E22, #C8AA6E08)",
-                  border: "1px solid #C8AA6E44",
+                  border: "1px solid #C8AA6E55",
                   display: "flex", alignItems: "center", justifyContent: "center",
-                  color: "#C8AA6E", fontSize: 11, fontWeight: 700, letterSpacing: 1
+                  color: "#C8AA6E", fontSize: 14, fontWeight: 700, letterSpacing: 0,
+                  fontFamily: "Barlow Condensed, sans-serif"
                 }}>{item.step}</div>
-                <div style={{ color: "#E0E0E0", fontSize: 15, lineHeight: 1.7, paddingTop: 6 }}>
+                <div style={{ color: "#E0E0E0", fontSize: 15, lineHeight: 1.75, paddingTop: 8, fontWeight: 400 }}>
                   {item.text}
                 </div>
               </div>
@@ -435,14 +436,14 @@ function AuthPage({ onLogin }) {
           {/* Rank odds table */}
           <div style={{ marginTop: 40, background: "#24242888", border: "1px solid #2A2A2E", borderRadius: 8, padding: 20 }}>
             <div style={{ fontSize: 12, letterSpacing: 3, color: "#C8AA6E", marginBottom: 16 }}>PAYOUT MULTIPLIERS BY RANK</div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px 24px" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px 24px" }}>
               {[
                 ["Iron", "1.60x"], ["Bronze", "1.55x"], ["Silver", "1.50x"], ["Gold", "1.45x"],
                 ["Platinum", "1.40x"], ["Emerald", "1.38x"], ["Diamond", "1.35x"], ["Master+", "1.15–1.25x"]
               ].map(([rank, odds]) => (
                 <div key={rank} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "4px 0", borderBottom: "1px solid #222225" }}>
                   <span style={{ fontSize: 12, color: "#A0A0A8", fontFamily: "DM Sans, sans-serif" }}>{rank}</span>
-                  <span style={{ fontSize: 12, color: "#C8AA6E", fontWeight: 700 }}>{odds}</span>
+                  <span style={{ fontSize: 15, color: "#C8AA6E", fontWeight: 700 }}>{odds}</span>
                 </div>
               ))}
             </div>
@@ -569,7 +570,7 @@ function AuthPage({ onLogin }) {
 
           {/* Coming soon rewards */}
           <div style={{ marginTop: 28, background: "linear-gradient(135deg, #C8AA6E11, #785A2811)", border: "1px solid #C8AA6E22", borderRadius: 8, padding: 20 }}>
-            <div style={{ fontSize: 9, letterSpacing: 4, color: "#C8AA6E88", marginBottom: 12 }}>COMING SOON · REWARDS SHOP</div>
+            <div style={{ fontSize: 13, letterSpacing: 2, color: "#C8AA6E", marginBottom: 14, fontFamily: "Barlow Condensed, sans-serif", fontWeight: 600 }}>COMING SOON · REWARDS SHOP</div>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {[
                 { item: "Champion Skin", price: "$1,250 gold", icon: "diamond" },
@@ -581,11 +582,11 @@ function AuthPage({ onLogin }) {
                     <RewardIcon type={r.icon} />
                     <span style={{ fontSize: 13, color: "#E0E0E0", fontFamily: "DM Sans, sans-serif" }}>{r.item}</span>
                   </div>
-                  <span style={{ fontSize: 12, color: "#C8AA6E", fontWeight: 700 }}>{r.price}</span>
+                  <span style={{ fontSize: 14, color: "#C8AA6E", fontWeight: 700 }}>{r.price}</span>
                 </div>
               ))}
             </div>
-            <div style={{ marginTop: 12, fontSize: 12, color: "#A0A0A8", fontFamily: "DM Sans, sans-serif", fontStyle: "italic" }}>
+            <div style={{ marginTop: 12, fontSize: 13, color: "#A0A0A8", fontStyle: "italic" }}>
               * Rewards are virtual and for demonstration purposes
             </div>
           </div>
