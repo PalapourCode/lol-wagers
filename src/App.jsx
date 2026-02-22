@@ -800,6 +800,89 @@ function Leaderboard() {
 
 
 
+// ─── LIVE FEED ───────────────────────────────────────────────────────────────
+const LIVE_CHAMPIONS = ["Jinx","Yasuo","Zed","Lux","Thresh","Ahri","Vi","Camille","Ezreal","Caitlyn","Jhin","Syndra","Akali","Yone","Vex","Garen","Darius","Nasus","Renekton","Orianna","Viktor","Azir","Katarina","LeBlanc","Twisted Fate"];
+const LIVE_RANKS = ["IRON","BRONZE","SILVER","GOLD","PLATINUM","EMERALD","DIAMOND","MASTER"];
+const LIVE_DIVS = ["IV","III","II","I"];
+const RANK_COLORS = { IRON:"#9d9d9d", BRONZE:"#b87333", SILVER:"#a8b2c0", GOLD:"#C8AA6E", PLATINUM:"#4cc9b0", EMERALD:"#22c55e", DIAMOND:"#6ab0f5", MASTER:"#c084fc" };
+
+function randomGame() {
+  const rank = LIVE_RANKS[Math.floor(Math.random() * LIVE_RANKS.length)];
+  const div = ["MASTER"].includes(rank) ? "" : " " + LIVE_DIVS[Math.floor(Math.random() * 4)];
+  const champ = LIVE_CHAMPIONS[Math.floor(Math.random() * LIVE_CHAMPIONS.length)];
+  const bet = [5, 10, 15, 20, 25, 30][Math.floor(Math.random() * 6)];
+  const mins = Math.floor(Math.random() * 35) + 15;
+  const k = Math.floor(Math.random() * 15);
+  const d = Math.floor(Math.random() * 8);
+  const a = Math.floor(Math.random() * 12);
+  return { rank, div, champ, bet, mins, k, d, a, id: Math.random() };
+}
+
+function LiveFeed() {
+  const [games, setGames] = useState(() => Array.from({ length: 4 }, randomGame));
+  const [flash, setFlash] = useState(null);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const idx = Math.floor(Math.random() * 4);
+      const newGame = randomGame();
+      setFlash(idx);
+      setTimeout(() => setFlash(null), 600);
+      setGames(prev => prev.map((g, i) => i === idx ? newGame : g));
+    }, 2800);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div style={{ background: "#0A1628", border: "1px solid #785A2833", borderRadius: 8, overflow: "hidden" }}>
+      {/* Header */}
+      <div style={{ padding: "14px 16px", borderBottom: "1px solid #785A2818", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ fontSize: 9, letterSpacing: 4, color: "#785A2877" }}>LIVE GAMES</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#C8464A", boxShadow: "0 0 6px #C8464A", animation: "pulse 1.5s ease-in-out infinite" }} />
+          <span style={{ fontSize: 9, color: "#C8464A", letterSpacing: 2 }}>LIVE</span>
+        </div>
+      </div>
+
+      {/* Game rows */}
+      <div>
+        {games.map((g, i) => (
+          <div key={g.id} style={{
+            padding: "10px 16px",
+            borderBottom: i < 3 ? "1px solid #785A2811" : "none",
+            background: flash === i ? "#C8AA6E06" : "transparent",
+            transition: "background 0.3s ease"
+          }}>
+            {/* Top row: champion + bet */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 4 }}>
+              <span style={{ fontSize: 13, fontWeight: 700, color: "#F0E6D3", letterSpacing: 0.5 }}>{g.champ}</span>
+              <span style={{ fontSize: 12, fontWeight: 900, color: "#C8AA6E" }}>${g.bet}</span>
+            </div>
+            {/* Bottom row: rank + game time + kda */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span style={{ fontSize: 10, color: RANK_COLORS[g.rank] || "#785A28", letterSpacing: 1, fontWeight: 600 }}>
+                {g.rank}{g.div}
+              </span>
+              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                <span style={{ fontSize: 10, color: "#785A2866", fontFamily: "Crimson Text, serif" }}>{g.mins}m</span>
+                <span style={{ fontSize: 10, color: "#785A2855" }}>{g.k}/{g.d}/{g.a}</span>
+              </div>
+            </div>
+            {/* Progress bar showing game time */}
+            <div style={{ marginTop: 6, height: 2, background: "#785A2811", borderRadius: 1 }}>
+              <div style={{ height: "100%", width: `${(g.mins / 50) * 100}%`, background: `linear-gradient(90deg, #785A28, ${RANK_COLORS[g.rank] || "#C8AA6E"})`, borderRadius: 1, transition: "width 0.5s ease" }} />
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ padding: "8px 16px", borderTop: "1px solid #785A2811", textAlign: "center" }}>
+        <span style={{ fontSize: 9, color: "#785A2844", letterSpacing: 2 }}>UPDATES EVERY FEW SECONDS</span>
+      </div>
+    </div>
+  );
+}
+
 // ─── VICTORY / DEFEAT SCREEN ─────────────────────────────────────────────────
 function ResultScreen({ result, bet, onClose }) {
   const won = result?.win;
@@ -1108,6 +1191,7 @@ export default function App() {
         @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes shimmerBar { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+        @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
         input, select { outline: none; }
         input::placeholder { color: #785A2888; }
         ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: #010A13; } ::-webkit-scrollbar-thumb { background: #785A28; border-radius: 3px; }
@@ -1156,73 +1240,91 @@ export default function App() {
       <div style={{ display: "grid", gridTemplateColumns: "220px 1fr 220px", gap: 0, minHeight: "calc(100vh - 100px)", animation: "fadeIn 0.3s ease" }}>
 
         {/* LEFT SIDEBAR */}
-        <div style={{ padding: "24px 16px 24px 24px", borderRight: "1px solid #785A2818", display: "flex", flexDirection: "column", gap: 16 }}>
+        <div style={{ padding: "24px 16px 24px 24px", borderRight: "1px solid #785A2818", display: "flex", flexDirection: "column", gap: 14 }}>
 
           {/* Player card */}
-          <div style={{ background: "#0A1628", border: "1px solid #785A2833", borderRadius: 8, padding: 16 }}>
-            <div style={{ fontSize: 9, letterSpacing: 3, color: "#785A2866", marginBottom: 10 }}>SUMMONER</div>
-            <div style={{ color: "#C8AA6E", fontSize: 14, fontWeight: 700, marginBottom: 2 }}>{user.username}</div>
+          <div style={{ background: "#0A1628", border: "1px solid #785A2833", borderRadius: 8, padding: "18px 16px" }}>
+            <div style={{ fontSize: 9, letterSpacing: 4, color: "#785A2877", marginBottom: 10 }}>SUMMONER</div>
+            <div style={{ color: "#C8AA6E", fontSize: 17, fontWeight: 900, letterSpacing: 1, marginBottom: 4 }}>{user.username}</div>
             {user.lolAccount ? (
               <>
-                <div style={{ color: "#785A28", fontSize: 11, fontFamily: "Crimson Text, serif", marginBottom: 8 }}>{user.lolAccount}</div>
-                <div style={{ display: "inline-block", background: "#C8AA6E22", border: "1px solid #C8AA6E44", borderRadius: 3, padding: "3px 10px", fontSize: 10, color: "#C8AA6E", letterSpacing: 1 }}>
+                <div style={{ color: "#F0E6D388", fontSize: 13, fontFamily: "Crimson Text, serif", marginBottom: 10 }}>{user.lolAccount}</div>
+                <div style={{
+                  display: "inline-block", background: "linear-gradient(135deg, #C8AA6E22, #785A2811)",
+                  border: "1px solid #C8AA6E55", borderRadius: 3, padding: "4px 12px",
+                  fontSize: 11, color: "#C8AA6E", letterSpacing: 2, fontWeight: 700
+                }}>
                   {user.rank || "UNRANKED"}
+                </div>
+                <div style={{ marginTop: 10, display: "flex", gap: 8 }}>
+                  <div style={{ flex: 1, textAlign: "center", background: "#010A13", borderRadius: 4, padding: "8px 4px" }}>
+                    <div style={{ color: "#0BC4AA", fontSize: 18, fontWeight: 900 }}>{stats.wins}</div>
+                    <div style={{ color: "#785A2877", fontSize: 9, letterSpacing: 2, marginTop: 2 }}>WINS</div>
+                  </div>
+                  <div style={{ flex: 1, textAlign: "center", background: "#010A13", borderRadius: 4, padding: "8px 4px" }}>
+                    <div style={{ color: "#C8464A", fontSize: 18, fontWeight: 900 }}>{stats.losses}</div>
+                    <div style={{ color: "#785A2877", fontSize: 9, letterSpacing: 2, marginTop: 2 }}>LOSSES</div>
+                  </div>
+                  <div style={{ flex: 1, textAlign: "center", background: "#010A13", borderRadius: 4, padding: "8px 4px" }}>
+                    <div style={{ color: "#C8AA6E", fontSize: 18, fontWeight: 900 }}>
+                      {stats.wins + stats.losses > 0 ? `${Math.round(stats.wins / (stats.wins + stats.losses) * 100)}%` : "--"}
+                    </div>
+                    <div style={{ color: "#785A2877", fontSize: 9, letterSpacing: 2, marginTop: 2 }}>W/R</div>
+                  </div>
                 </div>
               </>
             ) : (
-              <div style={{ color: "#785A2866", fontSize: 11, fontFamily: "Crimson Text, serif", fontStyle: "italic" }}>No account linked</div>
+              <div style={{ color: "#785A2866", fontSize: 13, fontFamily: "Crimson Text, serif", fontStyle: "italic", marginTop: 4 }}>No account linked</div>
             )}
           </div>
 
-          {/* Quick stats */}
-          <div style={{ background: "#0A1628", border: "1px solid #785A2833", borderRadius: 8, padding: 16 }}>
-            <div style={{ fontSize: 9, letterSpacing: 3, color: "#785A2866", marginBottom: 12 }}>STATS</div>
-            {[
-              { label: "Balance", value: formatMoney(user.balance), color: "#C8AA6E" },
-              { label: "Wins", value: stats.wins, color: "#0BC4AA" },
-              { label: "Losses", value: stats.losses, color: "#C8464A" },
-              { label: "Win Rate", value: stats.wins + stats.losses > 0 ? `${Math.round(stats.wins / (stats.wins + stats.losses) * 100)}%` : "—", color: "#F0E6D3" },
-            ].map(s => (
-              <div key={s.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "7px 0", borderBottom: "1px solid #785A2811" }}>
-                <span style={{ fontSize: 11, color: "#785A2888", fontFamily: "Crimson Text, serif" }}>{s.label}</span>
-                <span style={{ fontSize: 13, fontWeight: 700, color: s.color }}>{s.value}</span>
-              </div>
-            ))}
+          {/* Balance card */}
+          <div style={{ background: "linear-gradient(135deg, #0d1f3c, #0A1628)", border: "1px solid #C8AA6E22", borderRadius: 8, padding: "18px 16px" }}>
+            <div style={{ fontSize: 9, letterSpacing: 4, color: "#785A2877", marginBottom: 6 }}>BALANCE</div>
+            <div style={{ color: "#C8AA6E", fontSize: 28, fontWeight: 900, letterSpacing: 1 }}>{formatMoney(user.balance)}</div>
+            <div style={{ marginTop: 10, height: 2, background: "#785A2818", borderRadius: 2 }}>
+              <div style={{ height: "100%", width: `${Math.min(100, (user.balance / 500) * 100)}%`, background: "linear-gradient(90deg, #785A28, #C8AA6E)", borderRadius: 2, transition: "width 0.5s ease" }} />
+            </div>
+            <div style={{ color: "#785A2866", fontSize: 10, marginTop: 6, fontFamily: "Crimson Text, serif" }}>of $500.00 starting gold</div>
           </div>
 
-          {/* Active bet status */}
+          {/* Active bet */}
           {(() => {
             const activeBet = user.bets?.find(b => b.status === "pending");
             return activeBet ? (
-              <div style={{ background: "linear-gradient(135deg, #C8AA6E11, #785A2811)", border: "1px solid #C8AA6E33", borderRadius: 8, padding: 16 }}>
-                <div style={{ fontSize: 9, letterSpacing: 3, color: "#C8AA6E88", marginBottom: 10 }}>ACTIVE BET</div>
-                <div style={{ color: "#C8AA6E", fontSize: 22, fontWeight: 900 }}>{formatMoney(activeBet.amount)}</div>
-                <div style={{ color: "#785A28", fontSize: 11, marginTop: 4, fontFamily: "Crimson Text, serif" }}>
-                  Win to earn <span style={{ color: "#0BC4AA" }}>{formatMoney(activeBet.potentialWin)}</span>
+              <div style={{ background: "#0A1628", border: "1px solid #C8AA6E44", borderRadius: 8, padding: "18px 16px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                  <div style={{ fontSize: 9, letterSpacing: 4, color: "#C8AA6E88" }}>ACTIVE BET</div>
+                  <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#C8AA6E", boxShadow: "0 0 8px #C8AA6E", animation: "pulse 1.5s ease-in-out infinite" }} />
                 </div>
-                <div style={{ color: "#785A2866", fontSize: 10, marginTop: 6 }}>{timeAgo(activeBet.placedAt)}</div>
-                <div style={{ marginTop: 10, height: 3, background: "#785A2822", borderRadius: 2, overflow: "hidden" }}>
-                  <div style={{ height: "100%", width: "100%", background: "linear-gradient(90deg, #C8AA6E, #0BC4AA)", borderRadius: 2, animation: "shimmerBar 2s linear infinite" }} />
+                <div style={{ color: "#C8AA6E", fontSize: 26, fontWeight: 900 }}>{formatMoney(activeBet.amount)}</div>
+                <div style={{ color: "#785A28", fontSize: 13, marginTop: 4, fontFamily: "Crimson Text, serif" }}>
+                  Potential win: <span style={{ color: "#0BC4AA", fontWeight: 700 }}>{formatMoney(activeBet.potentialWin)}</span>
                 </div>
+                <div style={{ color: "#785A2855", fontSize: 11, marginTop: 4, fontFamily: "Crimson Text, serif" }}>{timeAgo(activeBet.placedAt)}</div>
               </div>
             ) : (
-              <div style={{ background: "#0A162866", border: "1px solid #785A2811", borderRadius: 8, padding: 16, textAlign: "center" }}>
-                <div style={{ fontSize: 24, marginBottom: 8 }}>🎯</div>
-                <div style={{ color: "#785A2866", fontSize: 11, fontFamily: "Crimson Text, serif", fontStyle: "italic" }}>No active bet</div>
-                <div style={{ color: "#785A2844", fontSize: 10, marginTop: 4 }}>Place a bet to begin</div>
+              <div style={{ background: "#0A162844", border: "1px solid #785A2818", borderRadius: 8, padding: "18px 16px", textAlign: "center" }}>
+                <div style={{ width: 32, height: 32, borderRadius: "50%", border: "2px dashed #785A2833", margin: "0 auto 10px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <div style={{ width: 10, height: 10, background: "#785A2833", borderRadius: "50%" }} />
+                </div>
+                <div style={{ color: "#785A2866", fontSize: 13, fontFamily: "Crimson Text, serif" }}>No active bet</div>
               </div>
             );
           })()}
 
-          {/* Rank odds mini table */}
-          <div style={{ background: "#0A1628", border: "1px solid #785A2833", borderRadius: 8, padding: 16 }}>
-            <div style={{ fontSize: 9, letterSpacing: 3, color: "#785A2866", marginBottom: 12 }}>ODDS TABLE</div>
-            {[["Iron","1.60x"],["Bronze","1.55x"],["Silver","1.50x"],["Gold","1.45x"],["Plat","1.40x"],["Emerald","1.38x"],["Diamond","1.35x"],["Master+","1.15x"]].map(([r,o]) => (
-              <div key={r} style={{ display: "flex", justifyContent: "space-between", padding: "4px 0", borderBottom: "1px solid #785A2811" }}>
-                <span style={{ fontSize: 10, color: user.rank?.startsWith(r.toUpperCase()) ? "#C8AA6E" : "#785A2866", fontFamily: "Crimson Text, serif" }}>{r}</span>
-                <span style={{ fontSize: 10, color: user.rank?.startsWith(r.toUpperCase()) ? "#C8AA6E" : "#785A2844", fontWeight: user.rank?.startsWith(r.toUpperCase()) ? 700 : 400 }}>{o}</span>
-              </div>
-            ))}
+          {/* Odds table */}
+          <div style={{ background: "#0A1628", border: "1px solid #785A2833", borderRadius: 8, padding: "18px 16px" }}>
+            <div style={{ fontSize: 9, letterSpacing: 4, color: "#785A2877", marginBottom: 14 }}>MULTIPLIERS</div>
+            {[["IRON","1.60x"],["BRONZE","1.55x"],["SILVER","1.50x"],["GOLD","1.45x"],["PLATINUM","1.40x"],["EMERALD","1.38x"],["DIAMOND","1.35x"],["MASTER+","1.15x"]].map(([r,o]) => {
+              const isMyRank = user.rank?.toUpperCase().startsWith(r.split("+")[0]);
+              return (
+                <div key={r} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 8px", marginBottom: 2, borderRadius: 3, background: isMyRank ? "#C8AA6E11" : "transparent", border: isMyRank ? "1px solid #C8AA6E22" : "1px solid transparent" }}>
+                  <span style={{ fontSize: 11, color: isMyRank ? "#C8AA6E" : "#785A2866", fontWeight: isMyRank ? 700 : 400 }}>{r}</span>
+                  <span style={{ fontSize: 12, color: isMyRank ? "#C8AA6E" : "#785A2844", fontWeight: 700 }}>{o}</span>
+                </div>
+              );
+            })}
           </div>
         </div>
 
@@ -1247,73 +1349,51 @@ export default function App() {
         </div>
 
         {/* RIGHT SIDEBAR */}
-        <div style={{ padding: "24px 24px 24px 16px", borderLeft: "1px solid #785A2818", display: "flex", flexDirection: "column", gap: 16 }}>
+        <div style={{ padding: "24px 24px 24px 16px", borderLeft: "1px solid #785A2818", display: "flex", flexDirection: "column", gap: 14 }}>
 
-          {/* Recent bet history preview */}
-          <div style={{ background: "#0A1628", border: "1px solid #785A2833", borderRadius: 8, padding: 16 }}>
-            <div style={{ fontSize: 9, letterSpacing: 3, color: "#785A2866", marginBottom: 12 }}>RECENT BETS</div>
-            {user.bets?.length ? (
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {[...user.bets].reverse().slice(0, 4).map(bet => (
-                  <div key={bet.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 0", borderBottom: "1px solid #785A2811" }}>
+          {/* Live Games Feed */}
+          <LiveFeed />
+
+          {/* Recent bets */}
+          <div style={{ background: "#0A1628", border: "1px solid #785A2833", borderRadius: 8, padding: "18px 16px" }}>
+            <div style={{ fontSize: 9, letterSpacing: 4, color: "#785A2877", marginBottom: 14 }}>YOUR RECENT BETS</div>
+            {user.bets?.filter(b => b.status !== "pending").length ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                {[...user.bets].reverse().filter(b => b.status !== "pending").slice(0, 4).map(bet => (
+                  <div key={bet.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 10px", borderRadius: 4, background: bet.status === "won" ? "#0BC4AA08" : "#C8464A08", border: `1px solid ${bet.status === "won" ? "#0BC4AA22" : "#C8464A22"}` }}>
                     <div>
-                      <div style={{ fontSize: 10, color: bet.status === "won" ? "#0BC4AA" : bet.status === "lost" ? "#C8464A" : "#C8AA6E", letterSpacing: 1 }}>
-                        {bet.status === "won" ? "WIN" : bet.status === "lost" ? "LOSS" : "ACTIVE"}
+                      <div style={{ fontSize: 12, color: bet.status === "won" ? "#0BC4AA" : "#C8464A", fontWeight: 700, letterSpacing: 1 }}>
+                        {bet.status === "won" ? "WIN" : "LOSS"}
                       </div>
-                      {bet.result?.champion && <div style={{ fontSize: 10, color: "#785A2877", fontFamily: "Crimson Text, serif" }}>{bet.result.champion}</div>}
+                      {bet.result?.champion && <div style={{ fontSize: 11, color: "#785A28", fontFamily: "Crimson Text, serif", marginTop: 1 }}>{bet.result.champion} · {bet.result.kills}/{bet.result.deaths}/{bet.result.assists}</div>}
                     </div>
-                    <div style={{ textAlign: "right" }}>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: bet.status === "won" ? "#0BC4AA" : bet.status === "lost" ? "#C8464A" : "#C8AA6E" }}>
-                        {bet.status === "won" ? "+" : bet.status === "lost" ? "-" : ""}{formatMoney(bet.status === "won" ? bet.potentialWin : bet.amount)}
-                      </div>
+                    <div style={{ fontSize: 14, fontWeight: 900, color: bet.status === "won" ? "#0BC4AA" : "#C8464A" }}>
+                      {bet.status === "won" ? "+" : "-"}{formatMoney(bet.status === "won" ? bet.potentialWin : bet.amount)}
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <div style={{ color: "#785A2844", fontSize: 11, fontFamily: "Crimson Text, serif", fontStyle: "italic", textAlign: "center", padding: "12px 0" }}>No bets yet</div>
+              <div style={{ color: "#785A2844", fontSize: 13, fontFamily: "Crimson Text, serif", fontStyle: "italic", textAlign: "center", padding: "16px 0" }}>
+                No completed bets yet
+              </div>
             )}
           </div>
 
-          {/* Tips */}
-          <div style={{ background: "#0A1628", border: "1px solid #785A2833", borderRadius: 8, padding: 16 }}>
-            <div style={{ fontSize: 9, letterSpacing: 3, color: "#785A2866", marginBottom: 12 }}>TIPS</div>
+          {/* Rules card */}
+          <div style={{ background: "#0A1628", border: "1px solid #785A2833", borderRadius: 8, padding: "18px 16px" }}>
+            <div style={{ fontSize: 9, letterSpacing: 4, color: "#785A2877", marginBottom: 14 }}>HOUSE RULES</div>
             {[
-              { icon: "🎯", tip: "Bet before you queue, not mid-champ select" },
-              { icon: "📈", tip: "Lower ranks earn higher multipliers" },
-              { icon: "⚡", tip: "Only ranked Solo/Duo games count" },
-              { icon: "🔒", tip: "One active bet at a time per account" },
-            ].map((t, i) => (
-              <div key={i} style={{ display: "flex", gap: 8, alignItems: "flex-start", marginBottom: 10 }}>
-                <span style={{ fontSize: 14, flexShrink: 0 }}>{t.icon}</span>
-                <span style={{ fontSize: 11, color: "#785A28", fontFamily: "Crimson Text, serif", lineHeight: 1.5 }}>{t.tip}</span>
+              ["Solo/Duo ranked only", "Flex & normals don't count"],
+              ["$1 — $30 per bet", "One active bet at a time"],
+              ["5% rake on winnings", "Losses return nothing"],
+              ["Results via Riot API", "No disputes possible"],
+            ].map(([rule, sub], i) => (
+              <div key={i} style={{ paddingBottom: 10, marginBottom: 10, borderBottom: i < 3 ? "1px solid #785A2811" : "none" }}>
+                <div style={{ fontSize: 12, color: "#F0E6D388", fontWeight: 600 }}>{rule}</div>
+                <div style={{ fontSize: 11, color: "#785A2866", fontFamily: "Crimson Text, serif", marginTop: 2 }}>{sub}</div>
               </div>
             ))}
-          </div>
-
-          {/* Coming soon rewards box */}
-          <div style={{ background: "linear-gradient(135deg, #C8AA6E0A, #785A280A)", border: "1px solid #C8AA6E22", borderRadius: 8, padding: 16 }}>
-            <div style={{ fontSize: 9, letterSpacing: 3, color: "#C8AA6E66", marginBottom: 12 }}>REWARDS SHOP</div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {[
-                { item: "650 RP Pack", price: "500g", emoji: "💎" },
-                { item: "Champion Skin", price: "1250g", emoji: "🎨" },
-                { item: "Champion Bundle", price: "800g", emoji: "⚔️" },
-              ].map(r => (
-                <div key={r.item} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 0", borderBottom: "1px solid #785A2811" }}>
-                  <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                    <span style={{ fontSize: 12 }}>{r.emoji}</span>
-                    <span style={{ fontSize: 11, color: "#F0E6D355", fontFamily: "Crimson Text, serif" }}>{r.item}</span>
-                  </div>
-                  <span style={{ fontSize: 10, color: "#C8AA6E88", fontWeight: 700 }}>{r.price}</span>
-                </div>
-              ))}
-            </div>
-            <div style={{ marginTop: 12, textAlign: "center" }}>
-              <div style={{ display: "inline-block", background: "#C8AA6E11", border: "1px solid #C8AA6E22", borderRadius: 3, padding: "4px 12px", fontSize: 9, color: "#C8AA6E66", letterSpacing: 2 }}>
-                COMING SOON
-              </div>
-            </div>
           </div>
         </div>
       </div>
