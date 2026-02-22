@@ -122,18 +122,88 @@ function Toast({ message, type, onClose }) {
 }
 
 
+// ─── SVG ICON COMPONENTS ─────────────────────────────────────────────────────
+function FeatureIcon({ type }) {
+  const s = { width: 28, height: 28, flexShrink: 0 };
+  const icons = {
+    target: (
+      <svg {...s} viewBox="0 0 28 28" fill="none">
+        <circle cx="14" cy="14" r="12" stroke="#C8AA6E" strokeWidth="1.5"/>
+        <circle cx="14" cy="14" r="7" stroke="#C8AA6E" strokeWidth="1.5" strokeDasharray="3 2"/>
+        <circle cx="14" cy="14" r="3" fill="#C8AA6E"/>
+        <line x1="14" y1="2" x2="14" y2="6" stroke="#C8AA6E" strokeWidth="1.5" strokeLinecap="round"/>
+        <line x1="14" y1="22" x2="14" y2="26" stroke="#C8AA6E" strokeWidth="1.5" strokeLinecap="round"/>
+        <line x1="2" y1="14" x2="6" y2="14" stroke="#C8AA6E" strokeWidth="1.5" strokeLinecap="round"/>
+        <line x1="22" y1="14" x2="26" y2="14" stroke="#C8AA6E" strokeWidth="1.5" strokeLinecap="round"/>
+      </svg>
+    ),
+    coin: (
+      <svg {...s} viewBox="0 0 28 28" fill="none">
+        <circle cx="14" cy="14" r="11" stroke="#C8AA6E" strokeWidth="1.5"/>
+        <circle cx="14" cy="14" r="7" fill="#C8AA6E22" stroke="#C8AA6E" strokeWidth="1"/>
+        <text x="14" y="18" textAnchor="middle" fill="#C8AA6E" fontSize="10" fontWeight="700" fontFamily="sans-serif">$</text>
+      </svg>
+    ),
+    gift: (
+      <svg {...s} viewBox="0 0 28 28" fill="none">
+        <rect x="4" y="13" width="20" height="12" rx="1.5" stroke="#C8AA6E" strokeWidth="1.5"/>
+        <rect x="6" y="10" width="16" height="5" rx="1" stroke="#C8AA6E" strokeWidth="1.5"/>
+        <line x1="14" y1="10" x2="14" y2="25" stroke="#C8AA6E" strokeWidth="1.5"/>
+        <path d="M14 10 C14 10 10 10 10 7 C10 4 14 4 14 7" stroke="#C8AA6E" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
+        <path d="M14 10 C14 10 18 10 18 7 C18 4 14 4 14 7" stroke="#C8AA6E" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
+      </svg>
+    ),
+    chart: (
+      <svg {...s} viewBox="0 0 28 28" fill="none">
+        <line x1="4" y1="24" x2="24" y2="24" stroke="#C8AA6E" strokeWidth="1.5" strokeLinecap="round"/>
+        <rect x="5" y="16" width="4" height="8" rx="1" fill="#C8AA6E" opacity="0.5"/>
+        <rect x="12" y="10" width="4" height="14" rx="1" fill="#C8AA6E" opacity="0.75"/>
+        <rect x="19" y="5" width="4" height="19" rx="1" fill="#C8AA6E"/>
+      </svg>
+    ),
+  };
+  return icons[type] || null;
+}
+
+function RewardIcon({ type }) {
+  const s = { width: 20, height: 20, flexShrink: 0 };
+  const icons = {
+    diamond: (
+      <svg {...s} viewBox="0 0 20 20" fill="none">
+        <polygon points="10,2 18,8 14,18 6,18 2,8" stroke="#0BC4AA" strokeWidth="1.5" fill="#0BC4AA22"/>
+        <polygon points="10,5 15,9 12,15 8,15 5,9" fill="#0BC4AA" opacity="0.4"/>
+      </svg>
+    ),
+    rp: (
+      <svg {...s} viewBox="0 0 20 20" fill="none">
+        <circle cx="10" cy="10" r="8" stroke="#C8AA6E" strokeWidth="1.5"/>
+        <text x="10" y="14" textAnchor="middle" fill="#C8AA6E" fontSize="8" fontWeight="700" fontFamily="sans-serif">RP</text>
+      </svg>
+    ),
+    bundle: (
+      <svg {...s} viewBox="0 0 20 20" fill="none">
+        <rect x="2" y="7" width="16" height="11" rx="1.5" stroke="#C8AA6E" strokeWidth="1.5"/>
+        <path d="M6 7 C6 4 14 4 14 7" stroke="#C8AA6E" strokeWidth="1.5" fill="none"/>
+        <line x1="10" y1="10" x2="10" y2="15" stroke="#C8AA6E" strokeWidth="1.5" strokeLinecap="round"/>
+        <line x1="7" y1="12.5" x2="13" y2="12.5" stroke="#C8AA6E" strokeWidth="1.5" strokeLinecap="round"/>
+      </svg>
+    ),
+  };
+  return icons[type] || null;
+}
+
 // ─── AUTH DYNAMIC COMPONENTS ─────────────────────────────────────────────────
 const TICKER_EVENTS = [
-  "palapourheal won $18.50 on Jinx — GOLD IV",
-  "xXSlayerXx lost $10.00 on Yasuo — SILVER II",
-  "MidOrFeed won $25.65 on Ahri — PLATINUM I",
-  "TopLaner99 won $12.35 on Darius — BRONZE III",
-  "JungleKing lost $20.00 on Vi — GOLD II",
-  "ADCarry won $28.50 on Caitlyn — DIAMOND IV",
-  "SupportMain won $9.50 on Thresh — SILVER I",
-  "CarryDiff won $14.25 on Akali — EMERALD II",
-  "OnetrICK lost $15.00 on Zed — PLATINUM III",
-  "RiftWalker won $22.80 on Orianna — MASTER",
+  "palapourheal won $18.50 on Jinx · GOLD IV",
+  "xXSlayerXx lost $10.00 on Yasuo · SILVER II",
+  "MidOrFeed won $25.65 on Ahri · PLATINUM I",
+  "TopLaner99 won $12.35 on Darius · BRONZE III",
+  "JungleKing lost $20.00 on Vi · GOLD II",
+  "ADCarry won $28.50 on Caitlyn · DIAMOND IV",
+  "SupportMain won $9.50 on Thresh · SILVER I",
+  "CarryDiff won $14.25 on Akali · EMERALD II",
+  "OnetrICK lost $15.00 on Zed · PLATINUM III",
+  "RiftWalker won $22.80 on Orianna · MASTER",
 ];
 
 function LiveTicker() {
@@ -152,7 +222,7 @@ function LiveTicker() {
       <div style={{ display: "flex", alignItems: "center", gap: 0, whiteSpace: "nowrap", transform: `translateX(-${offset}px)`, transition: "none" }}>
         {[...TICKER_EVENTS, ...TICKER_EVENTS].map((e, i) => (
           <span key={i} style={{ fontSize: 13, color: e.includes("won") ? "#3FB950" : "#F85149", fontFamily: "DM Sans, sans-serif", padding: "0 24px", flexShrink: 0 }}>
-            <span style={{ color: "#C8AA6E88", marginRight: 8 }}>◆</span>{e}
+            {e}
           </span>
         ))}
       </div>
@@ -284,17 +354,17 @@ function AuthPage({ onLogin }) {
   };
 
   const features = [
-    { icon: "⚔️", title: "Bet on Your Own Games", desc: "Wager on your next ranked Solo/Duo match. Only wins count — no match fixing possible." },
-    { icon: "🏆", title: "Earn Virtual Gold", desc: "Win games, stack gold. Your rank determines your odds — Iron players earn up to 1.6x." },
-    { icon: "🎁", title: "Redeem for Rewards", desc: "Use your gold balance to claim RP, skins, or champion bundles. Coming soon." },
-    { icon: "📊", title: "Compete on Leaderboards", desc: "See where you rank among your friends. Who's the best at backing themselves?" },
+    { icon: "target", title: "Bet on Your Own Games", desc: "Wager on your next ranked Solo/Duo match. Only wins count · no match fixing possible." },
+    { icon: "coin", title: "Earn Virtual Gold", desc: "Win games, stack gold. Your rank determines your odds · Iron players earn up to 1.6x." },
+    { icon: "gift", title: "Redeem for Rewards", desc: "Use your gold balance to claim RP, skins, or champion bundles. Coming soon." },
+    { icon: "chart", title: "Compete on Leaderboards", desc: "See where you rank among your friends. Who's the best at backing themselves?" },
   ];
 
   const howItWorks = [
     { step: "01", text: "Create an account & link your LoL profile via icon verification" },
     { step: "02", text: "Place a bet ($1–$30) before queuing into ranked" },
     { step: "03", text: "Play your game. Win = earn gold. Lose = lose your stake." },
-    { step: "04", text: "Check your result — Riot API verifies it automatically" },
+    { step: "04", text: "Check your result · Riot API verifies it automatically" },
   ];
 
   return (
@@ -322,7 +392,7 @@ function AuthPage({ onLogin }) {
       {/* Top brand bar */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 48px", borderBottom: "1px solid #2D2D32" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <div style={{ width: 32, height: 32, background: "linear-gradient(135deg, #C8AA6E, #785A28)", borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>⚔</div>
+          <img src="/logo.png" alt="Runeterra Wagers" style={{ width: 44, height: 44, objectFit: "contain" }} />
           <div>
             <div style={{ fontSize: 9, letterSpacing: 5, color: "#A0A0A8" }}>RUNETERRA</div>
             <div style={{ fontSize: 16, fontWeight: 700, color: "#C8AA6E", lineHeight: 1, fontFamily: "Barlow Condensed, sans-serif" }}>WAGERS</div>
@@ -339,7 +409,7 @@ function AuthPage({ onLogin }) {
       {/* Main split layout */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 420px 1fr", gap: 0, minHeight: "calc(100vh - 73px)", alignItems: "start" }}>
 
-        {/* LEFT PANEL — How it works */}
+        {/* LEFT PANEL · How it works */}
         <div style={{ padding: "60px 40px 60px 48px", animation: "fadeInLeft 0.7s ease" }}>
           <div style={{ fontSize: 12, letterSpacing: 3, color: "#C8AA6E", marginBottom: 8 }}>HOW IT WORKS</div>
           <h2 style={{ fontSize: 30, fontWeight: 800, color: "#F0F0F0", fontFamily: "Barlow Condensed, sans-serif", marginBottom: 32, lineHeight: 1.2 }}>
@@ -379,12 +449,14 @@ function AuthPage({ onLogin }) {
           </div>
         </div>
 
-        {/* CENTER — Login form */}
+        {/* CENTER · Login form */}
         <div style={{ padding: "60px 0", borderLeft: "1px solid #252528", borderRight: "1px solid #252528" }}>
           <div style={{ padding: "0 36px" }}>
             {/* Hero */}
             <div style={{ textAlign: "center", marginBottom: 36 }}>
-              <div style={{ fontSize: 64, marginBottom: 8, animation: "float 4s ease-in-out infinite" }}>⚔️</div>
+              <div style={{ marginBottom: 12, animation: "float 4s ease-in-out infinite" }}>
+              <img src="/logo.png" alt="Runeterra Wagers" style={{ width: 96, height: 96, objectFit: "contain", filter: "drop-shadow(0 0 20px #C8AA6E55)" }} />
+            </div>
               <h1 style={{ fontSize: 42, fontWeight: 900, color: "#C8AA6E", margin: "0 0 4px", animation: "glow 3s ease-in-out infinite", lineHeight: 1, fontFamily: "Barlow Condensed, sans-serif" }}>
                 BET ON<br /><span style={{ color: "#F0F0F0" }}>YOURSELF</span>
               </h1>
@@ -430,7 +502,7 @@ function AuthPage({ onLogin }) {
 
             {error && (
               <div style={{ background: "#C8464A11", border: "1px solid #C8464A33", borderRadius: 3, padding: "10px 14px", marginBottom: 14 }}>
-                <p style={{ color: "#C8464A", fontSize: 12, margin: 0, fontFamily: "DM Sans, sans-serif" }}>⚠ {error}</p>
+                <p style={{ color: "#F85149", fontSize: 13, margin: 0 }}>{error}</p>
               </div>
             )}
 
@@ -451,8 +523,8 @@ function AuthPage({ onLogin }) {
 
             {mode === "register" && (
               <div style={{ background: "#C8AA6E11", border: "1px solid #C8AA6E22", borderRadius: 4, padding: "12px 16px", textAlign: "center" }}>
-                <p style={{ color: "#C8AA6E", fontSize: 13, margin: 0, fontFamily: "DM Sans, sans-serif" }}>
-                  🎁 You start with <strong>$500 in virtual gold</strong> — no real money needed
+                <p style={{ color: "#C8AA6E", fontSize: 13, margin: 0 }}>
+                  You start with <strong>$500 in virtual gold</strong>. No real money needed.
                 </p>
               </div>
             )}
@@ -460,9 +532,9 @@ function AuthPage({ onLogin }) {
             <div style={{ marginTop: 24, padding: "16px", background: "#24242866", borderRadius: 4, border: "1px solid #2D2D32" }}>
               <div style={{ fontSize: 10, letterSpacing: 3, color: "#C8AA6E88", marginBottom: 10 }}>PLATFORM INFO</div>
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                {["Virtual currency only — no real money", "Solo/Duo ranked games only", "$30 max bet per game", "5% platform rake on winnings"].map(t => (
+                {["Virtual currency only · no real money", "Solo/Duo ranked games only", "$30 max bet per game", "5% platform rake on winnings"].map(t => (
                   <div key={t} style={{ fontSize: 15, color: "#D0D0D8", fontFamily: "DM Sans, sans-serif", display: "flex", gap: 8, alignItems: "center" }}>
-                    <span style={{ color: "#C8AA6E" }}>◆</span> {t}
+                    {t}
                   </div>
                 ))}
               </div>
@@ -470,7 +542,7 @@ function AuthPage({ onLogin }) {
           </div>
         </div>
 
-        {/* RIGHT PANEL — Features / rewards */}
+        {/* RIGHT PANEL · Features / rewards */}
         <div style={{ padding: "60px 48px 60px 40px", animation: "fadeInRight 0.7s ease" }}>
           <div style={{ fontSize: 12, letterSpacing: 3, color: "#C8AA6E", marginBottom: 8 }}>FEATURES</div>
           <h2 style={{ fontSize: 30, fontWeight: 800, color: "#F0F0F0", fontFamily: "Barlow Condensed, sans-serif", marginBottom: 32, lineHeight: 1.2 }}>
@@ -485,7 +557,7 @@ function AuthPage({ onLogin }) {
                 animation: `fadeInRight 0.7s ease ${0.1 * i}s both`
               }}>
                 <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
-                  <span style={{ fontSize: 20, flexShrink: 0 }}>{f.icon}</span>
+                  <FeatureIcon type={f.icon} />
                   <div>
                     <div style={{ color: "#C8AA6E", fontSize: 13, fontWeight: 700, marginBottom: 4 }}>{f.title}</div>
                     <div style={{ color: "#E0E0E0", fontSize: 15, fontFamily: "DM Sans, sans-serif", lineHeight: 1.7 }}>{f.desc}</div>
@@ -497,16 +569,16 @@ function AuthPage({ onLogin }) {
 
           {/* Coming soon rewards */}
           <div style={{ marginTop: 28, background: "linear-gradient(135deg, #C8AA6E11, #785A2811)", border: "1px solid #C8AA6E22", borderRadius: 8, padding: 20 }}>
-            <div style={{ fontSize: 9, letterSpacing: 4, color: "#C8AA6E88", marginBottom: 12 }}>COMING SOON — REWARDS SHOP</div>
+            <div style={{ fontSize: 9, letterSpacing: 4, color: "#C8AA6E88", marginBottom: 12 }}>COMING SOON · REWARDS SHOP</div>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {[
-                { item: "Champion Skin", price: "$1,250 gold", emoji: "🎨" },
-                { item: "Riot Points Pack (650 RP)", price: "$500 gold", emoji: "💎" },
-                { item: "Champion Bundle", price: "$800 gold", emoji: "⚔️" },
+                { item: "Champion Skin", price: "$1,250 gold", icon: "diamond" },
+                { item: "Riot Points Pack (650 RP)", price: "$500 gold", icon: "rp" },
+                { item: "Champion Bundle", price: "$800 gold", emoji: "⚔" },
               ].map(r => (
                 <div key={r.item} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid #222225" }}>
                   <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                    <span>{r.emoji}</span>
+                    <RewardIcon type={r.icon} />
                     <span style={{ fontSize: 13, color: "#E0E0E0", fontFamily: "DM Sans, sans-serif" }}>{r.item}</span>
                   </div>
                   <span style={{ fontSize: 12, color: "#C8AA6E", fontWeight: 700 }}>{r.price}</span>
@@ -570,7 +642,7 @@ function LinkAccount({ user, setUser, region, setRegion, toast }) {
         throw new Error(`Wrong icon! You currently have icon #${summoner.profileIconId} equipped. Please equip icon #${requiredIconId} in the League client first.`);
       }
 
-      // Icon matches — link the account
+      // Icon matches · link the account
       const rank = await riot.getRankedInfo(pendingAccount.puuid, region);
       const data = await apiCall("/api/user", {
         action: "linkAccount",
@@ -714,11 +786,11 @@ function PlaceBet({ user, setUser, toast }) {
 
   return (
     <div style={{ background: "#242428", border: "1px solid #2D2D32", borderRadius: 4, padding: 24 }}>
-      <div style={{ fontSize: 10, letterSpacing: 3, color: "#A0A0A8", marginBottom: 20 }}>PLACE BET — NEXT RANKED GAME</div>
+      <div style={{ fontSize: 10, letterSpacing: 3, color: "#A0A0A8", marginBottom: 20 }}>PLACE BET · NEXT RANKED GAME</div>
 
       {activeBet ? (
         <div style={{ background: "#1A1A1E", border: "1px solid #C8AA6E44", borderRadius: 3, padding: 20 }}>
-          <div style={{ color: "#C8AA6E", fontSize: 13, marginBottom: 8 }}>⏳ Active Bet</div>
+          <div style={{ color: "#C8AA6E", fontSize: 13, marginBottom: 8, display: "flex", alignItems: "center", gap: 8 }}><span style={{ display: "inline-block", width: 8, height: 8, borderRadius: "50%", background: "#C8AA6E", animation: "pulse 1.5s ease-in-out infinite" }} /> Active Bet</div>
           <div style={{ color: "#F0F0F0", fontSize: 24, fontWeight: 700 }}>{formatMoney(activeBet.amount)}</div>
           <div style={{ color: "#A0A0A8", fontSize: 13, marginTop: 4 }}>
             Win to earn <span style={{ color: "#0BC4AA" }}>{formatMoney(activeBet.potentialWin)}</span>
@@ -845,7 +917,7 @@ function ResolveBet({ user, setUser, region, toast, showResult }) {
         onMouseEnter={e => { e.target.style.background = "#C8AA6E22"; }}
         onMouseLeave={e => { e.target.style.background = "transparent"; }}
       >
-        {loading ? "Checking Riot API..." : "🔍 Check My Last Game"}
+        {loading ? "Checking Riot API..." : "Check My Last Game"}
       </button>
     </div>
   );
@@ -881,7 +953,7 @@ function BetHistory({ bets }) {
                   {bet.status.toUpperCase()}
                 </span>
                 {bet.result && <span style={{ color: "#A0A0A8", fontSize: 12, fontFamily: "DM Sans, sans-serif" }}>
-                  {bet.result.champion} — {bet.result.kills}/{bet.result.deaths}/{bet.result.assists}
+                  {bet.result.champion} · {bet.result.kills}/{bet.result.deaths}/{bet.result.assists}
                 </span>}
               </div>
               <div style={{ color: "#A0A0A8", fontSize: 11, marginTop: 4 }}>{timeAgo(bet.placedAt)}</div>
@@ -1115,11 +1187,31 @@ function ResultScreen({ result, bet, onClose }) {
       }}>
 
         {/* Big icon */}
-        <div style={{
-          fontSize: 80, marginBottom: 16, lineHeight: 1,
-          animation: "floatIcon 3s ease-in-out infinite"
-        }}>
-          {won ? "🏆" : "💀"}
+        <div style={{ marginBottom: 16, animation: "floatIcon 3s ease-in-out infinite" }}>
+          {won ? (
+            <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
+              <circle cx="40" cy="40" r="38" fill="#C8AA6E22" stroke="#C8AA6E" strokeWidth="1.5"/>
+              <path d="M20 28 C20 18 60 18 60 28 L60 44 C60 52 52 58 40 58 C28 58 20 52 20 44Z" fill="#C8AA6E"/>
+              <rect x="28" y="56" width="24" height="6" rx="2" fill="#C8AA6E"/>
+              <rect x="24" y="60" width="32" height="5" rx="2" fill="#A07830"/>
+              <rect x="14" y="28" width="8" height="18" rx="4" fill="#C8AA6E"/>
+              <rect x="58" y="28" width="8" height="18" rx="4" fill="#C8AA6E"/>
+              <circle cx="31" cy="38" r="5" fill="#1A1A1E"/>
+              <circle cx="49" cy="38" r="5" fill="#1A1A1E"/>
+            </svg>
+          ) : (
+            <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
+              <circle cx="40" cy="40" r="38" fill="#F8514922" stroke="#F85149" strokeWidth="1.5"/>
+              <ellipse cx="40" cy="37" rx="20" ry="18" fill="#F85149"/>
+              <circle cx="32" cy="34" r="4" fill="#1A1A1E"/>
+              <circle cx="48" cy="34" r="4" fill="#1A1A1E"/>
+              <rect x="28" y="44" width="4" height="8" rx="2" fill="#1A1A1E"/>
+              <rect x="36" y="44" width="4" height="10" rx="2" fill="#1A1A1E"/>
+              <rect x="44" y="44" width="4" height="8" rx="2" fill="#1A1A1E"/>
+              <ellipse cx="40" cy="55" rx="12" ry="4" fill="#C8464A"/>
+              <path d="M28 27 L24 18 M40 25 L40 16 M52 27 L56 18" stroke="#F85149" strokeWidth="2.5" strokeLinecap="round"/>
+            </svg>
+          )}
         </div>
 
         {/* Win/Loss title */}
@@ -1274,7 +1366,7 @@ function DebugPanel({ user, setUser, toast, showResult }) {
         background: "#1a1a2e", border: "1px solid #444", color: "#888",
         padding: "6px 12px", borderRadius: 3, cursor: "pointer",
         fontFamily: "monospace", fontSize: 11
-      }}>🛠 debug</button>
+      }}>debug</button>
       {open && (
         <div style={{
           position: "absolute", bottom: 36, right: 0, background: "#1a1a2e",
@@ -1384,7 +1476,7 @@ export default function App() {
         </div>
       </div>
 
-      {/* Content — wide 3-col layout */}
+      {/* Content · wide 3-col layout */}
       <div style={{ display: "grid", gridTemplateColumns: "220px 1fr 220px", gap: 0, minHeight: "calc(100vh - 100px)", animation: "fadeIn 0.3s ease" }}>
 
         {/* LEFT SIDEBAR */}
@@ -1533,7 +1625,7 @@ export default function App() {
             <div style={{ fontSize: 12, letterSpacing: 3, color: "#C8AA6E", marginBottom: 14 }}>HOUSE RULES</div>
             {[
               ["Solo/Duo ranked only", "Flex & normals don't count"],
-              ["$1 — $30 per bet", "One active bet at a time"],
+              ["$1 · $30 per bet", "One active bet at a time"],
               ["5% rake on winnings", "Losses return nothing"],
               ["Results via Riot API", "No disputes possible"],
             ].map(([rule, sub], i) => (
