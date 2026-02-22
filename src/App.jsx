@@ -1,9 +1,10 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 
 // ─── CONSTANTS ───────────────────────────────────────────────────────────────
 const STARTING_BALANCE = 500;
 const spendableBalance = (balance) => Math.max(0, balance - STARTING_BALANCE);
-const MAX_BET = 30;
+const MAX_BET = 30; // virtual only
+const MAX_REAL_BET = 1.00; // $1 max for real money
 const RAKE = 0.05; // 5%
 // API key is handled server-side via /api/riot
 
@@ -1260,20 +1261,28 @@ function LinkAccount({ user, setUser, region, setRegion, toast }) {
 }
 
 // ─── PLACE BET ───────────────────────────────────────────────────────────────
-function PlaceBet({ user, setUser, toast }) {
-  const [amount, setAmount] = useState(10);
+
+// ─── PLACE BET (UPDATED — supports virtual and real money modes) ──────────────
+function PlaceBet({ user, setUser, toast, betMode }) {
+  const [amount, setAmount] = useState(betMode === "real" ? 1 : 10);
   const [loading, setLoading] = useState(false);
 
+  const isReal = betMode === "real";
+  const maxBet = isReal ? MAX_REAL_BET : MAX_BET;
   const activeBet = user.bets?.find(b => b.status === "pending");
   const odds = getOdds(user.rank, user.winrate);
-  const potentialWin = ((amount * odds) * (1 - RAKE)).toFixed(2);
+  const rake = isReal ? 0 : RAKE; // no rake on real bets — stake returned + profit split
+  const potentialWin = isReal
+    ? (amount * odds).toFixed(2) // full payout shown (stake back + profit as credits)
+    : ((amount * odds) * (1 - RAKE)).toFixed(2);
+  const availableBalance = isReal ? user.realBalance : user.balance;
 
   const place = async () => {
     if (!user.lolAccount) return toast("Link your LoL account first", "error");
     if (activeBet) return toast("You already have an active bet!", "error");
-    if (amount > MAX_BET) return toast(`Max bet is $${MAX_BET}`, "error");
-    if (amount > user.balance) return toast("Insufficient balance", "error");
-    if (amount < 1) return toast("Minimum bet is $1", "error");
+    if (amount > maxBet) return toast(`Max bet is $${maxBet.toFixed(2)}`, "error");
+    if (amount > availableBalance) return toast(`Insufficient ${isReal ? "real" : "virtual"} balance`, "error");
+    if (amount < (isReal ? 0.10 : 1)) return toast(`Minimum bet is ${isReal ? "$0.10" : "$1"}`, "error");
 
     setLoading(true);
     try {
@@ -1282,26 +1291,41 @@ function PlaceBet({ user, setUser, toast }) {
         username: user.username,
         amount: Number(amount),
         odds,
-        potentialWin: Number(potentialWin)
+        potentialWin: Number(potentialWin),
+        mode: betMode
       });
       setUser(data.user);
-      toast(`Bet placed! Win your next ranked game to earn ${formatMoney(potentialWin)}`, "success");
+      toast(`Bet placed! Win to earn ${isReal ? `$${amount} back + $${(potentialWin - amount).toFixed(2)} skin credits` : `$${potentialWin}`}`, "success");
     } catch(e) {
       toast(e.message, "error");
     }
     setLoading(false);
   };
 
+  const accentColor = isReal ? "#4ade80" : "#C8AA6E";
+  const accentBg = isReal ? "#0d280d" : "#0d1f3c";
+
   return (
-    <div style={{ background: "#242428", border: "1px solid #2D2D32", borderRadius: 4, padding: 24 }}>
-      <div style={{ fontSize: 10, letterSpacing: 3, color: "#A0A0A8", marginBottom: 20 }}>PLACE BET · NEXT RANKED GAME</div>
+    <div style={{ background: "#242428", border: `1px solid ${isReal ? "#4ade8033" : "#2D2D32"}`, borderRadius: 4, padding: 24 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
+        <div style={{ fontSize: 10, letterSpacing: 3, color: "#A0A0A8" }}>PLACE BET · NEXT RANKED GAME</div>
+        <div style={{ fontSize: 10, background: isReal ? "#4ade8022" : "#C8AA6E22", color: accentColor, border: `1px solid ${accentColor}44`, borderRadius: 3, padding: "2px 8px", letterSpacing: 1 }}>
+          {isReal ? "💵 REAL" : "🎮 VIRTUAL"}
+        </div>
+      </div>
 
       {activeBet ? (
-        <div style={{ background: "#1A1A1E", border: "1px solid #C8AA6E44", borderRadius: 3, padding: 20 }}>
-          <div style={{ color: "#C8AA6E", fontSize: 13, marginBottom: 8, display: "flex", alignItems: "center", gap: 8 }}><span style={{ display: "inline-block", width: 8, height: 8, borderRadius: "50%", background: "#C8AA6E", animation: "pulse 1.5s ease-in-out infinite" }} /> Active Bet</div>
+        <div style={{ background: "#1A1A1E", border: `1px solid ${accentColor}44`, borderRadius: 3, padding: 20 }}>
+          <div style={{ color: accentColor, fontSize: 13, marginBottom: 8, display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ display: "inline-block", width: 8, height: 8, borderRadius: "50%", background: accentColor, animation: "pulse 1.5s ease-in-out infinite" }} />
+            Active {activeBet.mode === "real" ? "Real Money" : "Virtual"} Bet
+          </div>
           <div style={{ color: "#F0F0F0", fontSize: 24, fontWeight: 700 }}>{formatMoney(activeBet.amount)}</div>
           <div style={{ color: "#A0A0A8", fontSize: 13, marginTop: 4 }}>
-            Win to earn <span style={{ color: "#0BC4AA" }}>{formatMoney(activeBet.potentialWin)}</span>
+            {activeBet.mode === "real"
+              ? <>Win to get <span style={{ color: "#4ade80", fontWeight: 700 }}>${activeBet.amount.toFixed(2)} back</span> + <span style={{ color: "#a78bfa", fontWeight: 700 }}>${(activeBet.potentialWin - activeBet.amount).toFixed(2)} skin credits</span></>
+              : <>Win to earn <span style={{ color: "#0BC4AA", fontWeight: 700 }}>{formatMoney(activeBet.potentialWin)}</span></>
+            }
           </div>
           <div style={{ color: "#A0A0A8", fontSize: 11, marginTop: 8 }}>Placed {timeAgo(activeBet.placedAt)}</div>
         </div>
@@ -1310,62 +1334,84 @@ function PlaceBet({ user, setUser, toast }) {
           <div style={{ marginBottom: 20 }}>
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
               <label style={{ fontSize: 10, letterSpacing: 2, color: "#A0A0A8" }}>BET AMOUNT</label>
-              <span style={{ fontSize: 12, color: "#C8AA6E" }}>Max: ${MAX_BET}</span>
+              <span style={{ fontSize: 12, color: accentColor }}>
+                Max: ${maxBet.toFixed(2)} · Available: ${Number(availableBalance).toFixed(2)}
+              </span>
             </div>
             <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-              <span style={{ color: "#C8AA6E", fontSize: 18 }}>$</span>
+              <span style={{ color: accentColor, fontSize: 18 }}>$</span>
               <input
-                type="number" min={1} max={MAX_BET} value={amount}
-                onChange={e => setAmount(Math.min(MAX_BET, Math.max(1, Number(e.target.value))))}
+                type="number"
+                min={isReal ? 0.10 : 1}
+                max={maxBet}
+                step={isReal ? 0.10 : 1}
+                value={amount}
+                onChange={e => setAmount(Math.min(maxBet, Math.max(isReal ? 0.10 : 1, Number(e.target.value))))}
                 style={{
-                  flex: 1, background: "#1A1A1E", border: "1px solid #C8AA6E44", color: "#F0F0F0",
+                  flex: 1, background: "#1A1A1E", border: `1px solid ${accentColor}44`, color: "#F0F0F0",
                   padding: "12px", borderRadius: 3, fontFamily: "Barlow Condensed, sans-serif", fontSize: 20,
                   fontWeight: 700, textAlign: "center", outline: "none"
                 }}
               />
             </div>
             <input
-              type="range" min={1} max={MAX_BET} value={amount}
+              type="range" min={isReal ? 0.10 : 1} max={maxBet} step={isReal ? 0.10 : 1} value={amount}
               onChange={e => setAmount(Number(e.target.value))}
-              style={{ width: "100%", marginTop: 12, accentColor: "#C8AA6E" }}
+              style={{ width: "100%", marginTop: 12, accentColor }}
             />
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "#A0A0A8" }}>
-              <span>$1</span><span>${MAX_BET}</span>
-            </div>
           </div>
 
+          {/* Quick amounts */}
           <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
-            {[5, 10, 20, 30].map(v => (
+            {(isReal ? [0.25, 0.50, 0.75, 1.00] : [5, 10, 20, 30]).map(v => (
               <button key={v} onClick={() => setAmount(v)} style={{
-                flex: 1, background: amount === v ? "#C8AA6E" : "#010A13",
+                flex: 1, background: amount === v ? accentColor : "#010A13",
                 color: amount === v ? "#1A1A1E" : "#C0C0C8",
                 border: "1px solid #35353A", borderRadius: 3, padding: "6px",
                 fontFamily: "Barlow Condensed, sans-serif", fontSize: 12, cursor: "pointer"
-              }}>${v}</button>
+              }}>${v.toFixed(isReal ? 2 : 0)}</button>
             ))}
           </div>
 
-          <div style={{ background: "#1A1A1E", borderRadius: 3, padding: 16, marginBottom: 20, display: "flex", justifyContent: "space-between" }}>
-            <div>
-              <div style={{ fontSize: 10, letterSpacing: 2, color: "#A0A0A8" }}>YOUR ODDS</div>
-              <div style={{ color: "#C8AA6E", fontSize: 18, fontWeight: 700 }}>{odds}x</div>
-              <div style={{ color: "#A0A0A8", fontSize: 10 }}>{user.rank || "UNRANKED"}</div>
+          <div style={{ background: "#1A1A1E", borderRadius: 3, padding: 16, marginBottom: 20 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: isReal ? 12 : 0 }}>
+              <div>
+                <div style={{ fontSize: 10, letterSpacing: 2, color: "#A0A0A8" }}>YOUR ODDS</div>
+                <div style={{ color: accentColor, fontSize: 18, fontWeight: 700 }}>{odds}x</div>
+                <div style={{ color: "#A0A0A8", fontSize: 10 }}>{user.rank || "UNRANKED"}</div>
+              </div>
+              <div style={{ textAlign: "right" }}>
+                <div style={{ fontSize: 10, letterSpacing: 2, color: "#A0A0A8" }}>IF YOU WIN</div>
+                {isReal ? (
+                  <>
+                    <div style={{ color: "#4ade80", fontSize: 16, fontWeight: 700 }}>${Number(amount).toFixed(2)} <span style={{ fontSize: 11, color: "#A0A0A8" }}>back to wallet</span></div>
+                    <div style={{ color: "#a78bfa", fontSize: 16, fontWeight: 700 }}>${(potentialWin - amount).toFixed(2)} <span style={{ fontSize: 11, color: "#A0A0A8" }}>skin credits</span></div>
+                  </>
+                ) : (
+                  <>
+                    <div style={{ color: "#0BC4AA", fontSize: 24, fontWeight: 700 }}>{formatMoney(potentialWin)}</div>
+                    <div style={{ color: "#A0A0A8", fontSize: 10 }}>{RAKE * 100}% rake applied</div>
+                  </>
+                )}
+              </div>
             </div>
-            <div style={{ textAlign: "right" }}>
-              <div style={{ fontSize: 10, letterSpacing: 2, color: "#A0A0A8" }}>IF YOU WIN</div>
-              <div style={{ color: "#0BC4AA", fontSize: 24, fontWeight: 700 }}>{formatMoney(potentialWin)}</div>
-              <div style={{ color: "#A0A0A8", fontSize: 10 }}>{RAKE * 100}% rake applied</div>
-            </div>
+            {isReal && (
+              <div style={{ background: "#a78bfa11", border: "1px solid #a78bfa33", borderRadius: 3, padding: "8px 12px", marginTop: 8 }}>
+                <div style={{ color: "#a78bfa", fontSize: 11 }}>
+                  💜 Skin credits can be spent in the <strong>Shop</strong> tab to redeem RP cards — gifted to you directly in-game!
+                </div>
+              </div>
+            )}
           </div>
 
           <button onClick={place} disabled={loading || !user.lolAccount} style={{
-            width: "100%", background: user.lolAccount ? "linear-gradient(135deg, #C8AA6E, #785A28)" : "#785A2844",
+            width: "100%", background: user.lolAccount ? `linear-gradient(135deg, ${accentColor}, ${isReal ? "#16a34a" : "#785A28"})` : "#785A2844",
             border: "none", color: "#010A13", padding: "14px",
             borderRadius: 3, fontFamily: "Barlow Condensed, sans-serif", fontSize: 14,
             fontWeight: 700, letterSpacing: 2, cursor: user.lolAccount ? "pointer" : "not-allowed",
             textTransform: "uppercase"
           }}>
-            {loading ? "Placing..." : user.lolAccount ? "Place Bet" : "Link LoL Account First"}
+            {loading ? "Placing..." : user.lolAccount ? `Place ${isReal ? "Real" : "Virtual"} Bet` : "Link LoL Account First"}
           </button>
         </div>
       )}
@@ -1383,14 +1429,11 @@ function ResolveBet({ user, setUser, region, toast, showResult }) {
     setLoading(true);
     try {
       const match = await riot.getLastMatchResult(user.puuid, region);
-
-      // Check if this match was played after bet was placed
       if (match.gameEndTimestamp < activeBet.placedAt) {
         toast("No new ranked game found since your bet was placed. Play a game first!", "info");
         setLoading(false);
         return;
       }
-
       const won = match.win;
       const data = await apiCall("/api/bet", {
         action: "resolveBet",
@@ -1400,7 +1443,6 @@ function ResolveBet({ user, setUser, region, toast, showResult }) {
         result: match
       });
       setUser(data.user);
-
       showResult({ result: match, bet: activeBet });
     } catch (e) {
       toast(`Error: ${e.message}`, "error");
@@ -1409,24 +1451,315 @@ function ResolveBet({ user, setUser, region, toast, showResult }) {
   };
 
   if (!activeBet) return null;
+  const isReal = activeBet.mode === "real";
 
   return (
-    <div style={{ background: "#242428", border: "1px solid #C8AA6E44", borderRadius: 4, padding: 24 }}>
+    <div style={{ background: "#242428", border: `1px solid ${isReal ? "#4ade8044" : "#C8AA6E44"}`, borderRadius: 4, padding: 24 }}>
       <div style={{ fontSize: 10, letterSpacing: 3, color: "#A0A0A8", marginBottom: 12 }}>RESOLVE YOUR BET</div>
       <p style={{ color: "#FFFFFF88", fontSize: 13, fontFamily: "DM Sans, sans-serif", marginBottom: 16 }}>
         After finishing a ranked game, click below to check the result automatically via Riot's API.
       </p>
       <button onClick={resolve} disabled={loading} style={{
-        background: "transparent", border: "1px solid #C8AA6E", color: "#C8AA6E",
+        background: "transparent", border: `1px solid ${isReal ? "#4ade80" : "#C8AA6E"}`,
+        color: isReal ? "#4ade80" : "#C8AA6E",
         padding: "12px 24px", borderRadius: 3, fontFamily: "Barlow Condensed, sans-serif",
         fontSize: 13, fontWeight: 700, cursor: "pointer", letterSpacing: 1,
         transition: "all 0.2s", width: "100%"
-      }}
-        onMouseEnter={e => { e.target.style.background = "#C8AA6E22"; }}
-        onMouseLeave={e => { e.target.style.background = "transparent"; }}
-      >
+      }}>
         {loading ? "Checking Riot API..." : "Check My Last Game"}
       </button>
+    </div>
+  );
+}
+
+
+// ─── WALLET TOGGLE ───────────────────────────────────────────────────────────
+function WalletToggle({ mode, setMode }) {
+  return (
+    <div style={{ display: "flex", border: "1px solid #2D2D32", borderRadius: 6, overflow: "hidden", marginBottom: 10 }}>
+      {[{ id: "virtual", label: "🎮 Virtual Gold" }, { id: "real", label: "💵 Real Money" }].map(({ id, label }) => (
+        <button key={id} onClick={() => setMode(id)} style={{
+          flex: 1, padding: "9px 6px", border: "none", cursor: "pointer",
+          fontFamily: "Barlow Condensed, sans-serif", fontSize: 11, fontWeight: 700,
+          letterSpacing: 1, textTransform: "uppercase", transition: "all 0.2s",
+          background: mode === id ? (id === "real" ? "linear-gradient(135deg, #1a4a1a, #0d2e0d)" : "linear-gradient(135deg, #C8AA6E, #785A28)") : "#141416",
+          color: mode === id ? (id === "real" ? "#4ade80" : "#1A1A1E") : "#785A28",
+          borderBottom: mode === id ? `2px solid ${id === "real" ? "#4ade80" : "#C8AA6E"}` : "2px solid transparent",
+        }}>{label}</button>
+      ))}
+    </div>
+  );
+}
+
+// ─── PAYPAL BUTTON ────────────────────────────────────────────────────────────
+function PayPalButton({ amount, username, onSuccess, onError }) {
+  const containerRef = useRef(null);
+  const instanceRef = useRef(null);
+
+  useEffect(() => {
+    if (!window.paypal || !containerRef.current) return;
+    if (instanceRef.current) {
+      try { instanceRef.current.close(); } catch (_) {}
+      if (containerRef.current) containerRef.current.innerHTML = "";
+    }
+    instanceRef.current = window.paypal.Buttons({
+      style: { layout: "horizontal", color: "gold", shape: "rect", label: "pay", height: 44, tagline: false },
+      createOrder: async () => {
+        const res = await fetch("/api/paypal/create-order", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ amount, username }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Failed to create order");
+        return data.orderID;
+      },
+      onApprove: async (data) => {
+        const res = await fetch("/api/paypal/capture-order", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ orderID: data.orderID, username }),
+        });
+        const result = await res.json();
+        if (!res.ok) throw new Error(result.error || "Failed to capture payment");
+        onSuccess(result.depositedAmount, result.realBalance);
+      },
+      onError: (err) => { console.error("PayPal error:", err); onError("Something went wrong with PayPal. Please try again."); },
+      onCancel: () => {},
+    });
+    if (instanceRef.current.isEligible()) instanceRef.current.render(containerRef.current);
+    return () => { if (instanceRef.current) { try { instanceRef.current.close(); } catch (_) {} } };
+  }, [amount, username]);
+
+  return (
+    <div>
+      <div ref={containerRef} style={{ minHeight: 44 }} />
+      {!window.paypal && (
+        <div style={{ background: "#1A1A1E", border: "1px solid #C8464A33", borderRadius: 3, padding: 12, textAlign: "center", color: "#C8464A", fontSize: 12 }}>
+          ⚠️ PayPal SDK not loaded. Check your index.html script tag.
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── DEPOSIT PANEL ────────────────────────────────────────────────────────────
+function DepositPanel({ user, setUser, toast }) {
+  const [amount, setAmount] = useState(10);
+  const [deposits, setDeposits] = useState([]);
+  const [loadingHistory, setLoadingHistory] = useState(true);
+
+  useEffect(() => {
+    fetch(`/api/paypal/deposit-history?username=${encodeURIComponent(user.username)}`)
+      .then(r => r.json())
+      .then(data => setDeposits(data.deposits || []))
+      .catch(() => {})
+      .finally(() => setLoadingHistory(false));
+  }, [user.username]);
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      <div style={{ background: "#0d280d", border: "1px solid #4ade8033", borderRadius: 8, padding: "14px 18px", display: "flex", gap: 12 }}>
+        <div style={{ fontSize: 20 }}>💵</div>
+        <div>
+          <div style={{ color: "#4ade80", fontWeight: 700, fontSize: 13, marginBottom: 4 }}>Deposit Real Money</div>
+          <div style={{ color: "#86efac", fontSize: 13, fontFamily: "DM Sans, sans-serif", lineHeight: 1.6 }}>
+            Add funds via PayPal to your real balance. Use it to place real bets — if you win, your stake returns to your wallet and your profit becomes <strong>Skin Credits</strong> to spend on RP cards.
+          </div>
+        </div>
+      </div>
+
+      <div style={{ background: "#242428", border: "1px solid #2D2D32", borderRadius: 8, padding: 24 }}>
+        <div style={{ fontSize: 10, letterSpacing: 3, color: "#A0A0A8", marginBottom: 20 }}>ADD FUNDS VIA PAYPAL</div>
+        <div style={{ marginBottom: 20 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
+            <label style={{ fontSize: 10, letterSpacing: 2, color: "#A0A0A8" }}>DEPOSIT AMOUNT</label>
+            <span style={{ fontSize: 12, color: "#4ade80" }}>Max: $500</span>
+          </div>
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <span style={{ color: "#4ade80", fontSize: 18 }}>$</span>
+            <input type="number" min={1} max={500} value={amount}
+              onChange={e => setAmount(Math.min(500, Math.max(1, Number(e.target.value))))}
+              style={{ flex: 1, background: "#1A1A1E", border: "1px solid #4ade8044", color: "#F0F0F0", padding: "12px", borderRadius: 3, fontFamily: "Barlow Condensed, sans-serif", fontSize: 20, fontWeight: 700, textAlign: "center", outline: "none" }}
+            />
+          </div>
+          <input type="range" min={1} max={500} value={amount} onChange={e => setAmount(Number(e.target.value))}
+            style={{ width: "100%", marginTop: 12, accentColor: "#4ade80" }} />
+        </div>
+        <div style={{ display: "flex", gap: 8, marginBottom: 24 }}>
+          {[10, 25, 50, 100].map(v => (
+            <button key={v} onClick={() => setAmount(v)} style={{
+              flex: 1, background: amount === v ? "#4ade8022" : "#010A13", color: amount === v ? "#4ade80" : "#C0C0C8",
+              border: `1px solid ${amount === v ? "#4ade80" : "#35353A"}`, borderRadius: 3, padding: "6px",
+              fontFamily: "Barlow Condensed, sans-serif", fontSize: 12, cursor: "pointer"
+            }}>${v}</button>
+          ))}
+        </div>
+        <PayPalButton
+          amount={amount} username={user.username}
+          onSuccess={(deposited, newRealBal) => {
+            setUser(prev => ({ ...prev, realBalance: newRealBal }));
+            setDeposits(prev => [{ id: Date.now(), amount: deposited, created_at: Date.now(), status: "completed" }, ...prev]);
+            toast(`✅ $${deposited.toFixed(2)} added to your real balance!`, "success");
+          }}
+          onError={(msg) => toast(msg, "error")}
+        />
+        <div style={{ marginTop: 12, fontSize: 11, color: "#7A7A82", textAlign: "center", fontFamily: "DM Sans, sans-serif" }}>
+          🔒 Payments processed securely by PayPal. We never store your card details.
+        </div>
+      </div>
+
+      <div style={{ background: "#242428", border: "1px solid #2D2D32", borderRadius: 8, padding: 24 }}>
+        <div style={{ fontSize: 10, letterSpacing: 3, color: "#A0A0A8", marginBottom: 16 }}>DEPOSIT HISTORY</div>
+        {loadingHistory ? <Loader text="Loading..." /> : deposits.length === 0 ? (
+          <div style={{ color: "#A0A0A8", fontSize: 13, fontFamily: "DM Sans, sans-serif", fontStyle: "italic", textAlign: "center", padding: "16px 0" }}>No deposits yet.</div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {deposits.map((d, i) => (
+              <div key={d.id || i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 12px", borderRadius: 4, background: "#1A1A1E", border: "1px solid #4ade8022" }}>
+                <div>
+                  <div style={{ color: "#4ade80", fontSize: 13, fontWeight: 700 }}>PayPal Deposit</div>
+                  <div style={{ color: "#A0A0A8", fontSize: 11, marginTop: 2 }}>
+                    {new Date(Number(d.created_at)).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                  </div>
+                </div>
+                <div style={{ color: "#4ade80", fontSize: 16, fontWeight: 900 }}>+${Number(d.amount).toFixed(2)}</div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── SKIN SHOP ────────────────────────────────────────────────────────────────
+const RP_CARDS = [
+  { name: "RP Card 650", rp: 650, creditCost: 5.00, popular: false },
+  { name: "RP Card 1380", rp: 1380, creditCost: 10.00, popular: true },
+  { name: "RP Card 2800", rp: 2800, creditCost: 20.00, popular: false },
+  { name: "RP Card 5750", rp: 5750, creditCost: 40.00, popular: false },
+];
+
+function SkinShop({ user, setUser, toast }) {
+  const [redemptions, setRedemptions] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [loadingHistory, setLoadingHistory] = useState(true);
+  const [confirmCard, setConfirmCard] = useState(null);
+
+  useEffect(() => {
+    fetch("/api/redeem", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "getRedemptions", username: user.username })
+    }).then(r => r.json())
+      .then(data => setRedemptions(data.redemptions || []))
+      .catch(() => {})
+      .finally(() => setLoadingHistory(false));
+  }, [user.username]);
+
+  const redeem = async (card) => {
+    if (Number(user.skinCredits) < card.creditCost) return toast("Not enough skin credits", "error");
+    setLoading(true);
+    try {
+      const data = await apiCall("/api/redeem", {
+        action: "submitRedemption",
+        username: user.username,
+        skinName: card.name,
+        rpCost: card.rp,
+        creditCost: card.creditCost
+      });
+      setUser(data.user);
+      setRedemptions(prev => [{ id: Date.now(), skinName: card.name, rpCost: card.rp, creditCost: card.creditCost, status: "pending", createdAt: Date.now() }, ...prev]);
+      setConfirmCard(null);
+      toast(`✅ Redemption submitted! You'll receive your ${card.name} in-game shortly.`, "success");
+    } catch(e) {
+      toast(e.message, "error");
+    }
+    setLoading(false);
+  };
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      {/* Balance display */}
+      <div style={{ background: "#1a0d28", border: "1px solid #a78bfa33", borderRadius: 8, padding: "16px 20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div>
+          <div style={{ fontSize: 10, letterSpacing: 3, color: "#a78bfa", marginBottom: 4 }}>YOUR SKIN CREDITS</div>
+          <div style={{ fontSize: 28, fontWeight: 700, color: "#a78bfa", fontFamily: "Barlow Condensed, sans-serif" }}>
+            ${Number(user.skinCredits || 0).toFixed(2)}
+          </div>
+        </div>
+        <div style={{ fontSize: 32 }}>💜</div>
+      </div>
+
+      <div style={{ background: "#242428", border: "1px solid #2D2D32", borderRadius: 8, padding: 24 }}>
+        <div style={{ fontSize: 10, letterSpacing: 3, color: "#A0A0A8", marginBottom: 6 }}>RP CARD SHOP</div>
+        <div style={{ fontSize: 13, color: "#C0C0C8", fontFamily: "DM Sans, sans-serif", marginBottom: 20, lineHeight: 1.6 }}>
+          Spend your skin credits on RP cards. After you submit a request, the card will be gifted to your linked LoL account directly in-game, usually within 24h.
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+          {RP_CARDS.map(card => {
+            const canAfford = Number(user.skinCredits || 0) >= card.creditCost;
+            return (
+              <div key={card.name} style={{
+                background: "#1A1A1E", border: `1px solid ${card.popular ? "#a78bfa55" : "#2A2A2E"}`,
+                borderRadius: 8, padding: 16, position: "relative",
+                opacity: canAfford ? 1 : 0.6
+              }}>
+                {card.popular && (
+                  <div style={{ position: "absolute", top: -10, left: "50%", transform: "translateX(-50%)", background: "#a78bfa", color: "#1A1A1E", fontSize: 9, fontWeight: 700, letterSpacing: 1, padding: "2px 10px", borderRadius: 10 }}>POPULAR</div>
+                )}
+                <div style={{ fontSize: 20, marginBottom: 8 }}>🎮</div>
+                <div style={{ color: "#F0F0F0", fontSize: 15, fontWeight: 700, fontFamily: "Barlow Condensed, sans-serif", marginBottom: 4 }}>{card.name}</div>
+                <div style={{ color: "#a78bfa", fontSize: 22, fontWeight: 900, fontFamily: "Barlow Condensed, sans-serif", marginBottom: 12 }}>{card.rp.toLocaleString()} RP</div>
+                <div style={{ color: "#A0A0A8", fontSize: 12, marginBottom: 12 }}>Cost: <span style={{ color: "#a78bfa", fontWeight: 700 }}>${card.creditCost.toFixed(2)} credits</span></div>
+                {confirmCard?.name === card.name ? (
+                  <div style={{ display: "flex", gap: 6 }}>
+                    <button onClick={() => redeem(card)} disabled={loading} style={{ flex: 1, background: "#a78bfa", color: "#1A1A1E", border: "none", padding: "8px", borderRadius: 3, fontFamily: "Barlow Condensed, sans-serif", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
+                      {loading ? "..." : "CONFIRM"}
+                    </button>
+                    <button onClick={() => setConfirmCard(null)} style={{ flex: 1, background: "none", color: "#A0A0A8", border: "1px solid #35353A", padding: "8px", borderRadius: 3, fontFamily: "Barlow Condensed, sans-serif", fontSize: 11, cursor: "pointer" }}>CANCEL</button>
+                  </div>
+                ) : (
+                  <button onClick={() => canAfford ? setConfirmCard(card) : toast("Not enough skin credits", "error")} style={{
+                    width: "100%", background: canAfford ? "linear-gradient(135deg, #a78bfa, #7c3aed)" : "#35353A",
+                    color: canAfford ? "#fff" : "#A0A0A8", border: "none", padding: "8px", borderRadius: 3,
+                    fontFamily: "Barlow Condensed, sans-serif", fontSize: 11, fontWeight: 700,
+                    cursor: canAfford ? "pointer" : "not-allowed", letterSpacing: 1
+                  }}>
+                    {canAfford ? "REDEEM" : "NOT ENOUGH CREDITS"}
+                  </button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <div style={{ background: "#242428", border: "1px solid #2D2D32", borderRadius: 8, padding: 24 }}>
+        <div style={{ fontSize: 10, letterSpacing: 3, color: "#A0A0A8", marginBottom: 16 }}>YOUR REDEMPTIONS</div>
+        {loadingHistory ? <Loader text="Loading..." /> : redemptions.length === 0 ? (
+          <div style={{ color: "#A0A0A8", fontSize: 13, fontFamily: "DM Sans, sans-serif", fontStyle: "italic", textAlign: "center", padding: "16px 0" }}>No redemptions yet.</div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {redemptions.map((r, i) => (
+              <div key={r.id || i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 12px", borderRadius: 4, background: "#1A1A1E", border: `1px solid ${r.status === "fulfilled" ? "#4ade8022" : "#a78bfa22"}` }}>
+                <div>
+                  <div style={{ color: "#F0F0F0", fontSize: 13, fontWeight: 600 }}>{r.skinName}</div>
+                  <div style={{ display: "flex", gap: 8, marginTop: 4, alignItems: "center" }}>
+                    <span style={{ fontSize: 10, color: r.status === "fulfilled" ? "#4ade80" : "#a78bfa", border: `1px solid ${r.status === "fulfilled" ? "#4ade80" : "#a78bfa"}`, padding: "1px 6px", borderRadius: 2, letterSpacing: 1 }}>
+                      {r.status === "fulfilled" ? "✓ SENT" : "⏳ PENDING"}
+                    </span>
+                    <span style={{ fontSize: 11, color: "#A0A0A8" }}>{timeAgo(r.createdAt)}</span>
+                  </div>
+                </div>
+                <div style={{ color: "#a78bfa", fontSize: 14, fontWeight: 700 }}>-${Number(r.creditCost).toFixed(2)}</div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -1903,6 +2236,7 @@ function DebugPanel({ user, setUser, toast, showResult }) {
   );
 }
 
+
 // ─── MAIN APP ─────────────────────────────────────────────────────────────────
 export default function App() {
   const [user, setUser] = useState(() => {
@@ -1914,7 +2248,8 @@ export default function App() {
   const [tab, setTab] = useState("dashboard");
   const [toast, setToast] = useState(null);
   const [region, setRegion] = useState("euw1");
-  const [resultScreen, setResultScreen] = useState(null); // { result, bet }
+  const [resultScreen, setResultScreen] = useState(null);
+  const [walletMode, setWalletMode] = useState("virtual"); // "virtual" | "real"
 
   const showToast = useCallback((message, type = "info") => {
     setToast({ message, type, id: Date.now() });
@@ -1933,7 +2268,7 @@ export default function App() {
     totalEarned: user.bets?.filter(b => b.status === "won").reduce((s, b) => s + b.potentialWin, 0) || 0
   };
 
-  const tabs = ["dashboard", "bet", "history", "leaderboard"];
+  const tabs = ["dashboard", "bet", "history", "leaderboard", "deposit", "shop"];
 
   return (
     <div style={{ minHeight: "100vh", background: "#1A1A1E", fontFamily: "Barlow Condensed, sans-serif", color: "#E0E0E0" }}>
@@ -1952,17 +2287,27 @@ export default function App() {
 
       {/* Top bar */}
       <div style={{ borderBottom: "1px solid #2D2D32", background: "#141416" }}>
-
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 24px", height: 56 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <span style={{ fontSize: 10, letterSpacing: 4, color: "#A0A0A8" }}>RUNETERRA</span>
             <span style={{ color: "#6A6A72" }}>|</span>
             <span style={{ fontSize: 16, fontWeight: 700, color: "#C8AA6E" }}>WAGERS</span>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-            <div style={{ textAlign: "right" }}>
-              <div style={{ fontSize: 10, letterSpacing: 2, color: "#A0A0A8" }}>BALANCE</div>
-              <div style={{ fontSize: 16, fontWeight: 700, color: "#C8AA6E" }}>{formatMoney(user.balance)}</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+            {/* 3 balance pills */}
+            <div style={{ display: "flex", gap: 8 }}>
+              <div style={{ background: "#1A1A1E", border: "1px solid #C8AA6E33", borderRadius: 4, padding: "4px 10px", textAlign: "center" }}>
+                <div style={{ fontSize: 8, letterSpacing: 2, color: "#785A28" }}>GOLD</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "#C8AA6E" }}>{formatMoney(user.balance)}</div>
+              </div>
+              <div style={{ background: "#1A1A1E", border: "1px solid #4ade8033", borderRadius: 4, padding: "4px 10px", textAlign: "center" }}>
+                <div style={{ fontSize: 8, letterSpacing: 2, color: "#16a34a" }}>REAL</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "#4ade80" }}>{formatMoney(user.realBalance || 0)}</div>
+              </div>
+              <div style={{ background: "#1A1A1E", border: "1px solid #a78bfa33", borderRadius: 4, padding: "4px 10px", textAlign: "center" }}>
+                <div style={{ fontSize: 8, letterSpacing: 2, color: "#7c3aed" }}>CREDITS</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "#a78bfa" }}>{formatMoney(user.skinCredits || 0)}</div>
+              </div>
             </div>
             <div style={{ width: 1, height: 32, background: "#785A2833" }} />
             <div style={{ fontSize: 12, color: "#A0A0A8" }}>{user.username}</div>
@@ -1981,10 +2326,10 @@ export default function App() {
               background: "none", border: "none", cursor: "pointer",
               padding: "10px 16px", fontFamily: "Barlow Condensed, sans-serif", fontSize: 13,
               letterSpacing: 2, textTransform: "uppercase",
-              color: tab === t ? "#C8AA6E" : "#785A28",
-              borderBottom: `2px solid ${tab === t ? "#C8AA6E" : "transparent"}`,
+              color: t === "shop" ? (tab === t ? "#a78bfa" : "#5b3f8a") : tab === t ? "#C8AA6E" : "#785A28",
+              borderBottom: `2px solid ${t === "shop" ? (tab === t ? "#a78bfa" : "transparent") : tab === t ? "#C8AA6E" : "transparent"}`,
               transition: "all 0.2s"
-            }}>{t}</button>
+            }}>{t === "shop" ? "💜 Shop" : t === "deposit" ? "💵 Deposit" : t}</button>
           ))}
         </div>
       </div>
@@ -2002,11 +2347,7 @@ export default function App() {
             {user.lolAccount ? (
               <>
                 <div style={{ color: "#D0D0D8", fontSize: 14, marginBottom: 10 }}>{user.lolAccount}</div>
-                <div style={{
-                  display: "inline-block", background: "linear-gradient(135deg, #C8AA6E22, #785A2811)",
-                  border: "1px solid #C8AA6E55", borderRadius: 3, padding: "4px 12px",
-                  fontSize: 11, color: "#C8AA6E", letterSpacing: 2, fontWeight: 700
-                }}>
+                <div style={{ display: "inline-block", background: "linear-gradient(135deg, #C8AA6E22, #785A2811)", border: "1px solid #C8AA6E55", borderRadius: 3, padding: "4px 12px", fontSize: 11, color: "#C8AA6E", letterSpacing: 2, fontWeight: 700 }}>
                   {user.rank || "UNRANKED"}
                 </div>
                 <div style={{ marginTop: 10, display: "flex", gap: 8 }}>
@@ -2031,36 +2372,60 @@ export default function App() {
             )}
           </div>
 
-          {/* Balance card */}
-          <div style={{ background: "linear-gradient(135deg, #0d1f3c, #0A1628)", border: "1px solid #C8AA6E22", borderRadius: 8, padding: "18px 16px" }}>
-            <div style={{ fontSize: 12, letterSpacing: 3, color: "#C8AA6E", marginBottom: 6 }}>BALANCE</div>
-            <div style={{ color: "#C8AA6E", fontSize: 30, fontWeight: 700, letterSpacing: 0, fontFamily: "Barlow Condensed, sans-serif" }}>{formatMoney(user.balance)}</div>
-            <div style={{ marginTop: 10, height: 2, background: "#785A2818", borderRadius: 2 }}>
-              <div style={{ height: "100%", width: `${Math.min(100, (user.balance / 500) * 100)}%`, background: "linear-gradient(90deg, #785A28, #C8AA6E)", borderRadius: 2, transition: "width 0.5s ease" }} />
+          {/* Wallet toggle + balance cards */}
+          <WalletToggle mode={walletMode} setMode={setWalletMode} />
+
+          {walletMode === "virtual" ? (
+            <div style={{ background: "linear-gradient(135deg, #0d1f3c, #0A1628)", border: "1px solid #C8AA6E22", borderRadius: 8, padding: "18px 16px" }}>
+              <div style={{ fontSize: 12, letterSpacing: 3, color: "#C8AA6E", marginBottom: 6 }}>VIRTUAL GOLD</div>
+              <div style={{ color: "#C8AA6E", fontSize: 30, fontWeight: 700, fontFamily: "Barlow Condensed, sans-serif" }}>{formatMoney(user.balance)}</div>
+              <div style={{ marginTop: 10, height: 2, background: "#785A2818", borderRadius: 2 }}>
+                <div style={{ height: "100%", width: `${Math.min(100, (user.balance / 500) * 100)}%`, background: "linear-gradient(90deg, #785A28, #C8AA6E)", borderRadius: 2, transition: "width 0.5s ease" }} />
+              </div>
+              <div style={{ color: "#C0C0C8", fontSize: 12, marginTop: 6, fontFamily: "DM Sans, sans-serif" }}>of $500.00 starting gold</div>
             </div>
-            <div style={{ color: "#C0C0C8", fontSize: 12, marginTop: 6, fontFamily: "DM Sans, sans-serif" }}>of $500.00 starting gold</div>
-          </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <div style={{ background: "linear-gradient(135deg, #0d280d, #0a1a0a)", border: "1px solid #4ade8033", borderRadius: 8, padding: "14px 16px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
+                  <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#4ade80" }} />
+                  <div style={{ fontSize: 10, letterSpacing: 3, color: "#4ade80" }}>REAL BALANCE</div>
+                </div>
+                <div style={{ color: "#4ade80", fontSize: 26, fontWeight: 700, fontFamily: "Barlow Condensed, sans-serif" }}>{formatMoney(user.realBalance || 0)}</div>
+                <div style={{ color: "#86efac", fontSize: 11, marginTop: 4, fontFamily: "DM Sans, sans-serif" }}>💳 withdrawable</div>
+              </div>
+              <div style={{ background: "linear-gradient(135deg, #1a0d28, #0d0818)", border: "1px solid #a78bfa33", borderRadius: 8, padding: "14px 16px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
+                  <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#a78bfa" }} />
+                  <div style={{ fontSize: 10, letterSpacing: 3, color: "#a78bfa" }}>SKIN CREDITS</div>
+                </div>
+                <div style={{ color: "#a78bfa", fontSize: 26, fontWeight: 700, fontFamily: "Barlow Condensed, sans-serif" }}>{formatMoney(user.skinCredits || 0)}</div>
+                <div style={{ color: "#c4b5fd", fontSize: 11, marginTop: 4, fontFamily: "DM Sans, sans-serif" }}>💜 spend in shop</div>
+              </div>
+            </div>
+          )}
 
           {/* Active bet */}
           {(() => {
             const activeBet = user.bets?.find(b => b.status === "pending");
+            const isReal = activeBet?.mode === "real";
             return activeBet ? (
-              <div style={{ background: "#242428", border: "1px solid #C8AA6E44", borderRadius: 8, padding: "18px 16px" }}>
+              <div style={{ background: "#242428", border: `1px solid ${isReal ? "#4ade8044" : "#C8AA6E44"}`, borderRadius: 8, padding: "18px 16px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-                  <div style={{ fontSize: 12, letterSpacing: 3, color: "#C8AA6E" }}>ACTIVE BET</div>
-                  <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#C8AA6E", boxShadow: "0 0 8px #C8AA6E", animation: "pulse 1.5s ease-in-out infinite" }} />
+                  <div style={{ fontSize: 12, letterSpacing: 3, color: isReal ? "#4ade80" : "#C8AA6E" }}>ACTIVE BET {isReal ? "💵" : "🎮"}</div>
+                  <div style={{ width: 7, height: 7, borderRadius: "50%", background: isReal ? "#4ade80" : "#C8AA6E", boxShadow: `0 0 8px ${isReal ? "#4ade80" : "#C8AA6E"}`, animation: "pulse 1.5s ease-in-out infinite" }} />
                 </div>
-                <div style={{ color: "#C8AA6E", fontSize: 26, fontWeight: 700, fontFamily: "Barlow Condensed, sans-serif" }}>{formatMoney(activeBet.amount)}</div>
+                <div style={{ color: isReal ? "#4ade80" : "#C8AA6E", fontSize: 26, fontWeight: 700, fontFamily: "Barlow Condensed, sans-serif" }}>{formatMoney(activeBet.amount)}</div>
                 <div style={{ color: "#E0E0E0", fontSize: 13, marginTop: 4, fontFamily: "DM Sans, sans-serif" }}>
-                  Potential win: <span style={{ color: "#0BC4AA", fontWeight: 700 }}>{formatMoney(activeBet.potentialWin)}</span>
+                  {isReal
+                    ? <>Stake: <span style={{ color: "#4ade80" }}>${activeBet.amount.toFixed(2)}</span> + Credits: <span style={{ color: "#a78bfa" }}>${(activeBet.potentialWin - activeBet.amount).toFixed(2)}</span></>
+                    : <>Win: <span style={{ color: "#0BC4AA", fontWeight: 700 }}>{formatMoney(activeBet.potentialWin)}</span></>
+                  }
                 </div>
                 <div style={{ color: "#A0A0A8", fontSize: 12, marginTop: 4, fontFamily: "DM Sans, sans-serif" }}>{timeAgo(activeBet.placedAt)}</div>
               </div>
             ) : (
               <div style={{ background: "#24242866", border: "1px solid #252528", borderRadius: 8, padding: "18px 16px", textAlign: "center" }}>
-                <div style={{ width: 32, height: 32, borderRadius: "50%", border: "2px dashed #785A2833", margin: "0 auto 10px", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <div style={{ width: 10, height: 10, background: "#785A2833", borderRadius: "50%" }} />
-                </div>
                 <div style={{ color: "#7A7A82", fontSize: 13, fontFamily: "DM Sans, sans-serif" }}>No active bet</div>
               </div>
             );
@@ -2083,31 +2448,22 @@ export default function App() {
 
         {/* CENTER CONTENT */}
         <div style={{ padding: "24px 24px" }}>
-          {tab === "dashboard" && (
+          {(tab === "dashboard" || tab === "bet") && (
             <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
               <LinkAccount user={user} setUser={updateUser} region={region} setRegion={setRegion} toast={showToast} />
-              <PlaceBet user={user} setUser={updateUser} toast={showToast} />
-              <ResolveBet user={user} setUser={updateUser} region={region} toast={showToast} showResult={setResultScreen} />
-            </div>
-          )}
-          {tab === "bet" && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-              <LinkAccount user={user} setUser={updateUser} region={region} setRegion={setRegion} toast={showToast} />
-              <PlaceBet user={user} setUser={updateUser} toast={showToast} />
+              <PlaceBet user={user} setUser={updateUser} toast={showToast} betMode={walletMode} />
               <ResolveBet user={user} setUser={updateUser} region={region} toast={showToast} showResult={setResultScreen} />
             </div>
           )}
           {tab === "history" && <BetHistory bets={user.bets} />}
           {tab === "leaderboard" && <Leaderboard />}
+          {tab === "deposit" && <DepositPanel user={user} setUser={updateUser} toast={showToast} />}
+          {tab === "shop" && <SkinShop user={user} setUser={updateUser} toast={showToast} />}
         </div>
 
         {/* RIGHT SIDEBAR */}
         <div style={{ padding: "24px 24px 24px 16px", borderLeft: "1px solid #252528", display: "flex", flexDirection: "column", gap: 14 }}>
-
-          {/* Live Games Feed */}
           <LiveFeed />
-
-          {/* Recent bets */}
           <div style={{ background: "#242428", border: "1px solid #2D2D32", borderRadius: 8, padding: "18px 16px" }}>
             <div style={{ fontSize: 12, letterSpacing: 3, color: "#C8AA6E", marginBottom: 14 }}>YOUR RECENT BETS</div>
             {user.bets?.filter(b => b.status !== "pending").length ? (
@@ -2115,8 +2471,9 @@ export default function App() {
                 {[...user.bets].reverse().filter(b => b.status !== "pending").slice(0, 4).map(bet => (
                   <div key={bet.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 10px", borderRadius: 4, background: bet.status === "won" ? "#0BC4AA08" : "#C8464A08", border: `1px solid ${bet.status === "won" ? "#0BC4AA22" : "#C8464A22"}` }}>
                     <div>
-                      <div style={{ fontSize: 12, color: bet.status === "won" ? "#0BC4AA" : "#C8464A", fontWeight: 700, letterSpacing: 1 }}>
-                        {bet.status === "won" ? "WIN" : "LOSS"}
+                      <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                        <div style={{ fontSize: 12, color: bet.status === "won" ? "#0BC4AA" : "#C8464A", fontWeight: 700, letterSpacing: 1 }}>{bet.status === "won" ? "WIN" : "LOSS"}</div>
+                        {bet.mode === "real" && <div style={{ fontSize: 9, color: "#4ade80", border: "1px solid #4ade8044", borderRadius: 2, padding: "1px 4px" }}>REAL</div>}
                       </div>
                       {bet.result?.champion && <div style={{ fontSize: 12, color: "#A0A0A8", fontFamily: "DM Sans, sans-serif", marginTop: 1 }}>{bet.result.champion} · {bet.result.kills}/{bet.result.deaths}/{bet.result.assists}</div>}
                     </div>
@@ -2127,20 +2484,16 @@ export default function App() {
                 ))}
               </div>
             ) : (
-              <div style={{ color: "#C0C0C8", fontSize: 13, fontFamily: "DM Sans, sans-serif", fontStyle: "italic", textAlign: "center", padding: "16px 0" }}>
-                No completed bets yet
-              </div>
+              <div style={{ color: "#C0C0C8", fontSize: 13, fontFamily: "DM Sans, sans-serif", fontStyle: "italic", textAlign: "center", padding: "16px 0" }}>No completed bets yet</div>
             )}
           </div>
-
-          {/* Rules card */}
           <div style={{ background: "#242428", border: "1px solid #2D2D32", borderRadius: 8, padding: "18px 16px" }}>
             <div style={{ fontSize: 12, letterSpacing: 3, color: "#C8AA6E", marginBottom: 14 }}>HOUSE RULES</div>
             {[
-              ["Solo/Duo ranked only", "Flex & normals don't count"],
-              ["$1 · $30 per bet", "One active bet at a time"],
-              ["5% rake on winnings", "Losses return nothing"],
-              ["Results via Riot API", "No disputes possible"],
+              ["Virtual bets: $1–$30", "5% rake on winnings"],
+              ["Real bets: max $1.00", "Stake returned if you win"],
+              ["Profit → Skin Credits", "Spend in 💜 Shop tab"],
+              ["Results via Riot API", "Solo/Duo ranked only"],
             ].map(([rule, sub], i) => (
               <div key={i} style={{ paddingBottom: 10, marginBottom: 10, borderBottom: i < 3 ? "1px solid #222225" : "none" }}>
                 <div style={{ fontSize: 15, color: "#FFFFFF", fontWeight: 600 }}>{rule}</div>
