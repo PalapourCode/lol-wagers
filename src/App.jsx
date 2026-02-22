@@ -140,12 +140,24 @@ function AuthPage({ onLogin }) {
     finally { setLoading(false); }
   };
 
+  const features = [
+    { icon: "⚔️", title: "Bet on Your Own Games", desc: "Wager on your next ranked Solo/Duo match. Only wins count — no match fixing possible." },
+    { icon: "🏆", title: "Earn Virtual Gold", desc: "Win games, stack gold. Your rank determines your odds — Iron players earn up to 1.6x." },
+    { icon: "🎁", title: "Redeem for Rewards", desc: "Use your gold balance to claim RP, skins, or champion bundles. Coming soon." },
+    { icon: "📊", title: "Compete on Leaderboards", desc: "See where you rank among your friends. Who's the best at backing themselves?" },
+  ];
+
+  const howItWorks = [
+    { step: "01", text: "Create an account & link your LoL profile via icon verification" },
+    { step: "02", text: "Place a bet ($1–$30) before queuing into ranked" },
+    { step: "03", text: "Play your game. Win = earn gold. Lose = lose your stake." },
+    { step: "04", text: "Check your result — Riot API verifies it automatically" },
+  ];
+
   return (
     <div style={{
-      minHeight: "100vh", background: "#010A13",
-      display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-      fontFamily: "Cinzel, serif",
-      backgroundImage: "radial-gradient(ellipse at 50% 0%, #0A1628 0%, #010A13 70%)"
+      minHeight: "100vh", background: "#010A13", fontFamily: "Cinzel, serif",
+      backgroundImage: "radial-gradient(ellipse at 20% 50%, #0d1f3c 0%, #010A13 60%), radial-gradient(ellipse at 80% 20%, #1a0d05 0%, transparent 50%)"
     }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap');
@@ -153,85 +165,212 @@ function AuthPage({ onLogin }) {
         @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-        input::placeholder { color: #785A2888; }
+        @keyframes fadeInLeft { from { opacity: 0; transform: translateX(-30px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes fadeInRight { from { opacity: 0; transform: translateX(30px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes glow { 0%,100% { text-shadow: 0 0 20px #C8AA6E44; } 50% { text-shadow: 0 0 60px #C8AA6E99; } }
+        @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+        input::placeholder { color: #785A2844; }
         ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: #010A13; } ::-webkit-scrollbar-thumb { background: #785A28; border-radius: 3px; }
+        .auth-feature-card:hover { border-color: #C8AA6E44 !important; background: #0d1f3c !important; }
+        .auth-input:focus { border-color: #C8AA6E !important; }
       `}</style>
 
-      {/* Decorative hex frame */}
-      <div style={{ textAlign: "center", marginBottom: 40, animation: "fadeIn 0.8s ease" }}>
-        <div style={{ fontSize: 11, letterSpacing: 6, color: "#785A28", marginBottom: 12 }}>RUNETERRA WAGERS</div>
-        <h1 style={{
-          fontSize: 48, fontWeight: 900, color: "#C8AA6E", margin: 0,
-          textShadow: "0 0 40px #C8AA6E55", lineHeight: 1
-        }}>BET ON<br /><span style={{ color: "#F0E6D3" }}>YOURSELF</span></h1>
-        <div style={{ width: 80, height: 2, background: "linear-gradient(90deg, transparent, #C8AA6E, transparent)", margin: "16px auto" }} />
-        <p style={{ color: "#785A28", fontSize: 12, fontFamily: "Crimson Text, serif", fontStyle: "italic", margin: 0 }}>
+      {/* Top brand bar */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 48px", borderBottom: "1px solid #785A2811" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{ width: 32, height: 32, background: "linear-gradient(135deg, #C8AA6E, #785A28)", borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>⚔</div>
+          <div>
+            <div style={{ fontSize: 9, letterSpacing: 5, color: "#785A28" }}>RUNETERRA</div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: "#C8AA6E", lineHeight: 1 }}>WAGERS</div>
+          </div>
+        </div>
+        <div style={{ fontSize: 11, color: "#785A2888", fontFamily: "Crimson Text, serif", fontStyle: "italic" }}>
           Stake your gold. Prove your rank.
-        </p>
+        </div>
       </div>
 
-      <div style={{
-        background: "#0A1628", border: "1px solid #785A2855", borderRadius: 4,
-        padding: 36, width: 360, animation: "fadeIn 0.8s ease 0.1s both"
-      }}>
-        <div style={{ display: "flex", marginBottom: 28, border: "1px solid #785A2833", borderRadius: 3, overflow: "hidden" }}>
-          {["login", "register"].map(m => (
-            <button key={m} onClick={() => setMode(m)} style={{
-              flex: 1, padding: "10px", border: "none", cursor: "pointer",
-              background: mode === m ? "#C8AA6E" : "transparent",
-              color: mode === m ? "#010A13" : "#785A28",
-              fontFamily: "Cinzel, serif", fontSize: 12, fontWeight: 700,
-              textTransform: "uppercase", letterSpacing: 2, transition: "all 0.2s"
-            }}>{m}</button>
-          ))}
+      {/* Main split layout */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 420px 1fr", gap: 0, minHeight: "calc(100vh - 73px)", alignItems: "start" }}>
+
+        {/* LEFT PANEL — How it works */}
+        <div style={{ padding: "60px 40px 60px 48px", animation: "fadeInLeft 0.7s ease" }}>
+          <div style={{ fontSize: 9, letterSpacing: 5, color: "#785A28", marginBottom: 8 }}>HOW IT WORKS</div>
+          <h2 style={{ fontSize: 28, fontWeight: 900, color: "#F0E6D3", marginBottom: 32, lineHeight: 1.2 }}>
+            Bet on yourself.<br/><span style={{ color: "#C8AA6E" }}>Win real rewards.</span>
+          </h2>
+          <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+            {howItWorks.map((item, i) => (
+              <div key={i} style={{ display: "flex", gap: 16, alignItems: "flex-start", animation: `fadeInLeft 0.7s ease ${0.1 * i}s both` }}>
+                <div style={{
+                  width: 36, height: 36, borderRadius: 6, flexShrink: 0,
+                  background: "linear-gradient(135deg, #C8AA6E22, #785A2811)",
+                  border: "1px solid #C8AA6E33",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  color: "#C8AA6E", fontSize: 11, fontWeight: 700, letterSpacing: 1
+                }}>{item.step}</div>
+                <div style={{ color: "#785A28", fontSize: 13, fontFamily: "Crimson Text, serif", lineHeight: 1.6, paddingTop: 8 }}>
+                  {item.text}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Rank odds table */}
+          <div style={{ marginTop: 40, background: "#0A162888", border: "1px solid #785A2822", borderRadius: 8, padding: 20 }}>
+            <div style={{ fontSize: 9, letterSpacing: 4, color: "#785A28", marginBottom: 16 }}>PAYOUT MULTIPLIERS BY RANK</div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px 24px" }}>
+              {[
+                ["Iron", "1.60x"], ["Bronze", "1.55x"], ["Silver", "1.50x"], ["Gold", "1.45x"],
+                ["Platinum", "1.40x"], ["Emerald", "1.38x"], ["Diamond", "1.35x"], ["Master+", "1.15–1.25x"]
+              ].map(([rank, odds]) => (
+                <div key={rank} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "4px 0", borderBottom: "1px solid #785A2811" }}>
+                  <span style={{ fontSize: 11, color: "#785A2888", fontFamily: "Crimson Text, serif" }}>{rank}</span>
+                  <span style={{ fontSize: 12, color: "#C8AA6E", fontWeight: 700 }}>{odds}</span>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
 
-        {[
-          { label: "Username (case insensitive)", value: username, set: setUsername, type: "text" },
-          { label: "Password", value: password, set: setPassword, type: "password" }
-        ].map(f => (
-          <div key={f.label} style={{ marginBottom: 16 }}>
-            <label style={{ display: "block", fontSize: 10, letterSpacing: 3, color: "#785A28", marginBottom: 6 }}>
-              {f.label.toUpperCase()}
-            </label>
-            <input
-              type={f.type} value={f.value}
-              onChange={e => f.set(e.target.value)}
-              onKeyDown={e => e.key === "Enter" && handle()}
-              style={{
-                width: "100%", background: "#010A13", border: "1px solid #785A2855",
-                color: "#F0E6D3", padding: "10px 14px", borderRadius: 3,
-                fontFamily: "Cinzel, serif", fontSize: 13, outline: "none",
-                transition: "border-color 0.2s"
+        {/* CENTER — Login form */}
+        <div style={{ padding: "60px 0", borderLeft: "1px solid #785A2818", borderRight: "1px solid #785A2818" }}>
+          <div style={{ padding: "0 36px" }}>
+            {/* Hero */}
+            <div style={{ textAlign: "center", marginBottom: 36 }}>
+              <div style={{ fontSize: 64, marginBottom: 8, animation: "float 4s ease-in-out infinite" }}>⚔️</div>
+              <h1 style={{ fontSize: 36, fontWeight: 900, color: "#C8AA6E", margin: "0 0 4px", animation: "glow 3s ease-in-out infinite", lineHeight: 1 }}>
+                BET ON<br /><span style={{ color: "#F0E6D3" }}>YOURSELF</span>
+              </h1>
+              <div style={{ width: 60, height: 1, background: "linear-gradient(90deg, transparent, #C8AA6E, transparent)", margin: "12px auto" }} />
+            </div>
+
+            {/* Tabs */}
+            <div style={{ display: "flex", marginBottom: 24, border: "1px solid #785A2833", borderRadius: 4, overflow: "hidden" }}>
+              {["login", "register"].map(m => (
+                <button key={m} onClick={() => { setMode(m); setError(""); }} style={{
+                  flex: 1, padding: "11px", border: "none", cursor: "pointer",
+                  background: mode === m ? "#C8AA6E" : "transparent",
+                  color: mode === m ? "#010A13" : "#785A28",
+                  fontFamily: "Cinzel, serif", fontSize: 11, fontWeight: 700,
+                  textTransform: "uppercase", letterSpacing: 2, transition: "all 0.2s"
+                }}>{m}</button>
+              ))}
+            </div>
+
+            {/* Fields */}
+            {[
+              { label: "Username", value: username, set: setUsername, type: "text", placeholder: "your summoner name" },
+              { label: "Password", value: password, set: setPassword, type: "password", placeholder: "••••••••" }
+            ].map(f => (
+              <div key={f.label} style={{ marginBottom: 14 }}>
+                <label style={{ display: "block", fontSize: 9, letterSpacing: 3, color: "#785A28", marginBottom: 6 }}>
+                  {f.label.toUpperCase()}
+                </label>
+                <input
+                  className="auth-input"
+                  type={f.type} value={f.value} placeholder={f.placeholder}
+                  onChange={e => f.set(e.target.value)}
+                  onKeyDown={e => e.key === "Enter" && handle()}
+                  style={{
+                    width: "100%", background: "#010A13", border: "1px solid #785A2833",
+                    color: "#F0E6D3", padding: "11px 14px", borderRadius: 4,
+                    fontFamily: "Cinzel, serif", fontSize: 13, outline: "none",
+                    transition: "border-color 0.2s"
+                  }}
+                />
+              </div>
+            ))}
+
+            {error && (
+              <div style={{ background: "#C8464A11", border: "1px solid #C8464A33", borderRadius: 3, padding: "10px 14px", marginBottom: 14 }}>
+                <p style={{ color: "#C8464A", fontSize: 12, margin: 0, fontFamily: "Crimson Text, serif" }}>⚠ {error}</p>
+              </div>
+            )}
+
+            {loading ? <Loader text="Authenticating..." /> : (
+              <button onClick={handle} style={{
+                width: "100%", background: "linear-gradient(135deg, #C8AA6E, #785A28)",
+                border: "none", color: "#010A13", padding: "13px", borderRadius: 4,
+                fontFamily: "Cinzel, serif", fontSize: 13, fontWeight: 700,
+                letterSpacing: 2, cursor: "pointer", textTransform: "uppercase",
+                transition: "opacity 0.2s", marginBottom: 12
               }}
-              onFocus={e => e.target.style.borderColor = "#C8AA6E"}
-              onBlur={e => e.target.style.borderColor = "#785A2855"}
-            />
+                onMouseEnter={e => e.target.style.opacity = "0.85"}
+                onMouseLeave={e => e.target.style.opacity = "1"}
+              >
+                {mode === "login" ? "Enter the Rift" : "Create Account"}
+              </button>
+            )}
+
+            {mode === "register" && (
+              <div style={{ background: "#C8AA6E11", border: "1px solid #C8AA6E22", borderRadius: 4, padding: "12px 16px", textAlign: "center" }}>
+                <p style={{ color: "#C8AA6E", fontSize: 12, margin: 0, fontFamily: "Crimson Text, serif" }}>
+                  🎁 You start with <strong>$500 in virtual gold</strong> — no real money needed
+                </p>
+              </div>
+            )}
+
+            <div style={{ marginTop: 24, padding: "16px", background: "#0A162866", borderRadius: 4, border: "1px solid #785A2811" }}>
+              <div style={{ fontSize: 9, letterSpacing: 3, color: "#785A2866", marginBottom: 8 }}>PLATFORM INFO</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                {["Virtual currency only — no real money", "Solo/Duo ranked games only", "$30 max bet per game", "5% platform rake on winnings"].map(t => (
+                  <div key={t} style={{ fontSize: 11, color: "#785A2888", fontFamily: "Crimson Text, serif", display: "flex", gap: 6, alignItems: "center" }}>
+                    <span style={{ color: "#C8AA6E44" }}>◆</span> {t}
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
-        ))}
+        </div>
 
-        {error && <p style={{ color: "#C8464A", fontSize: 12, marginBottom: 16, fontFamily: "Crimson Text, serif" }}>⚠ {error}</p>}
+        {/* RIGHT PANEL — Features / rewards */}
+        <div style={{ padding: "60px 48px 60px 40px", animation: "fadeInRight 0.7s ease" }}>
+          <div style={{ fontSize: 9, letterSpacing: 5, color: "#785A28", marginBottom: 8 }}>FEATURES</div>
+          <h2 style={{ fontSize: 28, fontWeight: 900, color: "#F0E6D3", marginBottom: 32, lineHeight: 1.2 }}>
+            What you can<br/><span style={{ color: "#C8AA6E" }}>win & earn.</span>
+          </h2>
 
-        {loading ? <Loader text="Authenticating..." /> : (
-          <button onClick={handle} style={{
-            width: "100%", background: "linear-gradient(135deg, #C8AA6E, #785A28)",
-            border: "none", color: "#010A13", padding: "12px", borderRadius: 3,
-            fontFamily: "Cinzel, serif", fontSize: 13, fontWeight: 700,
-            letterSpacing: 2, cursor: "pointer", textTransform: "uppercase",
-            transition: "opacity 0.2s"
-          }}
-            onMouseEnter={e => e.target.style.opacity = "0.85"}
-            onMouseLeave={e => e.target.style.opacity = "1"}
-          >
-            {mode === "login" ? "Enter the Rift" : "Create Account"}
-          </button>
-        )}
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            {features.map((f, i) => (
+              <div key={i} className="auth-feature-card" style={{
+                background: "#0A162866", border: "1px solid #785A2822", borderRadius: 8,
+                padding: "16px 20px", transition: "all 0.2s", cursor: "default",
+                animation: `fadeInRight 0.7s ease ${0.1 * i}s both`
+              }}>
+                <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+                  <span style={{ fontSize: 20, flexShrink: 0 }}>{f.icon}</span>
+                  <div>
+                    <div style={{ color: "#C8AA6E", fontSize: 12, fontWeight: 700, marginBottom: 4 }}>{f.title}</div>
+                    <div style={{ color: "#785A28", fontSize: 12, fontFamily: "Crimson Text, serif", lineHeight: 1.5 }}>{f.desc}</div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
 
-        {mode === "register" && (
-          <p style={{ color: "#785A28", fontSize: 11, marginTop: 16, textAlign: "center", fontFamily: "Crimson Text, serif" }}>
-            You start with <strong style={{ color: "#C8AA6E" }}>$500 in fake gold</strong> to test the platform.
-          </p>
-        )}
+          {/* Coming soon rewards */}
+          <div style={{ marginTop: 28, background: "linear-gradient(135deg, #C8AA6E11, #785A2811)", border: "1px solid #C8AA6E22", borderRadius: 8, padding: 20 }}>
+            <div style={{ fontSize: 9, letterSpacing: 4, color: "#C8AA6E88", marginBottom: 12 }}>COMING SOON — REWARDS SHOP</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {[
+                { item: "Champion Skin", price: "$1,250 gold", emoji: "🎨" },
+                { item: "Riot Points Pack (650 RP)", price: "$500 gold", emoji: "💎" },
+                { item: "Champion Bundle", price: "$800 gold", emoji: "⚔️" },
+              ].map(r => (
+                <div key={r.item} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid #785A2811" }}>
+                  <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                    <span>{r.emoji}</span>
+                    <span style={{ fontSize: 12, color: "#F0E6D388", fontFamily: "Crimson Text, serif" }}>{r.item}</span>
+                  </div>
+                  <span style={{ fontSize: 11, color: "#C8AA6E", fontWeight: 700 }}>{r.price}</span>
+                </div>
+              ))}
+            </div>
+            <div style={{ marginTop: 12, fontSize: 10, color: "#785A2855", fontFamily: "Crimson Text, serif", fontStyle: "italic" }}>
+              * Rewards are virtual and for demonstration purposes
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -968,6 +1107,7 @@ export default function App() {
         @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes shimmerBar { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
         input, select { outline: none; }
         input::placeholder { color: #785A2888; }
         ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: #010A13; } ::-webkit-scrollbar-thumb { background: #785A28; border-radius: 3px; }
@@ -1012,41 +1152,170 @@ export default function App() {
         </div>
       </div>
 
-      {/* Content */}
-      <div style={{ maxWidth: 800, margin: "0 auto", padding: "32px 24px", animation: "fadeIn 0.3s ease" }}>
+      {/* Content — wide 3-col layout */}
+      <div style={{ display: "grid", gridTemplateColumns: "220px 1fr 220px", gap: 0, minHeight: "calc(100vh - 100px)", animation: "fadeIn 0.3s ease" }}>
 
-        {tab === "dashboard" && (
-          <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-            {/* Stats row */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
+        {/* LEFT SIDEBAR */}
+        <div style={{ padding: "24px 16px 24px 24px", borderRight: "1px solid #785A2818", display: "flex", flexDirection: "column", gap: 16 }}>
+
+          {/* Player card */}
+          <div style={{ background: "#0A1628", border: "1px solid #785A2833", borderRadius: 8, padding: 16 }}>
+            <div style={{ fontSize: 9, letterSpacing: 3, color: "#785A2866", marginBottom: 10 }}>SUMMONER</div>
+            <div style={{ color: "#C8AA6E", fontSize: 14, fontWeight: 700, marginBottom: 2 }}>{user.username}</div>
+            {user.lolAccount ? (
+              <>
+                <div style={{ color: "#785A28", fontSize: 11, fontFamily: "Crimson Text, serif", marginBottom: 8 }}>{user.lolAccount}</div>
+                <div style={{ display: "inline-block", background: "#C8AA6E22", border: "1px solid #C8AA6E44", borderRadius: 3, padding: "3px 10px", fontSize: 10, color: "#C8AA6E", letterSpacing: 1 }}>
+                  {user.rank || "UNRANKED"}
+                </div>
+              </>
+            ) : (
+              <div style={{ color: "#785A2866", fontSize: 11, fontFamily: "Crimson Text, serif", fontStyle: "italic" }}>No account linked</div>
+            )}
+          </div>
+
+          {/* Quick stats */}
+          <div style={{ background: "#0A1628", border: "1px solid #785A2833", borderRadius: 8, padding: 16 }}>
+            <div style={{ fontSize: 9, letterSpacing: 3, color: "#785A2866", marginBottom: 12 }}>STATS</div>
+            {[
+              { label: "Balance", value: formatMoney(user.balance), color: "#C8AA6E" },
+              { label: "Wins", value: stats.wins, color: "#0BC4AA" },
+              { label: "Losses", value: stats.losses, color: "#C8464A" },
+              { label: "Win Rate", value: stats.wins + stats.losses > 0 ? `${Math.round(stats.wins / (stats.wins + stats.losses) * 100)}%` : "—", color: "#F0E6D3" },
+            ].map(s => (
+              <div key={s.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "7px 0", borderBottom: "1px solid #785A2811" }}>
+                <span style={{ fontSize: 11, color: "#785A2888", fontFamily: "Crimson Text, serif" }}>{s.label}</span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: s.color }}>{s.value}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Active bet status */}
+          {(() => {
+            const activeBet = user.bets?.find(b => b.status === "pending");
+            return activeBet ? (
+              <div style={{ background: "linear-gradient(135deg, #C8AA6E11, #785A2811)", border: "1px solid #C8AA6E33", borderRadius: 8, padding: 16 }}>
+                <div style={{ fontSize: 9, letterSpacing: 3, color: "#C8AA6E88", marginBottom: 10 }}>ACTIVE BET</div>
+                <div style={{ color: "#C8AA6E", fontSize: 22, fontWeight: 900 }}>{formatMoney(activeBet.amount)}</div>
+                <div style={{ color: "#785A28", fontSize: 11, marginTop: 4, fontFamily: "Crimson Text, serif" }}>
+                  Win to earn <span style={{ color: "#0BC4AA" }}>{formatMoney(activeBet.potentialWin)}</span>
+                </div>
+                <div style={{ color: "#785A2866", fontSize: 10, marginTop: 6 }}>{timeAgo(activeBet.placedAt)}</div>
+                <div style={{ marginTop: 10, height: 3, background: "#785A2822", borderRadius: 2, overflow: "hidden" }}>
+                  <div style={{ height: "100%", width: "100%", background: "linear-gradient(90deg, #C8AA6E, #0BC4AA)", borderRadius: 2, animation: "shimmerBar 2s linear infinite" }} />
+                </div>
+              </div>
+            ) : (
+              <div style={{ background: "#0A162866", border: "1px solid #785A2811", borderRadius: 8, padding: 16, textAlign: "center" }}>
+                <div style={{ fontSize: 24, marginBottom: 8 }}>🎯</div>
+                <div style={{ color: "#785A2866", fontSize: 11, fontFamily: "Crimson Text, serif", fontStyle: "italic" }}>No active bet</div>
+                <div style={{ color: "#785A2844", fontSize: 10, marginTop: 4 }}>Place a bet to begin</div>
+              </div>
+            );
+          })()}
+
+          {/* Rank odds mini table */}
+          <div style={{ background: "#0A1628", border: "1px solid #785A2833", borderRadius: 8, padding: 16 }}>
+            <div style={{ fontSize: 9, letterSpacing: 3, color: "#785A2866", marginBottom: 12 }}>ODDS TABLE</div>
+            {[["Iron","1.60x"],["Bronze","1.55x"],["Silver","1.50x"],["Gold","1.45x"],["Plat","1.40x"],["Emerald","1.38x"],["Diamond","1.35x"],["Master+","1.15x"]].map(([r,o]) => (
+              <div key={r} style={{ display: "flex", justifyContent: "space-between", padding: "4px 0", borderBottom: "1px solid #785A2811" }}>
+                <span style={{ fontSize: 10, color: user.rank?.startsWith(r.toUpperCase()) ? "#C8AA6E" : "#785A2866", fontFamily: "Crimson Text, serif" }}>{r}</span>
+                <span style={{ fontSize: 10, color: user.rank?.startsWith(r.toUpperCase()) ? "#C8AA6E" : "#785A2844", fontWeight: user.rank?.startsWith(r.toUpperCase()) ? 700 : 400 }}>{o}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* CENTER CONTENT */}
+        <div style={{ padding: "24px 24px" }}>
+          {tab === "dashboard" && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+              <LinkAccount user={user} setUser={updateUser} region={region} setRegion={setRegion} toast={showToast} />
+              <PlaceBet user={user} setUser={updateUser} toast={showToast} />
+              <ResolveBet user={user} setUser={updateUser} region={region} toast={showToast} showResult={setResultScreen} />
+            </div>
+          )}
+          {tab === "bet" && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+              <LinkAccount user={user} setUser={updateUser} region={region} setRegion={setRegion} toast={showToast} />
+              <PlaceBet user={user} setUser={updateUser} toast={showToast} />
+              <ResolveBet user={user} setUser={updateUser} region={region} toast={showToast} showResult={setResultScreen} />
+            </div>
+          )}
+          {tab === "history" && <BetHistory bets={user.bets} />}
+          {tab === "leaderboard" && <Leaderboard />}
+        </div>
+
+        {/* RIGHT SIDEBAR */}
+        <div style={{ padding: "24px 24px 24px 16px", borderLeft: "1px solid #785A2818", display: "flex", flexDirection: "column", gap: 16 }}>
+
+          {/* Recent bet history preview */}
+          <div style={{ background: "#0A1628", border: "1px solid #785A2833", borderRadius: 8, padding: 16 }}>
+            <div style={{ fontSize: 9, letterSpacing: 3, color: "#785A2866", marginBottom: 12 }}>RECENT BETS</div>
+            {user.bets?.length ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {[...user.bets].reverse().slice(0, 4).map(bet => (
+                  <div key={bet.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 0", borderBottom: "1px solid #785A2811" }}>
+                    <div>
+                      <div style={{ fontSize: 10, color: bet.status === "won" ? "#0BC4AA" : bet.status === "lost" ? "#C8464A" : "#C8AA6E", letterSpacing: 1 }}>
+                        {bet.status === "won" ? "WIN" : bet.status === "lost" ? "LOSS" : "ACTIVE"}
+                      </div>
+                      {bet.result?.champion && <div style={{ fontSize: 10, color: "#785A2877", fontFamily: "Crimson Text, serif" }}>{bet.result.champion}</div>}
+                    </div>
+                    <div style={{ textAlign: "right" }}>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: bet.status === "won" ? "#0BC4AA" : bet.status === "lost" ? "#C8464A" : "#C8AA6E" }}>
+                        {bet.status === "won" ? "+" : bet.status === "lost" ? "-" : ""}{formatMoney(bet.status === "won" ? bet.potentialWin : bet.amount)}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div style={{ color: "#785A2844", fontSize: 11, fontFamily: "Crimson Text, serif", fontStyle: "italic", textAlign: "center", padding: "12px 0" }}>No bets yet</div>
+            )}
+          </div>
+
+          {/* Tips */}
+          <div style={{ background: "#0A1628", border: "1px solid #785A2833", borderRadius: 8, padding: 16 }}>
+            <div style={{ fontSize: 9, letterSpacing: 3, color: "#785A2866", marginBottom: 12 }}>TIPS</div>
+            {[
+              { icon: "🎯", tip: "Bet before you queue, not mid-champ select" },
+              { icon: "📈", tip: "Lower ranks earn higher multipliers" },
+              { icon: "⚡", tip: "Only ranked Solo/Duo games count" },
+              { icon: "🔒", tip: "One active bet at a time per account" },
+            ].map((t, i) => (
+              <div key={i} style={{ display: "flex", gap: 8, alignItems: "flex-start", marginBottom: 10 }}>
+                <span style={{ fontSize: 14, flexShrink: 0 }}>{t.icon}</span>
+                <span style={{ fontSize: 11, color: "#785A28", fontFamily: "Crimson Text, serif", lineHeight: 1.5 }}>{t.tip}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Coming soon rewards box */}
+          <div style={{ background: "linear-gradient(135deg, #C8AA6E0A, #785A280A)", border: "1px solid #C8AA6E22", borderRadius: 8, padding: 16 }}>
+            <div style={{ fontSize: 9, letterSpacing: 3, color: "#C8AA6E66", marginBottom: 12 }}>REWARDS SHOP</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {[
-                { label: "Balance", value: formatMoney(user.balance), color: "#C8AA6E" },
-                { label: "Wins", value: stats.wins, color: "#0BC4AA" },
-                { label: "Losses", value: stats.losses, color: "#C8464A" },
-                { label: "Win Rate", value: stats.wins + stats.losses > 0 ? `${Math.round(stats.wins / (stats.wins + stats.losses) * 100)}%` : "—", color: "#C8AA6E" }
-              ].map(s => (
-                <div key={s.label} style={{ background: "#0A1628", border: "1px solid #785A2833", borderRadius: 4, padding: "16px 20px" }}>
-                  <div style={{ fontSize: 9, letterSpacing: 3, color: "#785A28", marginBottom: 6 }}>{s.label.toUpperCase()}</div>
-                  <div style={{ fontSize: 22, fontWeight: 700, color: s.color }}>{s.value}</div>
+                { item: "650 RP Pack", price: "500g", emoji: "💎" },
+                { item: "Champion Skin", price: "1250g", emoji: "🎨" },
+                { item: "Champion Bundle", price: "800g", emoji: "⚔️" },
+              ].map(r => (
+                <div key={r.item} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 0", borderBottom: "1px solid #785A2811" }}>
+                  <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                    <span style={{ fontSize: 12 }}>{r.emoji}</span>
+                    <span style={{ fontSize: 11, color: "#F0E6D355", fontFamily: "Crimson Text, serif" }}>{r.item}</span>
+                  </div>
+                  <span style={{ fontSize: 10, color: "#C8AA6E88", fontWeight: 700 }}>{r.price}</span>
                 </div>
               ))}
             </div>
-            <LinkAccount user={user} setUser={updateUser} region={region} setRegion={setRegion} toast={showToast} />
-            <PlaceBet user={user} setUser={updateUser} toast={showToast} />
-            <ResolveBet user={user} setUser={updateUser} region={region} toast={showToast} showResult={setResultScreen} />
+            <div style={{ marginTop: 12, textAlign: "center" }}>
+              <div style={{ display: "inline-block", background: "#C8AA6E11", border: "1px solid #C8AA6E22", borderRadius: 3, padding: "4px 12px", fontSize: 9, color: "#C8AA6E66", letterSpacing: 2 }}>
+                COMING SOON
+              </div>
+            </div>
           </div>
-        )}
-
-        {tab === "bet" && (
-          <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-            <LinkAccount user={user} setUser={updateUser} region={region} setRegion={setRegion} toast={showToast} />
-            <PlaceBet user={user} setUser={updateUser} toast={showToast} />
-            <ResolveBet user={user} setUser={updateUser} region={region} toast={showToast} showResult={setResultScreen} />
-          </div>
-        )}
-
-        {tab === "history" && <BetHistory bets={user.bets} />}
-        {tab === "leaderboard" && <Leaderboard />}
+        </div>
       </div>
 
       {toast && <Toast key={toast.id} message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
