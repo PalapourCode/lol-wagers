@@ -663,6 +663,88 @@ function Leaderboard() {
   );
 }
 
+
+// ─── DEBUG PANEL (admin only) ────────────────────────────────────────────────
+function DebugPanel({ user, setUser, toast }) {
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const activeBet = user.bets?.find(b => b.status === "pending");
+
+  const simulate = async (won) => {
+    if (!activeBet) return toast("Place a bet first", "error");
+    setLoading(true);
+    try {
+      const fakeMatch = {
+        matchId: `DEBUG_${Date.now()}`,
+        win: won,
+        champion: "Teemo",
+        kills: won ? 10 : 0,
+        deaths: won ? 1 : 10,
+        assists: 5,
+        gameEndTimestamp: Date.now()
+      };
+      const data = await apiCall("/api/bet", {
+        action: "resolveBet",
+        username: user.username,
+        won,
+        matchId: fakeMatch.matchId,
+        result: fakeMatch
+      });
+      setUser(data.user);
+      toast(won ? "🏆 Simulated WIN!" : "💀 Simulated LOSS!", won ? "success" : "error");
+    } catch(e) {
+      toast(e.message, "error");
+    }
+    setLoading(false);
+  };
+
+  const resetBalance = async () => {
+    setLoading(true);
+    try {
+      const data = await apiCall("/api/debug", { action: "resetBalance", username: user.username });
+      setUser(data.user);
+      toast("Balance reset to $500", "success");
+    } catch(e) {
+      toast(e.message, "error");
+    }
+    setLoading(false);
+  };
+
+  return (
+    <div style={{ position: "fixed", bottom: 80, right: 24, zIndex: 9998 }}>
+      <button onClick={() => setOpen(!open)} style={{
+        background: "#1a1a2e", border: "1px solid #444", color: "#888",
+        padding: "6px 12px", borderRadius: 3, cursor: "pointer",
+        fontFamily: "monospace", fontSize: 11
+      }}>🛠 debug</button>
+      {open && (
+        <div style={{
+          position: "absolute", bottom: 36, right: 0, background: "#1a1a2e",
+          border: "1px solid #444", borderRadius: 4, padding: 16, width: 220,
+          display: "flex", flexDirection: "column", gap: 8
+        }}>
+          <div style={{ color: "#888", fontSize: 10, letterSpacing: 2, marginBottom: 4 }}>DEBUG TOOLS</div>
+          <div style={{ color: "#555", fontSize: 11, fontFamily: "monospace" }}>
+            Active bet: {activeBet ? `$${activeBet.amount}` : "none"}
+          </div>
+          <button onClick={() => simulate(true)} disabled={loading || !activeBet} style={{
+            background: "#0BC4AA22", border: "1px solid #0BC4AA55", color: "#0BC4AA",
+            padding: "8px", borderRadius: 3, cursor: "pointer", fontFamily: "monospace", fontSize: 12
+          }}>✓ Simulate WIN</button>
+          <button onClick={() => simulate(false)} disabled={loading || !activeBet} style={{
+            background: "#C8464A22", border: "1px solid #C8464A55", color: "#C8464A",
+            padding: "8px", borderRadius: 3, cursor: "pointer", fontFamily: "monospace", fontSize: 12
+          }}>✗ Simulate LOSS</button>
+          <button onClick={resetBalance} disabled={loading} style={{
+            background: "#C8AA6E22", border: "1px solid #C8AA6E55", color: "#C8AA6E",
+            padding: "8px", borderRadius: 3, cursor: "pointer", fontFamily: "monospace", fontSize: 12
+          }}>↺ Reset Balance $500</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── MAIN APP ─────────────────────────────────────────────────────────────────
 export default function App() {
   const [user, setUser] = useState(null);
@@ -779,6 +861,7 @@ export default function App() {
       </div>
 
       {toast && <Toast key={toast.id} message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+      <DebugPanel user={user} setUser={updateUser} toast={showToast} />
     </div>
   );
 }
