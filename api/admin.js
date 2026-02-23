@@ -147,39 +147,88 @@ module.exports = async function handler(req, res) {
 
     // ── GET FINANCIALS ───────────────────────────────────────────────────────
     } else if (action === "getFinancials") {
-      const [deps] = await sql`SELECT COALESCE(SUM(amount), 0) as total FROM deposits WHERE status = 'completed'`;
+      const [deps] = await sql`SELECT COALESCE(SUM(amount), 0) as total, COUNT(*) as count FROM deposits WHERE status = 'completed'`;
       const [realOwed] = await sql`SELECT COALESCE(SUM(real_balance), 0) as total FROM users`;
       const [creditsOwed] = await sql`SELECT COALESCE(SUM(skin_credits), 0) as total FROM users`;
-      const [redeemed] = await sql`SELECT COALESCE(SUM(credit_cost + COALESCE(real_cost, 0)), 0) as total FROM skin_redemptions WHERE status = 'fulfilled'`;
-      const [pendingRedeemed] = await sql`SELECT COALESCE(SUM(credit_cost + COALESCE(real_cost, 0)), 0) as total FROM skin_redemptions WHERE status = 'pending'`;
-      const [betStats] = await sql`SELECT COUNT(*) as total, SUM(CASE WHEN status='won' THEN 1 ELSE 0 END) as wins, SUM(CASE WHEN status='lost' THEN 1 ELSE 0 END) as losses, COALESCE(SUM(amount),0) as wagered FROM bets WHERE status != 'pending' AND status != 'cancelled'`;
+      const [redeemed] = await sql`SELECT COALESCE(SUM(credit_cost + COALESCE(real_cost, 0)), 0) as total, COUNT(*) as count FROM skin_redemptions WHERE status = 'fulfilled'`;
+      const [pendingRedeemed] = await sql`SELECT COALESCE(SUM(credit_cost + COALESCE(real_cost, 0)), 0) as total, COUNT(*) as count FROM skin_redemptions WHERE status = 'pending'`;
       const [playerCount] = await sql`SELECT COUNT(*) as total FROM users`;
-      const [depositCount] = await sql`SELECT COUNT(*) as total FROM deposits`;
+
+      // Real bets stats
+      const [realBets] = await sql`
+        SELECT
+          COUNT(*) as total,
+          COALESCE(SUM(CASE WHEN status='won' THEN 1 ELSE 0 END), 0) as wins,
+          COALESCE(SUM(CASE WHEN status='lost' THEN 1 ELSE 0 END), 0) as losses,
+          COALESCE(SUM(amount), 0) as wagered,
+          COALESCE(SUM(CASE WHEN status='won' THEN potential_win - amount ELSE 0 END), 0) as credits_paid_out
+        FROM bets WHERE mode = 'real' AND status NOT IN ('pending', 'cancelled')
+      `;
+
+      // Virtual bets stats
+      const [virtualBets] = await sql`
+        SELECT
+          COUNT(*) as total,
+          COALESCE(SUM(CASE WHEN status='won' THEN 1 ELSE 0 END), 0) as wins,
+          COALESCE(SUM(CASE WHEN status='lost' THEN 1 ELSE 0 END), 0) as losses,
+          COALESCE(SUM(amount), 0) as wagered
+        FROM bets WHERE mode = 'virtual' AND status NOT IN ('pending', 'cancelled')
+      `;
+
+      // Pending bets
+      const [pendingBets] = await sql`
+        SELECT COUNT(*) as total,
+          COALESCE(SUM(CASE WHEN mode='real' THEN amount ELSE 0 END), 0) as real_at_stake,
+          COALESCE(SUM(CASE WHEN mode='virtual' THEN amount ELSE 0 END), 0) as virtual_at_stake
+        FROM bets WHERE status = 'pending'
+      `;
 
       const totalDeposited = Number(deps.total);
       const totalRealOwed = Number(realOwed.total);
       const totalCreditsOwed = Number(creditsOwed.total);
       const totalFulfilled = Number(redeemed.total);
       const totalPendingRedeem = Number(pendingRedeemed.total);
-      const totalBets = Number(betStats.total);
-      const totalWins = Number(betStats.wins);
-      const totalLosses = Number(betStats.losses);
-      const totalWagered = Number(betStats.wagered);
+
+      const real = {
+        totalBets: Number(realBets.total),
+        wins: Number(realBets.wins),
+        losses: Number(realBets.losses),
+        wagered: Number(realBets.wagered),       // real € wagered by players
+        creditsPaidOut: Number(realBets.credits_paid_out), // credits created from wins
+        winRate: Number(realBets.total) > 0 ? Math.round(Number(realBets.wins) / Number(realBets.total) * 100) : 0,
+      };
+
+      const virtual = {
+        totalBets: Number(virtualBets.total),
+        wins: Number(virtualBets.wins),
+        losses: Number(virtualBets.losses),
+        wagered: Number(virtualBets.wagered),    // fake $ wagered (for info only)
+        winRate: Number(virtualBets.total) > 0 ? Math.round(Number(virtualBets.wins) / Number(virtualBets.total) * 100) : 0,
+      };
 
       return res.status(200).json({
+        // Real money
         totalDeposited,
         totalRealOwed,
-        totalCreditsOwed,
         totalFulfilled,
         totalPendingRedeem,
         netMargin: totalDeposited - totalRealOwed - totalFulfilled - totalPendingRedeem,
-        totalBets,
-        totalWins,
-        totalLosses,
-        totalWagered,
-        platformWinRate: totalBets > 0 ? Math.round((totalWins / totalBets) * 100) : 0,
+        // Credits
+        totalCreditsOwed,
+        totalCreditsPaidOut: real.creditsPaidOut,
+        // Bet stats split
+        real,
+        virtual,
+        // Pending
+        pendingBetsCount: Number(pendingBets.total),
+        pendingRealAtStake: Number(pendingBets.real_at_stake),
+        pendingVirtualAtStake: Number(pendingBets.virtual_at_stake),
+        // Counts
         totalPlayers: Number(playerCount.total),
-        totalDeposits: Number(depositCount.total),
+        totalDeposits: Number(deps.count),
+        totalRedemptionsFulfilled: Number(redeemed.count),
+        totalRedemptionsPending: Number(pendingRedeemed.count),
+      });
       });
 
     // ── GET RECENT ACTIVITY LOG ──────────────────────────────────────────────
