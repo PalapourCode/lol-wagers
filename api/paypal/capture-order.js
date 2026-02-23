@@ -47,6 +47,7 @@ module.exports = async function handler(req, res) {
       capture.purchase_units?.[0]?.payments?.captures?.[0]?.amount?.value || "0"
     );
     if (!capturedAmount || capturedAmount <= 0) return res.status(400).json({ error: "Could not verify captured amount" });
+    if (capturedAmount < 5.00) return res.status(400).json({ error: "Minimum deposit is $5.00" });
 
     // Security: verify username matches what was set in create-order
     const customId = capture.purchase_units?.[0]?.custom_id;
