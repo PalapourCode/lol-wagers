@@ -2897,46 +2897,135 @@ function AdminPanel({ adminToken, onLogout }) {
 
         {/* ══ FINANCIALS TAB ═════════════════════════════════════════════════ */}
         {!loading && tab === "financials" && financials && (
-          <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
             <div style={S.sectionTitle}>Platform Financials</div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))", gap: 14 }}>
-              {[
-                { label: "Total Deposited", val: fmt(financials.totalDeposited), color: "#4ade80", desc: "All PayPal deposits ever" },
-                { label: "Real Balance Owed", val: fmt(financials.totalRealOwed), color: "#F0F0F0", desc: "Money players can withdraw" },
-                { label: "Credits Outstanding", val: fmt(financials.totalCreditsOwed), color: "#a78bfa", desc: "Unspent skin credits" },
-                { label: "Redemptions Fulfilled", val: fmt(financials.totalFulfilled), color: "#C8AA6E", desc: "Total spent on sent RP cards" },
-                { label: "Redemptions Pending", val: fmt(financials.totalPendingRedeem), color: "#fb923c", desc: "Submitted but not yet sent" },
-                { label: "Net Margin", val: fmt(financials.netMargin), color: financials.netMargin >= 0 ? "#3FB950" : "#C8464A", desc: financials.netMargin >= 0 ? "Platform is profitable" : "⚠️ You owe more than received" },
-              ].map(({ label, val, color, desc }) => (
-                <div key={label} style={S.card}>
-                  <div style={S.label}>{label}</div>
-                  <div style={{ fontSize: 26, fontWeight: 700, fontFamily: "Barlow Condensed, sans-serif", color, marginTop: 6, marginBottom: 6 }}>{val}</div>
-                  <div style={{ fontSize: 13, color: "#7A7A82" }}>{desc}</div>
-                </div>
-              ))}
+
+            {/* ── SECTION 1: REAL MONEY ── */}
+            <div>
+              <div style={{ fontSize: 11, letterSpacing: 3, color: "#4ade80", fontWeight: 700, marginBottom: 12 }}>💵 REAL MONEY (EUR)</div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12 }}>
+                {[
+                  { label: "Total Deposited", val: `€${financials.totalDeposited.toFixed(2)}`, color: "#4ade80", desc: `${financials.totalDeposits} PayPal deposits` },
+                  { label: "Real Balance Owed", val: `€${financials.totalRealOwed.toFixed(2)}`, color: "#F0F0F0", desc: "Sitting in player wallets" },
+                  { label: "Redemptions Fulfilled", val: `€${financials.totalFulfilled.toFixed(2)}`, color: "#C8AA6E", desc: `${financials.totalRedemptionsFulfilled} RP cards sent` },
+                  { label: "Redemptions Pending", val: `€${financials.totalPendingRedeem.toFixed(2)}`, color: "#fb923c", desc: `${financials.totalRedemptionsPending} cards not yet sent` },
+                  {
+                    label: "Net Margin",
+                    val: `€${financials.netMargin.toFixed(2)}`,
+                    color: financials.netMargin >= 0 ? "#3FB950" : "#C8464A",
+                    desc: financials.netMargin >= 0 ? "Platform is profitable" : "⚠️ Owe more than received"
+                  },
+                ].map(({ label, val, color, desc }) => (
+                  <div key={label} style={{ ...S.card, borderColor: "#4ade8022" }}>
+                    <div style={S.label}>{label}</div>
+                    <div style={{ fontSize: 26, fontWeight: 700, fontFamily: "Barlow Condensed, sans-serif", color, marginTop: 6, marginBottom: 4 }}>{val}</div>
+                    <div style={{ fontSize: 12, color: "#7A7A82" }}>{desc}</div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ marginTop: 10, background: "#0d180d", border: "1px solid #4ade8022", borderRadius: 6, padding: "12px 16px", fontSize: 13, color: "#86efac", lineHeight: 1.8 }}>
+                <strong style={{ color: "#F0F0F0" }}>Margin:</strong> Deposited <strong>€{financials.totalDeposited.toFixed(2)}</strong> − owed to players <strong>€{financials.totalRealOwed.toFixed(2)}</strong> − sent RP <strong>€{financials.totalFulfilled.toFixed(2)}</strong> − pending RP <strong>€{financials.totalPendingRedeem.toFixed(2)}</strong> = <strong style={{ color: financials.netMargin >= 0 ? "#3FB950" : "#C8464A", fontSize: 15 }}>€{financials.netMargin.toFixed(2)}</strong>
+              </div>
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 14 }}>
-              {[
-                { label: "Players", val: financials.totalPlayers, color: "#F0F0F0" },
-                { label: "Total Bets", val: financials.totalBets, color: "#C8AA6E" },
-                { label: "Player Wins", val: `${financials.totalWins} (${financials.platformWinRate}%)`, color: "#3FB950" },
-                { label: "Player Losses", val: financials.totalLosses, color: "#F85149" },
-                { label: "Total Wagered", val: fmt(financials.totalWagered), color: "#A0A0A8" },
-                { label: "Total Deposits", val: financials.totalDeposits, color: "#4ade80" },
-              ].map(({ label, val, color }) => (
-                <div key={label} style={{ ...S.card, textAlign: "center" }}>
-                  <div style={S.label}>{label}</div>
-                  <div style={{ fontSize: 22, fontWeight: 700, fontFamily: "Barlow Condensed, sans-serif", color, marginTop: 8 }}>{val}</div>
-                </div>
-              ))}
+            {/* ── SECTION 2: SKIN CREDITS ── */}
+            <div>
+              <div style={{ fontSize: 11, letterSpacing: 3, color: "#a78bfa", fontWeight: 700, marginBottom: 12 }}>💜 SKIN CREDITS (not real money)</div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12 }}>
+                {[
+                  { label: "Credits Outstanding", val: financials.totalCreditsOwed.toFixed(2), color: "#a78bfa", desc: "Unspent credits across all players" },
+                  { label: "Credits Issued (all-time)", val: financials.totalCreditsPaidOut.toFixed(2), color: "#c4b5fd", desc: "Total created from real bet wins" },
+                ].map(({ label, val, color, desc }) => (
+                  <div key={label} style={{ ...S.card, borderColor: "#a78bfa22" }}>
+                    <div style={S.label}>{label}</div>
+                    <div style={{ fontSize: 26, fontWeight: 700, fontFamily: "Barlow Condensed, sans-serif", color, marginTop: 6, marginBottom: 4 }}>{val}</div>
+                    <div style={{ fontSize: 12, color: "#7A7A82" }}>{desc}</div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ marginTop: 10, background: "#14101e", border: "1px solid #a78bfa22", borderRadius: 6, padding: "12px 16px", fontSize: 13, color: "#c4b5fd", lineHeight: 1.6 }}>
+                Credits are <strong style={{ color: "#F0F0F0" }}>not cash</strong> — they only exist as a number in the database until a player redeems them for an RP card. Outstanding credits = your future RP card liability.
+              </div>
             </div>
 
-            <div style={{ ...S.card, background: "#141416" }}>
-              <div style={{ fontSize: 14, color: "#A0A0A8", lineHeight: 1.9, fontFamily: "DM Sans, sans-serif" }}>
-                <strong style={{ color: "#F0F0F0" }}>Margin explained:</strong> Total deposited <span style={{ color: "#4ade80" }}>{fmt(financials.totalDeposited)}</span> − real balance owed to players <span style={{ color: "#F0F0F0" }}>{fmt(financials.totalRealOwed)}</span> − fulfilled redemptions <span style={{ color: "#C8AA6E" }}>{fmt(financials.totalFulfilled)}</span> − pending redemptions <span style={{ color: "#fb923c" }}>{fmt(financials.totalPendingRedeem)}</span> = <strong style={{ color: financials.netMargin >= 0 ? "#3FB950" : "#C8464A", fontSize: 16 }}>{fmt(financials.netMargin)}</strong>
-                <br /><br />
-                <strong style={{ color: "#F0F0F0" }}>Player win rate:</strong> Players won <span style={{ color: "#3FB950" }}>{financials.platformWinRate}%</span> of resolved bets. Your house edge targets ~10% — if player WR is consistently above 55%, the odds formula may need adjusting.
+            {/* ── SECTION 3: REAL BETS ── */}
+            <div>
+              <div style={{ fontSize: 11, letterSpacing: 3, color: "#4ade80", fontWeight: 700, marginBottom: 12 }}>🎮 REAL MONEY BETS</div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12 }}>
+                {[
+                  { label: "Total Real Bets", val: financials.real.totalBets, color: "#F0F0F0" },
+                  { label: "Player Wins", val: `${financials.real.wins} (${financials.real.winRate}%)`, color: "#F85149", desc: "Costs you credits" },
+                  { label: "Player Losses", val: `${financials.real.losses}`, color: "#3FB950", desc: "You keep the stake" },
+                  { label: "Real € Wagered", val: `€${financials.real.wagered.toFixed(2)}`, color: "#4ade80", desc: "Total staked in real bets" },
+                  { label: "Credits Created", val: financials.real.creditsPaidOut.toFixed(2), color: "#a78bfa", desc: "Issued to winning players" },
+                  { label: "Win Rate", val: `${financials.real.winRate}%`, color: financials.real.winRate > 55 ? "#F85149" : "#3FB950", desc: financials.real.winRate > 55 ? "⚠️ Above target" : "✓ Within target" },
+                ].map(({ label, val, color, desc }) => (
+                  <div key={label} style={{ ...S.card, textAlign: "center", borderColor: "#4ade8022" }}>
+                    <div style={S.label}>{label}</div>
+                    <div style={{ fontSize: 22, fontWeight: 700, fontFamily: "Barlow Condensed, sans-serif", color, marginTop: 6 }}>{val}</div>
+                    {desc && <div style={{ fontSize: 11, color: "#7A7A82", marginTop: 4 }}>{desc}</div>}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* ── SECTION 4: VIRTUAL BETS ── */}
+            <div>
+              <div style={{ fontSize: 11, letterSpacing: 3, color: "#C8AA6E", fontWeight: 700, marginBottom: 12 }}>🎮 VIRTUAL BETS (fake money — for info only)</div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12 }}>
+                {[
+                  { label: "Total Virtual Bets", val: financials.virtual.totalBets, color: "#F0F0F0" },
+                  { label: "Player Wins", val: `${financials.virtual.wins} (${financials.virtual.winRate}%)`, color: "#A0A0A8" },
+                  { label: "Player Losses", val: financials.virtual.losses, color: "#A0A0A8" },
+                  { label: "Virtual $ Wagered", val: `$${financials.virtual.wagered.toFixed(2)}`, color: "#C8AA6E", desc: "Fake money only" },
+                ].map(({ label, val, color, desc }) => (
+                  <div key={label} style={{ ...S.card, textAlign: "center", borderColor: "#C8AA6E22", opacity: 0.8 }}>
+                    <div style={S.label}>{label}</div>
+                    <div style={{ fontSize: 22, fontWeight: 700, fontFamily: "Barlow Condensed, sans-serif", color, marginTop: 6 }}>{val}</div>
+                    {desc && <div style={{ fontSize: 11, color: "#7A7A82", marginTop: 4 }}>{desc}</div>}
+                  </div>
+                ))}
+              </div>
+              <div style={{ marginTop: 10, background: "#141416", border: "1px solid #C8AA6E22", borderRadius: 6, padding: "10px 14px", fontSize: 12, color: "#7A7A82" }}>
+                Virtual bets have no financial impact. Numbers shown for engagement tracking only.
+              </div>
+            </div>
+
+            {/* ── SECTION 5: PENDING BETS AT RISK ── */}
+            {financials.pendingBetsCount > 0 && (
+              <div>
+                <div style={{ fontSize: 11, letterSpacing: 3, color: "#fb923c", fontWeight: 700, marginBottom: 12 }}>⏳ PENDING BETS (in progress)</div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
+                  {[
+                    { label: "Active Bets", val: financials.pendingBetsCount, color: "#fb923c" },
+                    { label: "Real € at Stake", val: `€${financials.pendingRealAtStake.toFixed(2)}`, color: "#4ade80", desc: "Staked, awaiting result" },
+                    { label: "Virtual $ at Stake", val: `$${financials.pendingVirtualAtStake.toFixed(2)}`, color: "#C8AA6E", desc: "Fake money" },
+                  ].map(({ label, val, color, desc }) => (
+                    <div key={label} style={{ ...S.card, textAlign: "center", borderColor: "#fb923c33" }}>
+                      <div style={S.label}>{label}</div>
+                      <div style={{ fontSize: 22, fontWeight: 700, fontFamily: "Barlow Condensed, sans-serif", color, marginTop: 6 }}>{val}</div>
+                      {desc && <div style={{ fontSize: 11, color: "#7A7A82", marginTop: 4 }}>{desc}</div>}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* ── SECTION 6: PLATFORM SUMMARY ── */}
+            <div>
+              <div style={{ fontSize: 11, letterSpacing: 3, color: "#A0A0A8", fontWeight: 700, marginBottom: 12 }}>📊 PLATFORM</div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 12 }}>
+                {[
+                  { label: "Players", val: financials.totalPlayers, color: "#F0F0F0" },
+                  { label: "Total Deposits", val: financials.totalDeposits, color: "#4ade80" },
+                  { label: "RP Cards Sent", val: financials.totalRedemptionsFulfilled, color: "#C8AA6E" },
+                  { label: "RP Cards Pending", val: financials.totalRedemptionsPending, color: "#fb923c" },
+                ].map(({ label, val, color }) => (
+                  <div key={label} style={{ ...S.card, textAlign: "center" }}>
+                    <div style={S.label}>{label}</div>
+                    <div style={{ fontSize: 28, fontWeight: 700, fontFamily: "Barlow Condensed, sans-serif", color, marginTop: 6 }}>{val}</div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
