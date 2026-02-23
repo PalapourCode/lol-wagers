@@ -36,13 +36,17 @@ module.exports = async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
   if (req.method === "OPTIONS") return res.status(200).end();
 
-  const { action, username, lolAccount, puuid, rank } = req.body || {};
+  const { action, username, lolAccount, puuid, rank, region } = req.body || {};
 
   try {
-    if (action === "linkAccount") {
+    if (action === "getUser") {
+      const user = await getUser(username);
+      if (!user) return res.status(404).json({ error: "User not found" });
+      return res.status(200).json({ user });
+    } else if (action === "linkAccount") {
       const existing = await sql`SELECT username FROM users WHERE puuid = ${puuid} AND username != ${username}`;
       if (existing.length > 0) return res.status(409).json({ error: "This LoL account is already linked to another account" });
-      await sql`UPDATE users SET lol_account = ${lolAccount}, puuid = ${puuid}, rank = ${rank} WHERE username = ${username}`;
+      await sql`UPDATE users SET lol_account = ${lolAccount}, puuid = ${puuid}, rank = ${rank}, region = ${region || 'euw1'} WHERE username = ${username}`;
       const user = await getUser(username);
       return res.status(200).json({ user });
     } else if (action === "unlinkAccount") {
