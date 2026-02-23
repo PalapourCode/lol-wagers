@@ -17,6 +17,7 @@ async function initDB() {
   `;
   await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS real_balance NUMERIC DEFAULT 0`;
   await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS skin_credits NUMERIC DEFAULT 0`;
+  await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS region TEXT DEFAULT 'euw1'`;
   await sql`
     CREATE TABLE IF NOT EXISTS bets (
       id            BIGINT PRIMARY KEY,
