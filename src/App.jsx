@@ -2077,12 +2077,500 @@ function LiveFeed() {
 // ─── VICTORY / DEFEAT SCREEN ─────────────────────────────────────────────────
 function ResultScreen({ result, bet, onClose }) {
   const won = result?.win;
+  const [phase, setPhase] = useState("intro"); // intro → main → payout
+  const [teemos, setTeemos] = useState([]);
+  const [particles, setParticles] = useState([]);
+  const audioCtx = useRef(null);
 
+  // ── SOUND ENGINE ────────────────────────────────────────────────────────────
+  const getAudioCtx = () => {
+    if (!audioCtx.current) audioCtx.current = new (window.AudioContext || window.webkitAudioContext)();
+    return audioCtx.current;
+  };
+
+  const playTone = (freq, type, duration, gain = 0.3, delay = 0) => {
+    try {
+      const ctx = getAudioCtx();
+      const osc = ctx.createOscillator();
+      const g = ctx.createGain();
+      osc.connect(g); g.connect(ctx.destination);
+      osc.type = type; osc.frequency.setValueAtTime(freq, ctx.currentTime + delay);
+      g.gain.setValueAtTime(0, ctx.currentTime + delay);
+      g.gain.linearRampToValueAtTime(gain, ctx.currentTime + delay + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + duration);
+      osc.start(ctx.currentTime + delay);
+      osc.stop(ctx.currentTime + delay + duration + 0.05);
+    } catch(e) {}
+  };
+
+  const playWinFanfare = () => {
+    // Triumphant ascending fanfare
+    const notes = [523, 659, 784, 1047, 1319];
+    notes.forEach((f, i) => playTone(f, "triangle", 0.4, 0.25, i * 0.12));
+    setTimeout(() => {
+      [784, 988, 1175, 1568].forEach((f, i) => playTone(f, "sine", 0.6, 0.2, i * 0.1));
+    }, 700);
+    // Low punch
+    playTone(80, "sawtooth", 0.3, 0.4, 0);
+    playTone(100, "sawtooth", 0.2, 0.3, 0.05);
+  };
+
+  const playLossDoom = () => {
+    // Descending doom
+    [400, 320, 250, 180, 120].forEach((f, i) => playTone(f, "sawtooth", 0.5, 0.2, i * 0.15));
+    playTone(60, "square", 1.2, 0.15, 0);
+    setTimeout(() => playTone(55, "sawtooth", 0.8, 0.1), 900);
+  };
+
+  const playCoinsSound = () => {
+    for (let i = 0; i < 8; i++) {
+      playTone(800 + Math.random() * 400, "sine", 0.15, 0.15, i * 0.06);
+    }
+  };
+
+  const playTeemoSqueak = () => {
+    playTone(1200, "sine", 0.08, 0.1, 0);
+    playTone(1600, "sine", 0.06, 0.06, 0.05);
+  };
+
+  // ── PARTICLES ────────────────────────────────────────────────────────────────
+  const spawnParticles = useCallback(() => {
+    if (!won) return;
+    const burst = Array.from({ length: 120 }, (_, i) => ({
+      id: i + Date.now(),
+      x: 20 + Math.random() * 60,
+      y: -5,
+      vx: (Math.random() - 0.5) * 4,
+      size: 4 + Math.random() * 10,
+      delay: Math.random() * 3,
+      duration: 2.5 + Math.random() * 3,
+      color: ["#C8AA6E","#FFD700","#0BC4AA","#ff6b35","#a78bfa","#fff","#C8464A","#00ff88"][Math.floor(Math.random() * 8)],
+      shape: Math.random() > 0.6 ? "circle" : Math.random() > 0.5 ? "star" : "rect",
+      spin: (Math.random() - 0.5) * 720,
+    }));
+    setParticles(burst);
+  }, [won]);
+
+  // ── TEEMOS ───────────────────────────────────────────────────────────────────
+  const spawnTeemos = useCallback(() => {
+    const count = won ? 12 : 6;
+    const t = Array.from({ length: count }, (_, i) => ({
+      id: i,
+      x: Math.random() * 95,
+      delay: i * 0.18 + Math.random() * 0.3,
+      size: won ? 40 + Math.random() * 40 : 30 + Math.random() * 25,
+      spin: (Math.random() - 0.5) * 60,
+      speed: 3 + Math.random() * 4,
+      flipped: Math.random() > 0.5,
+      happy: won,
+      wobble: Math.random() * 2,
+    }));
+    setTeemos(t);
+  }, [won]);
+
+  // ── LIFECYCLE ────────────────────────────────────────────────────────────────
   useEffect(() => {
-    const t = setTimeout(onClose, 12000);
-    return () => clearTimeout(t);
-  }, [onClose]);
+    won ? playWinFanfare() : playLossDoom();
+    spawnParticles();
+    spawnTeemos();
 
+    const t1 = setTimeout(() => setPhase("main"), 600);
+    const t2 = setTimeout(() => { setPhase("payout"); playCoinsSound(); }, 1800);
+    const t3 = setTimeout(onClose, 14000);
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
+  }, []);
+
+  // Teemo squeak on hover
+  const handleTeemoHover = () => playTeemoSqueak();
+
+  // ── TEEMO SVG ────────────────────────────────────────────────────────────────
+  const TeemoFace = ({ happy, size }) => (
+    <svg width={size} height={size} viewBox="0 0 100 100" style={{ filter: happy ? "drop-shadow(0 0 8px #C8AA6E)" : "drop-shadow(0 0 6px #C8464A)" }}>
+      {/* Body */}
+      <ellipse cx="50" cy="65" rx="20" ry="25" fill={happy ? "#e8a040" : "#a04040"} />
+      {/* Head */}
+      <circle cx="50" cy="42" r="28" fill={happy ? "#f0b050" : "#b05050"} />
+      {/* Hat */}
+      <ellipse cx="50" cy="18" rx="32" ry="8" fill={happy ? "#cc3333" : "#661111"} />
+      <ellipse cx="50" cy="16" rx="16" ry="14" fill={happy ? "#dd4444" : "#772222"} />
+      {/* Hat pompom */}
+      <circle cx="50" cy="4" r="6" fill="white" />
+      {/* Eyes */}
+      {happy ? (
+        <>
+          <ellipse cx="38" cy="42" rx="6" ry="7" fill="white" />
+          <ellipse cx="62" cy="42" rx="6" ry="7" fill="white" />
+          <circle cx="39" cy="43" r="4" fill="#1a1a1a" />
+          <circle cx="63" cy="43" r="4" fill="#1a1a1a" />
+          <circle cx="41" cy="41" r="1.5" fill="white" />
+          <circle cx="65" cy="41" r="1.5" fill="white" />
+        </>
+      ) : (
+        <>
+          <ellipse cx="38" cy="42" rx="6" ry="5" fill="white" />
+          <ellipse cx="62" cy="42" rx="6" ry="5" fill="white" />
+          <circle cx="38" cy="43" r="3.5" fill="#1a1a1a" />
+          <circle cx="62" cy="43" r="3.5" fill="#1a1a1a" />
+          {/* X eyes for dead */}
+          {!happy && <>
+            <line x1="34" y1="39" x2="42" y2="46" stroke="#ff4444" strokeWidth="2" />
+            <line x1="42" y1="39" x2="34" y2="46" stroke="#ff4444" strokeWidth="2" />
+            <line x1="58" y1="39" x2="66" y2="46" stroke="#ff4444" strokeWidth="2" />
+            <line x1="66" y1="39" x2="58" y2="46" stroke="#ff4444" strokeWidth="2" />
+          </>}
+        </>
+      )}
+      {/* Whiskers */}
+      <line x1="20" y1="48" x2="38" y2="50" stroke="#8b6914" strokeWidth="1.5" />
+      <line x1="20" y1="52" x2="38" y2="52" stroke="#8b6914" strokeWidth="1.5" />
+      <line x1="62" y1="50" x2="80" y2="48" stroke="#8b6914" strokeWidth="1.5" />
+      <line x1="62" y1="52" x2="80" y2="52" stroke="#8b6914" strokeWidth="1.5" />
+      {/* Smile / frown */}
+      {happy
+        ? <path d="M38 58 Q50 68 62 58" stroke="#8b6914" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+        : <path d="M38 64 Q50 56 62 64" stroke="#8b6914" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+      }
+      {/* Mushroom on loss */}
+      {!happy && <circle cx="70" cy="75" r="8" fill="#aa2222" opacity="0.8" />}
+      {/* Stars on win */}
+      {happy && <>
+        <text x="72" y="25" fontSize="14" fill="#FFD700">✦</text>
+        <text x="10" y="30" fontSize="10" fill="#FFD700">✦</text>
+      </>}
+    </svg>
+  );
+
+  // ── BG COLOR ─────────────────────────────────────────────────────────────────
+  const bgGradient = won
+    ? "radial-gradient(ellipse at center, #0a1f0a 0%, #010A13 60%)"
+    : "radial-gradient(ellipse at center, #1a0505 0%, #010A13 60%)";
+
+  const accentColor = won ? "#C8AA6E" : "#C8464A";
+  const glowColor   = won ? "#C8AA6E44" : "#C8464A33";
+
+  const isReal = bet?.mode === "real";
+
+  return (
+    <div style={{
+      position: "fixed", inset: 0, zIndex: 99999,
+      background: bgGradient,
+      display: "flex", alignItems: "center", justifyContent: "center",
+      overflow: "hidden",
+    }}>
+      <style>{`
+        @keyframes teemoFall {
+          0%   { transform: translateY(-120px) rotate(0deg) scaleX(var(--flip)); opacity: 0; }
+          10%  { opacity: 1; }
+          80%  { opacity: 1; }
+          100% { transform: translateY(110vh) rotate(var(--spin)) scaleX(var(--flip)); opacity: 0; }
+        }
+        @keyframes teemoWalk {
+          0%   { transform: translateX(-140px) translateY(0) scaleX(var(--flip)); opacity: 0; }
+          5%   { opacity: 1; }
+          48%  { transform: translateX(calc(100vw + 100px)) translateY(calc(sin(var(--wobble)) * 15px)) scaleX(var(--flip)); opacity: 1; }
+          100% { transform: translateX(calc(100vw + 140px)) scaleX(var(--flip)); opacity: 0; }
+        }
+        @keyframes teemoBob {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-12px); }
+        }
+        @keyframes confettiFall {
+          0%   { transform: translateY(-30px) rotate(0deg); opacity: 1; }
+          100% { transform: translateY(110vh) rotate(var(--spin)); opacity: 0; }
+        }
+        @keyframes screenShake {
+          0%,100% { transform: translate(0,0) rotate(0); }
+          10% { transform: translate(-6px, -4px) rotate(-0.5deg); }
+          20% { transform: translate(6px, 4px) rotate(0.5deg); }
+          30% { transform: translate(-4px, 6px) rotate(0); }
+          40% { transform: translate(4px, -6px) rotate(0.3deg); }
+          50% { transform: translate(-6px, 2px) rotate(-0.3deg); }
+          60% { transform: translate(4px, -4px) rotate(0); }
+          70% { transform: translate(-2px, 6px) rotate(0.5deg); }
+        }
+        @keyframes revealTitle {
+          0%   { transform: scale(3) rotate(-5deg); opacity: 0; filter: blur(20px); }
+          60%  { transform: scale(0.95) rotate(1deg); opacity: 1; filter: blur(0); }
+          80%  { transform: scale(1.05) rotate(-0.5deg); }
+          100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+        @keyframes pulseGlow {
+          0%,100% { text-shadow: 0 0 30px ${accentColor}88, 0 0 60px ${accentColor}44; }
+          50%      { text-shadow: 0 0 60px ${accentColor}cc, 0 0 120px ${accentColor}88, 0 0 200px ${accentColor}33; }
+        }
+        @keyframes shimmerGold {
+          0%   { background-position: -300% center; }
+          100% { background-position: 300% center; }
+        }
+        @keyframes slideUp {
+          from { transform: translateY(40px); opacity: 0; }
+          to   { transform: translateY(0); opacity: 1; }
+        }
+        @keyframes coinPop {
+          0%   { transform: scale(0) rotate(-20deg); opacity: 0; }
+          60%  { transform: scale(1.2) rotate(5deg); }
+          100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+        @keyframes bgPulse {
+          0%,100% { opacity: 0.4; }
+          50%      { opacity: 0.8; }
+        }
+        @keyframes scanline {
+          0%   { transform: translateY(-100%); }
+          100% { transform: translateY(100vh); }
+        }
+        @keyframes borderRace {
+          0%   { background-position: 0% 50%; }
+          100% { background-position: 200% 50%; }
+        }
+      `}</style>
+
+      {/* ── ANIMATED BG RINGS ── */}
+      {[1,2,3,4].map(i => (
+        <div key={i} style={{
+          position: "absolute",
+          width: `${i * 280}px`, height: `${i * 280}px`,
+          borderRadius: "50%",
+          border: `1px solid ${accentColor}${won ? "22" : "15"}`,
+          top: "50%", left: "50%",
+          transform: "translate(-50%, -50%)",
+          animation: `bgPulse ${1.5 + i * 0.5}s ease-in-out infinite`,
+          animationDelay: `${i * 0.2}s`,
+          pointerEvents: "none",
+        }} />
+      ))}
+
+      {/* ── SCANLINE ── */}
+      <div style={{
+        position: "absolute", inset: 0, pointerEvents: "none", zIndex: 1,
+        background: `linear-gradient(180deg, transparent 50%, ${accentColor}08 50%)`,
+        backgroundSize: "100% 4px",
+        opacity: 0.3,
+      }} />
+
+      {/* ── TEEMOS ── */}
+      {teemos.map(t => (
+        <div
+          key={t.id}
+          onMouseEnter={handleTeemoHover}
+          style={{
+            position: "absolute",
+            left: won ? undefined : `${t.x}%`,
+            top: won ? `${20 + (t.id % 4) * 18}%` : undefined,
+            zIndex: 2,
+            cursor: "pointer",
+            "--flip": t.flipped ? -1 : 1,
+            "--spin": `${t.spin}deg`,
+            "--wobble": `${t.wobble}`,
+            animation: won
+              ? `teemoWalk ${t.speed}s ${t.delay}s linear infinite`
+              : `teemoFall ${t.speed}s ${t.delay}s ease-in forwards`,
+            filter: won ? "none" : "grayscale(30%)",
+          }}
+        >
+          <div style={{ animation: won ? `teemoBob ${0.8 + t.wobble * 0.3}s ease-in-out infinite` : "none" }}>
+            <TeemoFace happy={t.happy} size={t.size} />
+          </div>
+        </div>
+      ))}
+
+      {/* ── WIN CONFETTI ── */}
+      {particles.map(p => (
+        <div key={p.id} style={{
+          position: "absolute",
+          left: `${p.x}%`,
+          top: "-20px",
+          width: p.shape === "circle" ? p.size : p.size * 0.7,
+          height: p.shape === "circle" ? p.size : p.size * 1.2,
+          background: p.color,
+          borderRadius: p.shape === "circle" ? "50%" : p.shape === "rect" ? "2px" : "0",
+          clipPath: p.shape === "star" ? "polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)" : "none",
+          "--spin": `${p.spin}deg`,
+          animation: `confettiFall ${p.duration}s ${p.delay}s linear forwards`,
+          pointerEvents: "none",
+          zIndex: 2,
+          boxShadow: `0 0 4px ${p.color}88`,
+        }} />
+      ))}
+
+      {/* ── MAIN CARD ── */}
+      <div style={{
+        position: "relative", zIndex: 10,
+        background: won
+          ? "linear-gradient(160deg, #0c1a0c 0%, #0A1628 40%, #0d1f0d 100%)"
+          : "linear-gradient(160deg, #1a0808 0%, #0A1628 40%, #1a0505 100%)",
+        border: `2px solid ${accentColor}`,
+        borderRadius: 16,
+        padding: "40px 52px",
+        maxWidth: 500, width: "90%",
+        textAlign: "center",
+        boxShadow: `0 0 60px ${glowColor}, 0 0 120px ${glowColor}, inset 0 0 40px ${glowColor}`,
+        animation: `screenShake 0.5s ease 0s 1`,
+      }}>
+
+        {/* Animated border glow */}
+        <div style={{
+          position: "absolute", inset: -2, borderRadius: 18, zIndex: -1,
+          background: `linear-gradient(90deg, transparent, ${accentColor}, transparent, ${accentColor}, transparent)`,
+          backgroundSize: "200% 100%",
+          animation: "borderRace 2s linear infinite",
+          opacity: 0.6,
+        }} />
+
+        {/* ── TITLE ── */}
+        {phase !== "intro" && (
+          <div style={{
+            fontFamily: "Barlow Condensed, sans-serif",
+            fontSize: 68, fontWeight: 900, letterSpacing: 8,
+            color: won ? "transparent" : "#C8464A",
+            background: won ? "linear-gradient(90deg, #785A28, #C8AA6E, #FFD700, #fff, #FFD700, #C8AA6E, #785A28)" : "none",
+            backgroundSize: won ? "300% auto" : "auto",
+            WebkitBackgroundClip: won ? "text" : "unset",
+            WebkitTextFillColor: won ? "transparent" : "#C8464A",
+            animation: won
+              ? "revealTitle 0.6s cubic-bezier(0.34,1.56,0.64,1), shimmerGold 4s linear infinite, pulseGlow 2s ease-in-out infinite"
+              : "revealTitle 0.6s cubic-bezier(0.34,1.56,0.64,1), pulseGlow 2s ease-in-out infinite",
+            marginBottom: 4, lineHeight: 1,
+            textTransform: "uppercase",
+          }}>
+            {won ? "VICTORY!" : "DEFEAT"}
+          </div>
+        )}
+
+        {/* ── SUBTITLE ── */}
+        {phase !== "intro" && (
+          <div style={{
+            fontSize: 13, letterSpacing: 4, color: `${accentColor}aa`,
+            fontFamily: "Barlow Condensed, sans-serif", marginBottom: 24,
+            animation: "slideUp 0.5s ease 0.3s both",
+          }}>
+            {won ? "THE ENEMY HAS BEEN SLAIN" : "YOU HAVE BEEN SLAIN"}
+          </div>
+        )}
+
+        {/* ── DIVIDER ── */}
+        <div style={{
+          height: 1, margin: "0 auto 24px",
+          background: `linear-gradient(90deg, transparent, ${accentColor}, transparent)`,
+          animation: "slideUp 0.5s ease 0.4s both",
+        }} />
+
+        {/* ── MATCH STATS ── */}
+        {result && phase !== "intro" && (
+          <div style={{
+            background: `${accentColor}0d`,
+            border: `1px solid ${accentColor}33`,
+            borderRadius: 8, padding: "16px 20px", marginBottom: 20,
+            animation: "slideUp 0.5s ease 0.5s both",
+          }}>
+            <div style={{ color: `${accentColor}88`, fontSize: 10, letterSpacing: 3, marginBottom: 10 }}>MATCH RESULT</div>
+            <div style={{
+              fontFamily: "Barlow Condensed, sans-serif", fontSize: 22, fontWeight: 700,
+              color: accentColor, marginBottom: 14, letterSpacing: 2,
+            }}>
+              {result.champion?.toUpperCase()}
+            </div>
+            <div style={{ display: "flex", justifyContent: "center" }}>
+              {[
+                { label: "KILLS",   val: result.kills,   color: "#0BC4AA" },
+                { label: "DEATHS",  val: result.deaths,  color: "#C8464A" },
+                { label: "ASSISTS", val: result.assists,  color: "#C8AA6E" },
+              ].map((s, i) => (
+                <div key={s.label} style={{
+                  flex: 1, borderRight: i < 2 ? `1px solid #2D2D32` : "none", padding: "0 12px",
+                }}>
+                  <div style={{ fontSize: 32, fontWeight: 900, color: s.color, fontFamily: "Barlow Condensed, sans-serif" }}>{s.val}</div>
+                  <div style={{ fontSize: 9, letterSpacing: 2, color: "#7A7A82", marginTop: 2 }}>{s.label}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── PAYOUT ── */}
+        {phase === "payout" && (
+          <div style={{
+            background: won ? "linear-gradient(135deg, #0d1f0d, #0a2a0a)" : "linear-gradient(135deg, #1f0a0a, #2a0d0d)",
+            border: `2px solid ${accentColor}66`,
+            borderRadius: 10, padding: "20px 24px", marginBottom: 24,
+            animation: "coinPop 0.5s cubic-bezier(0.34,1.56,0.64,1)",
+            boxShadow: `0 0 30px ${glowColor}`,
+          }}>
+            {won ? (
+              <>
+                <div style={{ color: `${accentColor}99`, fontSize: 10, letterSpacing: 3, marginBottom: 6 }}>
+                  {isReal ? "STAKE RETURNED + SKIN CREDITS EARNED" : "GOLD EARNED"}
+                </div>
+                <div style={{
+                  fontFamily: "Barlow Condensed, sans-serif", fontSize: 52, fontWeight: 900,
+                  color: "transparent",
+                  background: "linear-gradient(90deg, #C8AA6E, #FFD700, #fff, #FFD700, #C8AA6E)",
+                  backgroundSize: "200% auto",
+                  WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+                  animation: "shimmerGold 2s linear infinite",
+                  lineHeight: 1,
+                }}>
+                  {isReal
+                    ? `€${Number(bet?.potentialWin || 0).toFixed(2)}`
+                    : `$${Number(bet?.potentialWin || 0).toFixed(2)}`
+                  }
+                </div>
+                {isReal && (
+                  <div style={{ fontSize: 12, color: "#86efac", marginTop: 6 }}>
+                    €{Number(bet?.amount || 0).toFixed(2)} back + {(Number(bet?.potentialWin || 0) - Number(bet?.amount || 0)).toFixed(2)} skin credits
+                  </div>
+                )}
+              </>
+            ) : (
+              <>
+                <div style={{ color: "#C8464A99", fontSize: 10, letterSpacing: 3, marginBottom: 6 }}>WAGER LOST</div>
+                <div style={{
+                  fontFamily: "Barlow Condensed, sans-serif", fontSize: 52, fontWeight: 900,
+                  color: "#C8464A", lineHeight: 1,
+                  animation: "pulseGlow 1.5s ease-in-out infinite",
+                }}>
+                  {isReal ? `-€${Number(bet?.amount || 0).toFixed(2)}` : `-$${Number(bet?.amount || 0).toFixed(2)}`}
+                </div>
+                <div style={{ fontSize: 12, color: "#7A7A82", marginTop: 6 }}>
+                  Better luck next time, summoner
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
+        {/* ── CLOSE BUTTON ── */}
+        {phase === "payout" && (
+          <button onClick={onClose} style={{
+            background: won
+              ? "linear-gradient(135deg, #C8AA6E, #FFD700, #785A28)"
+              : "transparent",
+            border: won ? "none" : "1px solid #C8464A66",
+            color: won ? "#010A13" : "#C8464A",
+            padding: "13px 48px", borderRadius: 4,
+            fontFamily: "Barlow Condensed, sans-serif", fontSize: 14, fontWeight: 900,
+            cursor: "pointer", letterSpacing: 3, textTransform: "uppercase",
+            animation: "slideUp 0.4s ease",
+            boxShadow: won ? "0 4px 20px #C8AA6E44" : "none",
+            transition: "all 0.2s",
+          }}
+          onMouseEnter={e => { e.target.style.transform = "scale(1.05)"; playTeemoSqueak(); }}
+          onMouseLeave={e => { e.target.style.transform = "scale(1)"; }}
+          >
+            {won ? "⚔ CLAIM VICTORY" : "↩ TRY AGAIN"}
+          </button>
+        )}
+
+        <div style={{ color: "#3A3A42", fontSize: 10, marginTop: 16, fontFamily: "DM Sans, sans-serif", letterSpacing: 1 }}>
+          AUTO-CLOSE IN 14s · HOVER TEEMOS FOR SOUNDS
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+// ─── DEBUG PANEL (admin only) ────────────────────────────────────────────────
   // Confetti particles
   const confetti = won ? Array.from({length: 80}, (_, i) => ({
     id: i,
@@ -2261,61 +2749,52 @@ function ResultScreen({ result, bet, onClose }) {
               <div style={{ color: "#C8464A", fontSize: 32, fontWeight: 900, fontFamily: "Barlow Condensed, sans-serif" }}>
                 -${Number(bet?.amount || 0).toFixed(2)}
               </div>
-              <div style={{ color: "#A0A0A8", fontSize: 11, marginTop: 4 }}>better luck next time, summoner</div>
-            </>
-          )}
-        </div>
-
-        <button onClick={onClose} style={{
-          background: won ? "linear-gradient(135deg, #C8AA6E, #785A28)" : "transparent",
-          border: won ? "none" : "1px solid #C8464A55",
-          color: won ? "#010A13" : "#C8464A",
-          padding: "12px 40px", borderRadius: 4,
-          fontFamily: "Barlow Condensed, sans-serif", fontSize: 13, fontWeight: 700,
-          cursor: "pointer", letterSpacing: 2, textTransform: "uppercase"
-        }}>
-          {won ? "Claim Victory" : "Try Again"}
-        </button>
-
-        <div style={{ color: "#7A7A82", fontSize: 10, marginTop: 12, fontFamily: "DM Sans, sans-serif" }}>
-          closes automatically in 12 seconds
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // ─── DEBUG PANEL (admin only) ────────────────────────────────────────────────
 function DebugPanel({ user, setUser, toast, showResult }) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [champion, setChampion] = useState("Teemo");
+  const [betAmt, setBetAmt] = useState("1.00");
+  const [mode, setMode] = useState("real");
   const activeBet = user.bets?.find(b => b.status === "pending");
 
-  const simulate = async (won) => {
-    if (!activeBet) return toast("Place a bet first", "error");
+  // Preview screens without touching the DB — just fires the visual directly
+  const previewScreen = (won) => {
+    const fakeMatch = {
+      matchId: `PREVIEW_${Date.now()}`,
+      win: won,
+      champion,
+      kills:   won ? 12 : 1,
+      deaths:  won ? 2  : 9,
+      assists: won ? 7  : 3,
+      gameEndTimestamp: Date.now(),
+    };
+    const fakeBet = {
+      amount: parseFloat(betAmt) || 1,
+      potentialWin: ((parseFloat(betAmt) || 1) * 1.7).toFixed(2),
+      mode,
+    };
+    showResult({ result: fakeMatch, bet: fakeBet });
+  };
+
+  // Resolve an actual pending bet (updates DB)
+  const simulateReal = async (won) => {
+    if (!activeBet) return toast("No active bet to resolve", "error");
     setLoading(true);
     try {
       const fakeMatch = {
         matchId: `DEBUG_${Date.now()}`,
-        win: won,
-        champion: "Teemo",
-        kills: won ? 10 : 0,
-        deaths: won ? 1 : 10,
-        assists: 5,
-        gameEndTimestamp: Date.now()
+        win: won, champion,
+        kills: won ? 12 : 1, deaths: won ? 2 : 9, assists: 5,
+        gameEndTimestamp: Date.now(),
       };
       const data = await apiCall("/api/bet", {
-        action: "resolveBet",
-        username: user.username,
-        won,
-        matchId: fakeMatch.matchId,
-        result: fakeMatch
+        action: "resolveBet", username: user.username,
+        won, matchId: fakeMatch.matchId, result: fakeMatch
       });
       setUser(data.user);
       showResult({ result: fakeMatch, bet: activeBet });
-    } catch(e) {
-      toast(e.message, "error");
-    }
+    } catch(e) { toast(e.message, "error"); }
     setLoading(false);
   };
 
@@ -2325,41 +2804,120 @@ function DebugPanel({ user, setUser, toast, showResult }) {
       const data = await apiCall("/api/debug", { action: "resetBalance", username: user.username });
       setUser(data.user);
       toast("Balance reset to $500", "success");
-    } catch(e) {
-      toast(e.message, "error");
-    }
+    } catch(e) { toast(e.message, "error"); }
     setLoading(false);
   };
 
+  const champs = ["Teemo","Jinx","Lux","Yasuo","Thresh","Ahri","Zed","Vi"];
+
   return (
-    <div style={{ position: "fixed", bottom: 80, right: 24, zIndex: 9998 }}>
-      <button onClick={() => setOpen(!open)} style={{
-        background: "#1a1a2e", border: "1px solid #444", color: "#888",
-        padding: "6px 12px", borderRadius: 3, cursor: "pointer",
-        fontFamily: "monospace", fontSize: 11
-      }}>debug</button>
+    <div style={{ position: "fixed", bottom: 80, right: 20, zIndex: 9998 }}>
+      {/* Toggle button — subtle, looks like a system widget */}
+      <button onClick={() => setOpen(o => !o)} style={{
+        background: open ? "#1a1a2e" : "#0d0d14",
+        border: `1px solid ${open ? "#C8AA6E55" : "#2a2a35"}`,
+        color: open ? "#C8AA6E" : "#444",
+        padding: "6px 10px", borderRadius: 4, cursor: "pointer",
+        fontFamily: "monospace", fontSize: 10, letterSpacing: 1,
+        transition: "all 0.2s",
+      }}>⚙ DEV</button>
+
       {open && (
         <div style={{
-          position: "absolute", bottom: 36, right: 0, background: "#1a1a2e",
-          border: "1px solid #444", borderRadius: 4, padding: 16, width: 220,
-          display: "flex", flexDirection: "column", gap: 8
+          position: "absolute", bottom: 36, right: 0,
+          background: "#0d0d14", border: "1px solid #C8AA6E33",
+          borderRadius: 8, padding: 18, width: 260,
+          display: "flex", flexDirection: "column", gap: 10,
+          boxShadow: "0 8px 32px #00000088",
         }}>
-          <div style={{ color: "#888", fontSize: 10, letterSpacing: 2, marginBottom: 4 }}>DEBUG TOOLS</div>
-          <div style={{ color: "#555", fontSize: 11, fontFamily: "monospace" }}>
-            Active bet: {activeBet ? `$${activeBet.amount}` : "none"}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 2 }}>
+            <span style={{ color: "#C8AA6E", fontSize: 11, letterSpacing: 2, fontFamily: "Barlow Condensed, sans-serif", fontWeight: 700 }}>DEV TOOLS</span>
+            <span style={{ color: "#333", fontSize: 10, fontFamily: "monospace" }}>only you see this</span>
           </div>
-          <button onClick={() => simulate(true)} disabled={loading || !activeBet} style={{
-            background: "#0BC4AA22", border: "1px solid #0BC4AA55", color: "#0BC4AA",
-            padding: "8px", borderRadius: 3, cursor: "pointer", fontFamily: "monospace", fontSize: 12
-          }}>✓ Simulate WIN</button>
-          <button onClick={() => simulate(false)} disabled={loading || !activeBet} style={{
-            background: "#C8464A22", border: "1px solid #C8464A55", color: "#C8464A",
-            padding: "8px", borderRadius: 3, cursor: "pointer", fontFamily: "monospace", fontSize: 12
-          }}>✗ Simulate LOSS</button>
+
+          {/* Champion picker */}
+          <div>
+            <div style={{ color: "#555", fontSize: 10, letterSpacing: 1, marginBottom: 4 }}>CHAMPION</div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+              {champs.map(c => (
+                <button key={c} onClick={() => setChampion(c)} style={{
+                  background: champion === c ? "#C8AA6E22" : "#1a1a1e",
+                  border: `1px solid ${champion === c ? "#C8AA6E" : "#2a2a2e"}`,
+                  color: champion === c ? "#C8AA6E" : "#666",
+                  padding: "3px 7px", borderRadius: 3, cursor: "pointer",
+                  fontFamily: "monospace", fontSize: 10,
+                }}>{c}</button>
+              ))}
+            </div>
+          </div>
+
+          {/* Bet amount + mode for preview */}
+          <div style={{ display: "flex", gap: 8 }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ color: "#555", fontSize: 10, letterSpacing: 1, marginBottom: 4 }}>BET AMT</div>
+              <input
+                value={betAmt} onChange={e => setBetAmt(e.target.value)}
+                style={{
+                  width: "100%", background: "#1a1a1e", border: "1px solid #2a2a2e",
+                  color: "#C8AA6E", padding: "5px 8px", borderRadius: 3,
+                  fontFamily: "monospace", fontSize: 12, boxSizing: "border-box"
+                }}
+              />
+            </div>
+            <div>
+              <div style={{ color: "#555", fontSize: 10, letterSpacing: 1, marginBottom: 4 }}>MODE</div>
+              <select value={mode} onChange={e => setMode(e.target.value)} style={{
+                background: "#1a1a1e", border: "1px solid #2a2a2e", color: "#aaa",
+                padding: "5px 6px", borderRadius: 3, fontFamily: "monospace", fontSize: 11,
+              }}>
+                <option value="real">real</option>
+                <option value="virtual">virtual</option>
+              </select>
+            </div>
+          </div>
+
+          {/* PREVIEW — no DB touch */}
+          <div>
+            <div style={{ color: "#555", fontSize: 10, letterSpacing: 1, marginBottom: 6 }}>PREVIEW SCREEN (no DB)</div>
+            <div style={{ display: "flex", gap: 6 }}>
+              <button onClick={() => previewScreen(true)} style={{
+                flex: 1, background: "#0BC4AA18", border: "1px solid #0BC4AA44", color: "#0BC4AA",
+                padding: "8px", borderRadius: 4, cursor: "pointer", fontFamily: "monospace", fontSize: 12, fontWeight: 700,
+              }}>🏆 WIN</button>
+              <button onClick={() => previewScreen(false)} style={{
+                flex: 1, background: "#C8464A18", border: "1px solid #C8464A44", color: "#C8464A",
+                padding: "8px", borderRadius: 4, cursor: "pointer", fontFamily: "monospace", fontSize: 12, fontWeight: 700,
+              }}>💀 LOSS</button>
+            </div>
+          </div>
+
+          <div style={{ height: 1, background: "#2a2a2e" }} />
+
+          {/* RESOLVE — touches DB, needs active bet */}
+          <div>
+            <div style={{ color: "#555", fontSize: 10, letterSpacing: 1, marginBottom: 4 }}>
+              RESOLVE REAL BET {activeBet ? <span style={{ color: "#4ade80" }}>({activeBet.mode} €{activeBet.amount})</span> : <span style={{ color: "#444" }}>(no active bet)</span>}
+            </div>
+            <div style={{ display: "flex", gap: 6 }}>
+              <button onClick={() => simulateReal(true)} disabled={loading || !activeBet} style={{
+                flex: 1, background: activeBet ? "#0BC4AA12" : "#111", border: `1px solid ${activeBet ? "#0BC4AA33" : "#222"}`,
+                color: activeBet ? "#0BC4AA" : "#333",
+                padding: "7px", borderRadius: 4, cursor: activeBet ? "pointer" : "not-allowed", fontFamily: "monospace", fontSize: 11,
+              }}>✓ Force WIN</button>
+              <button onClick={() => simulateReal(false)} disabled={loading || !activeBet} style={{
+                flex: 1, background: activeBet ? "#C8464A12" : "#111", border: `1px solid ${activeBet ? "#C8464A33" : "#222"}`,
+                color: activeBet ? "#C8464A" : "#333",
+                padding: "7px", borderRadius: 4, cursor: activeBet ? "pointer" : "not-allowed", fontFamily: "monospace", fontSize: 11,
+              }}>✗ Force LOSS</button>
+            </div>
+          </div>
+
+          <div style={{ height: 1, background: "#2a2a2e" }} />
+
           <button onClick={resetBalance} disabled={loading} style={{
-            background: "#C8AA6E22", border: "1px solid #C8AA6E55", color: "#C8AA6E",
-            padding: "8px", borderRadius: 3, cursor: "pointer", fontFamily: "monospace", fontSize: 12
-          }}>↺ Reset Balance $500</button>
+            background: "#C8AA6E12", border: "1px solid #C8AA6E33", color: "#C8AA6E88",
+            padding: "7px", borderRadius: 4, cursor: "pointer", fontFamily: "monospace", fontSize: 11,
+          }}>↺ Reset virtual balance $500</button>
         </div>
       )}
     </div>
