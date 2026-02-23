@@ -1185,7 +1185,8 @@ function LinkAccount({ user, setUser, region, setRegion, toast }) {
         username: user.username,
         lolAccount: `${pendingAccount.gameName}#${pendingAccount.tagLine}`,
         puuid: pendingAccount.puuid,
-        rank
+        rank,
+        region,
       });
       setUser(data.user);
       toast(`Verified! Account linked. Rank: ${rank}`, "success");
@@ -1469,9 +1470,18 @@ function ResolveBet({ user, setUser, region, toast, showResult }) {
 
   return (
     <div style={{ background: "#242428", border: `1px solid ${isReal ? "#4ade8044" : "#C8AA6E44"}`, borderRadius: 4, padding: 24 }}>
-      <div style={{ fontSize: 10, letterSpacing: 3, color: "#A0A0A8", marginBottom: 12 }}>RESOLVE YOUR BET</div>
-      <p style={{ color: "#FFFFFF88", fontSize: 13, fontFamily: "DM Sans, sans-serif", marginBottom: 16 }}>
-        After finishing a ranked game, click below to check the result automatically via Riot's API.
+      <div style={{ fontSize: 10, letterSpacing: 3, color: "#A0A0A8", marginBottom: 12 }}>ACTIVE BET</div>
+
+      {/* Auto-resolve notice */}
+      <div style={{ background: "#0d1a0d", border: "1px solid #4ade8022", borderRadius: 6, padding: "10px 14px", marginBottom: 16, display: "flex", gap: 10, alignItems: "flex-start" }}>
+        <span style={{ fontSize: 16, flexShrink: 0 }}>⚡</span>
+        <p style={{ color: "#86efac", fontSize: 13, fontFamily: "DM Sans, sans-serif", margin: 0, lineHeight: 1.5 }}>
+          <strong>Auto-resolve is on.</strong> Your bet resolves automatically within 5 minutes of your game ending — even if you close this tab.
+        </p>
+      </div>
+
+      <p style={{ color: "#FFFFFF66", fontSize: 13, fontFamily: "DM Sans, sans-serif", marginBottom: 16 }}>
+        Already finished a game? Click below to resolve instantly instead of waiting.
       </p>
       <button onClick={resolve} disabled={loading} style={{
         background: "transparent", border: `1px solid ${isReal ? "#4ade80" : "#C8AA6E"}`,
@@ -1480,7 +1490,7 @@ function ResolveBet({ user, setUser, region, toast, showResult }) {
         fontSize: 13, fontWeight: 700, cursor: "pointer", letterSpacing: 1,
         transition: "all 0.2s", width: "100%"
       }}>
-        {loading ? "Checking Riot API..." : "Check My Last Game"}
+        {loading ? "Checking Riot API..." : "Resolve Now"}
       </button>
     </div>
   );
@@ -2992,6 +3002,38 @@ export default function App() {
   const updateUser = useCallback((updated) => {
     setUser(updated);
   }, []);
+
+  // Auto-poll every 60s when player has a pending bet
+  // The cron job resolves it server-side — we just need to refresh the UI
+  const hasPendingBet = user?.bets?.some(b => b.status === "pending");
+  useEffect(() => {
+    if (!hasPendingBet || !user?.username) return;
+    const poll = async () => {
+      try {
+        const data = await fetch("/api/user", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "getUser", username: user.username })
+        }).then(r => r.json());
+        if (data.user) {
+          const wasResolved = data.user.bets?.some(
+            b => b.status !== "pending" &&
+            user.bets?.find(ob => ob.id === b.id && ob.status === "pending")
+          );
+          setUser(data.user);
+          if (wasResolved) {
+            const resolved = data.user.bets?.find(
+              b => user.bets?.find(ob => ob.id === b.id && ob.status === "pending") && b.status !== "pending"
+            );
+            if (resolved?.status === "won") showToast("🏆 Your bet was resolved — you WON!", "success");
+            else if (resolved?.status === "lost") showToast("Your bet has been resolved.", "info");
+          }
+        }
+      } catch (_) {}
+    };
+    const interval = setInterval(poll, 60000); // every 60s
+    return () => clearInterval(interval);
+  }, [hasPendingBet, user?.username]);
 
   if (!user) return <AuthPage onLogin={setUser} />;
   if (user.isAdmin) return <AdminPanel adminToken={user.adminToken} onLogout={() => setUser(null)} />;
