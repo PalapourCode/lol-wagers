@@ -14,28 +14,33 @@ module.exports = async function handler(req, res) {
 
   const { action, adminToken, ...params } = req.body || {};
 
-  // Every single request must pass the admin token check
   if (!verifyAdmin(adminToken)) {
     return res.status(403).json({ error: "Forbidden" });
   }
 
+  // Ensure notes column exists
+  await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS admin_note TEXT DEFAULT NULL`;
+
   try {
+
     // ── GET ALL PLAYERS ──────────────────────────────────────────────────────
     if (action === "getPlayers") {
       const users = await sql`SELECT * FROM users ORDER BY created_at DESC`;
-      const bets = await sql`SELECT username, status, amount, potential_win, mode FROM bets`;
-      const deposits = await sql`SELECT username, SUM(amount) as total FROM deposits GROUP BY username`;
+      const bets = await sql`SELECT username, status, amount, potential_win, mode, odds FROM bets`;
+      const deposits = await sql`SELECT username, SUM(amount) as total, COUNT(*) as count FROM deposits GROUP BY username`;
 
       const depositMap = {};
-      for (const d of deposits) depositMap[d.username] = Number(d.total);
+      for (const d of deposits) depositMap[d.username] = { total: Number(d.total), count: Number(d.count) };
 
       const betMap = {};
       for (const b of bets) {
-        if (!betMap[b.username]) betMap[b.username] = { total: 0, wins: 0, losses: 0, pending: 0 };
+        if (!betMap[b.username]) betMap[b.username] = { total: 0, wins: 0, losses: 0, pending: 0, cancelled: 0, totalWagered: 0, totalWon: 0 };
         betMap[b.username].total++;
-        if (b.status === "won") betMap[b.username].wins++;
+        betMap[b.username].totalWagered += Number(b.amount);
+        if (b.status === "won") { betMap[b.username].wins++; betMap[b.username].totalWon += Number(b.potential_win); }
         else if (b.status === "lost") betMap[b.username].losses++;
         else if (b.status === "pending") betMap[b.username].pending++;
+        else if (b.status === "cancelled") betMap[b.username].cancelled++;
       }
 
       return res.status(200).json({
@@ -47,9 +52,45 @@ module.exports = async function handler(req, res) {
           lolAccount: u.lol_account,
           rank: u.rank,
           createdAt: Number(u.created_at),
-          totalDeposited: depositMap[u.username] || 0,
-          bets: betMap[u.username] || { total: 0, wins: 0, losses: 0, pending: 0 },
+          adminNote: u.admin_note || "",
+          deposit: depositMap[u.username] || { total: 0, count: 0 },
+          bets: betMap[u.username] || { total: 0, wins: 0, losses: 0, pending: 0, cancelled: 0, totalWagered: 0, totalWon: 0 },
         }))
+      });
+
+    // ── GET PLAYER DETAIL (bets + deposits) ──────────────────────────────────
+    } else if (action === "getPlayerDetail") {
+      const { username } = params;
+      const bets = await sql`SELECT * FROM bets WHERE username = ${username} ORDER BY placed_at DESC LIMIT 50`;
+      const deposits = await sql`SELECT * FROM deposits WHERE username = ${username} ORDER BY created_at DESC LIMIT 50`;
+      const redemptions = await sql`SELECT * FROM skin_redemptions WHERE username = ${username} ORDER BY created_at DESC LIMIT 20`;
+      return res.status(200).json({
+        bets: bets.map(b => ({
+          id: Number(b.id),
+          amount: Number(b.amount),
+          odds: Number(b.odds),
+          potentialWin: Number(b.potential_win),
+          status: b.status,
+          mode: b.mode || "virtual",
+          placedAt: Number(b.placed_at),
+          resolvedAt: b.resolved_at ? Number(b.resolved_at) : null,
+          result: b.result,
+        })),
+        deposits: deposits.map(d => ({
+          id: Number(d.id),
+          amount: Number(d.amount),
+          status: d.status,
+          createdAt: Number(d.created_at),
+        })),
+        redemptions: redemptions.map(r => ({
+          id: Number(r.id),
+          skinName: r.skin_name,
+          rpCost: Number(r.rp_cost),
+          creditCost: Number(r.credit_cost || 0),
+          realCost: Number(r.real_cost || 0),
+          status: r.status,
+          createdAt: Number(r.created_at),
+        })),
       });
 
     // ── GET ALL REDEMPTIONS ──────────────────────────────────────────────────
@@ -58,8 +99,8 @@ module.exports = async function handler(req, res) {
         SELECT r.*, u.lol_account
         FROM skin_redemptions r
         JOIN users u ON u.username = r.username
-        ORDER BY r.created_at DESC
-        LIMIT 100
+        ORDER BY r.status ASC, r.created_at ASC
+        LIMIT 200
       `;
       return res.status(200).json({
         redemptions: rows.map(r => ({
@@ -81,6 +122,29 @@ module.exports = async function handler(req, res) {
       await sql`UPDATE skin_redemptions SET status = 'fulfilled' WHERE id = ${redemptionId}`;
       return res.status(200).json({ success: true });
 
+    // ── GET ALL PENDING BETS ─────────────────────────────────────────────────
+    } else if (action === "getPendingBets") {
+      const rows = await sql`
+        SELECT b.*, u.lol_account, u.rank
+        FROM bets b
+        JOIN users u ON u.username = b.username
+        WHERE b.status = 'pending'
+        ORDER BY b.placed_at ASC
+      `;
+      return res.status(200).json({
+        bets: rows.map(b => ({
+          id: Number(b.id),
+          username: b.username,
+          lolAccount: b.lol_account,
+          rank: b.rank,
+          amount: Number(b.amount),
+          odds: Number(b.odds),
+          potentialWin: Number(b.potential_win),
+          mode: b.mode || "virtual",
+          placedAt: Number(b.placed_at),
+        }))
+      });
+
     // ── GET FINANCIALS ───────────────────────────────────────────────────────
     } else if (action === "getFinancials") {
       const [deps] = await sql`SELECT COALESCE(SUM(amount), 0) as total FROM deposits WHERE status = 'completed'`;
@@ -88,7 +152,7 @@ module.exports = async function handler(req, res) {
       const [creditsOwed] = await sql`SELECT COALESCE(SUM(skin_credits), 0) as total FROM users`;
       const [redeemed] = await sql`SELECT COALESCE(SUM(credit_cost + COALESCE(real_cost, 0)), 0) as total FROM skin_redemptions WHERE status = 'fulfilled'`;
       const [pendingRedeemed] = await sql`SELECT COALESCE(SUM(credit_cost + COALESCE(real_cost, 0)), 0) as total FROM skin_redemptions WHERE status = 'pending'`;
-      const [betCount] = await sql`SELECT COUNT(*) as total FROM bets`;
+      const [betStats] = await sql`SELECT COUNT(*) as total, SUM(CASE WHEN status='won' THEN 1 ELSE 0 END) as wins, SUM(CASE WHEN status='lost' THEN 1 ELSE 0 END) as losses, COALESCE(SUM(amount),0) as wagered FROM bets WHERE status != 'pending' AND status != 'cancelled'`;
       const [playerCount] = await sql`SELECT COUNT(*) as total FROM users`;
       const [depositCount] = await sql`SELECT COUNT(*) as total FROM deposits`;
 
@@ -97,42 +161,46 @@ module.exports = async function handler(req, res) {
       const totalCreditsOwed = Number(creditsOwed.total);
       const totalFulfilled = Number(redeemed.total);
       const totalPendingRedeem = Number(pendingRedeemed.total);
+      const totalBets = Number(betStats.total);
+      const totalWins = Number(betStats.wins);
+      const totalLosses = Number(betStats.losses);
+      const totalWagered = Number(betStats.wagered);
 
       return res.status(200).json({
         totalDeposited,
-        totalRealOwed,        // real money you owe players (they can withdraw this)
-        totalCreditsOwed,     // skin credits outstanding
-        totalFulfilled,       // total spent on fulfilled redemptions
-        totalPendingRedeem,   // redemptions submitted but not yet sent
+        totalRealOwed,
+        totalCreditsOwed,
+        totalFulfilled,
+        totalPendingRedeem,
         netMargin: totalDeposited - totalRealOwed - totalFulfilled - totalPendingRedeem,
-        totalBets: Number(betCount.total),
+        totalBets,
+        totalWins,
+        totalLosses,
+        totalWagered,
+        platformWinRate: totalBets > 0 ? Math.round((totalWins / totalBets) * 100) : 0,
         totalPlayers: Number(playerCount.total),
         totalDeposits: Number(depositCount.total),
       });
 
     // ── GET RECENT ACTIVITY LOG ──────────────────────────────────────────────
     } else if (action === "getActivity") {
-      const bets = await sql`
-        SELECT 'bet' as type, username, amount, status, placed_at as ts, mode FROM bets
-        ORDER BY placed_at DESC LIMIT 30
-      `;
-      const deposits = await sql`
-        SELECT 'deposit' as type, username, amount, 'completed' as status, created_at as ts FROM deposits
-        ORDER BY created_at DESC LIMIT 20
-      `;
-      const redemptions = await sql`
-        SELECT 'redemption' as type, username, (credit_cost + COALESCE(real_cost,0)) as amount, status, created_at as ts, skin_name
-        FROM skin_redemptions
-        ORDER BY created_at DESC LIMIT 20
-      `;
+      const bets = await sql`SELECT 'bet' as type, username, amount, status, placed_at as ts, mode FROM bets ORDER BY placed_at DESC LIMIT 40`;
+      const deposits = await sql`SELECT 'deposit' as type, username, amount, 'completed' as status, created_at as ts FROM deposits ORDER BY created_at DESC LIMIT 30`;
+      const redemptions = await sql`SELECT 'redemption' as type, username, (credit_cost + COALESCE(real_cost,0)) as amount, status, created_at as ts, skin_name FROM skin_redemptions ORDER BY created_at DESC LIMIT 30`;
 
       const all = [
         ...bets.map(b => ({ type: "bet", username: b.username, amount: Number(b.amount), status: b.status, ts: Number(b.ts), mode: b.mode })),
         ...deposits.map(d => ({ type: "deposit", username: d.username, amount: Number(d.amount), status: "completed", ts: Number(d.ts) })),
         ...redemptions.map(r => ({ type: "redemption", username: r.username, amount: Number(r.amount), status: r.status, ts: Number(r.ts), skinName: r.skin_name })),
-      ].sort((a, b) => b.ts - a.ts).slice(0, 50);
+      ].sort((a, b) => b.ts - a.ts).slice(0, 80);
 
       return res.status(200).json({ activity: all });
+
+    // ── SAVE ADMIN NOTE ──────────────────────────────────────────────────────
+    } else if (action === "saveNote") {
+      const { username, note } = params;
+      await sql`UPDATE users SET admin_note = ${note} WHERE username = ${username}`;
+      return res.status(200).json({ success: true });
 
     // ── QUICK ACTIONS ────────────────────────────────────────────────────────
     } else if (action === "resetVirtualBalance") {
@@ -142,14 +210,21 @@ module.exports = async function handler(req, res) {
 
     } else if (action === "adjustBalance") {
       const { username, field, amount } = params;
-      const allowed = ["balance", "real_balance", "skin_credits"];
-      if (!allowed.includes(field)) return res.status(400).json({ error: "Invalid field" });
-      await sql`UPDATE users SET ${sql(field)} = ${sql(field)} + ${Number(amount)} WHERE username = ${username}`;
-      return res.status(200).json({ success: true });
+      const amt = Number(amount);
+      if (field === "balance") {
+        await sql`UPDATE users SET balance = GREATEST(0, balance + ${amt}) WHERE username = ${username}`;
+      } else if (field === "real_balance") {
+        await sql`UPDATE users SET real_balance = GREATEST(0, real_balance + ${amt}) WHERE username = ${username}`;
+      } else if (field === "skin_credits") {
+        await sql`UPDATE users SET skin_credits = GREATEST(0, skin_credits + ${amt}) WHERE username = ${username}`;
+      } else {
+        return res.status(400).json({ error: "Invalid field" });
+      }
+      const rows = await sql`SELECT balance, real_balance, skin_credits FROM users WHERE username = ${username}`;
+      return res.status(200).json({ success: true, updated: rows[0] });
 
     } else if (action === "cancelPendingBet") {
       const { username } = params;
-      // Refund the stake back to the appropriate balance
       const bets = await sql`SELECT * FROM bets WHERE username = ${username} AND status = 'pending'`;
       if (!bets.length) return res.status(404).json({ error: "No pending bet found" });
       const bet = bets[0];
@@ -159,14 +234,6 @@ module.exports = async function handler(req, res) {
       } else {
         await sql`UPDATE users SET balance = balance + ${Number(bet.amount)} WHERE username = ${username}`;
       }
-      return res.status(200).json({ success: true });
-
-    } else if (action === "setBalance") {
-      // Set balance to exact amount (not add — replace)
-      const { username, field, amount } = params;
-      const allowed = ["balance", "real_balance", "skin_credits"];
-      if (!allowed.includes(field)) return res.status(400).json({ error: "Invalid field" });
-      await sql`UPDATE users SET ${sql(field)} = ${Number(amount)} WHERE username = ${username}`;
       return res.status(200).json({ success: true });
 
     } else {
