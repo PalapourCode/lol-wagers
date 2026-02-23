@@ -229,7 +229,6 @@ module.exports = async function handler(req, res) {
         totalRedemptionsFulfilled: Number(redeemed.count),
         totalRedemptionsPending: Number(pendingRedeemed.count),
       });
-      });
 
     // ── GET RECENT ACTIVITY LOG ──────────────────────────────────────────────
     } else if (action === "getActivity") {
