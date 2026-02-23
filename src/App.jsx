@@ -2897,12 +2897,156 @@ function AdminPanel({ adminToken, onLogout }) {
 
         {/* ══ FINANCIALS TAB ═════════════════════════════════════════════════ */}
         {!loading && tab === "financials" && financials && (
-          <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-            <div style={S.sectionTitle}>Platform Financials</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
 
-            {/* ── SECTION 1: REAL MONEY ── */}
-            <div>
-              <div style={{ fontSize: 11, letterSpacing: 3, color: "#4ade80", fontWeight: 700, marginBottom: 12 }}>💵 REAL MONEY (EUR)</div>
+            {/* ══════════════════════════════════════════════════════════════
+                PANEL 1 — REAL MONEY  (green border, what matters)
+            ══════════════════════════════════════════════════════════════ */}
+            <div style={{ border: "2px solid #4ade8055", borderRadius: 10, overflow: "hidden" }}>
+
+              {/* Panel header */}
+              <div style={{ background: "linear-gradient(135deg, #0a2010, #0d280d)", padding: "14px 20px", display: "flex", alignItems: "center", gap: 10, borderBottom: "1px solid #4ade8033" }}>
+                <span style={{ fontSize: 20 }}>💵</span>
+                <div>
+                  <div style={{ fontSize: 16, fontWeight: 800, color: "#4ade80", letterSpacing: 2, fontFamily: "Barlow Condensed, sans-serif" }}>REAL MONEY — EUR</div>
+                  <div style={{ fontSize: 12, color: "#86efac", marginTop: 2 }}>This is actual money. These numbers affect your bank account.</div>
+                </div>
+              </div>
+
+              <div style={{ padding: 20, display: "flex", flexDirection: "column", gap: 16 }}>
+
+                {/* Cash flow row */}
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12 }}>
+                  {[
+                    { label: "Total Deposited", val: `€${financials.totalDeposited.toFixed(2)}`, color: "#4ade80", sub: `${financials.totalDeposits} PayPal payments`, icon: "↓" },
+                    { label: "Real Balance Owed", val: `€${financials.totalRealOwed.toFixed(2)}`, color: "#f87171", sub: "In player wallets right now", icon: "−" },
+                    { label: "RP Cards Sent", val: `€${financials.totalFulfilled.toFixed(2)}`, color: "#f87171", sub: `${financials.totalRedemptionsFulfilled} redemptions fulfilled`, icon: "−" },
+                    { label: "RP Cards Pending", val: `€${financials.totalPendingRedeem.toFixed(2)}`, color: "#fb923c", sub: `${financials.totalRedemptionsPending} not yet sent`, icon: "−" },
+                  ].map(({ label, val, color, sub, icon }) => (
+                    <div key={label} style={{ background: "#0a1a0a", border: "1px solid #4ade8022", borderRadius: 8, padding: "14px 16px" }}>
+                      <div style={{ fontSize: 11, letterSpacing: 2, color: "#7A7A82", marginBottom: 6 }}>{label}</div>
+                      <div style={{ fontSize: 28, fontWeight: 800, fontFamily: "Barlow Condensed, sans-serif", color }}>{val}</div>
+                      <div style={{ fontSize: 11, color: "#6A6A72", marginTop: 4 }}>{sub}</div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Net margin — big prominent number */}
+                <div style={{ background: financials.netMargin >= 0 ? "#0a1f0a" : "#1f0a0a", border: `2px solid ${financials.netMargin >= 0 ? "#4ade8066" : "#f8717166"}`, borderRadius: 8, padding: "16px 20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <div>
+                    <div style={{ fontSize: 11, letterSpacing: 2, color: "#7A7A82", marginBottom: 4 }}>NET MARGIN (what you actually keep)</div>
+                    <div style={{ fontSize: 12, color: "#7A7A82" }}>
+                      Deposited €{financials.totalDeposited.toFixed(2)} − owed €{financials.totalRealOwed.toFixed(2)} − sent RP €{financials.totalFulfilled.toFixed(2)} − pending RP €{financials.totalPendingRedeem.toFixed(2)}
+                    </div>
+                  </div>
+                  <div style={{ fontSize: 42, fontWeight: 900, fontFamily: "Barlow Condensed, sans-serif", color: financials.netMargin >= 0 ? "#4ade80" : "#f87171", marginLeft: 20, flexShrink: 0 }}>
+                    {financials.netMargin >= 0 ? "+" : ""}€{financials.netMargin.toFixed(2)}
+                  </div>
+                </div>
+
+                {/* Real bet stats */}
+                <div>
+                  <div style={{ fontSize: 11, letterSpacing: 2, color: "#4ade8088", marginBottom: 10 }}>REAL BET STATS</div>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 10 }}>
+                    {[
+                      { label: "Real Bets Placed", val: financials.real.totalBets, color: "#F0F0F0" },
+                      { label: "Player Wins", val: financials.real.wins, color: "#f87171", sub: "You pay credits" },
+                      { label: "Player Losses", val: financials.real.losses, color: "#4ade80", sub: "You keep stake" },
+                      { label: "€ Wagered", val: `€${financials.real.wagered.toFixed(2)}`, color: "#F0F0F0" },
+                      { label: "Player Win Rate", val: `${financials.real.winRate}%`, color: financials.real.winRate > 55 ? "#f87171" : "#4ade80", sub: financials.real.winRate > 55 ? "⚠️ High — check edge" : "✓ Healthy" },
+                    ].map(({ label, val, color, sub }) => (
+                      <div key={label} style={{ background: "#0a1a0a", border: "1px solid #4ade8015", borderRadius: 6, padding: "10px 12px", textAlign: "center" }}>
+                        <div style={{ fontSize: 10, letterSpacing: 1, color: "#6A6A72", marginBottom: 4 }}>{label}</div>
+                        <div style={{ fontSize: 20, fontWeight: 700, fontFamily: "Barlow Condensed, sans-serif", color }}>{val}</div>
+                        {sub && <div style={{ fontSize: 10, color: "#6A6A72", marginTop: 3 }}>{sub}</div>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Pending real bets */}
+                {financials.pendingRealAtStake > 0 && (
+                  <div style={{ background: "#1a1200", border: "1px solid #fb923c44", borderRadius: 6, padding: "10px 14px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span style={{ fontSize: 13, color: "#fb923c" }}>⏳ {financials.pendingBetsCount} real bet{financials.pendingBetsCount > 1 ? "s" : ""} currently in progress</span>
+                    <span style={{ fontSize: 18, fontWeight: 700, fontFamily: "Barlow Condensed, sans-serif", color: "#fb923c" }}>€{financials.pendingRealAtStake.toFixed(2)} at stake</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* ══════════════════════════════════════════════════════════════
+                SKIN CREDITS — purple, sits between the two panels
+            ══════════════════════════════════════════════════════════════ */}
+            <div style={{ border: "2px solid #a78bfa55", borderRadius: 10, overflow: "hidden" }}>
+              <div style={{ background: "linear-gradient(135deg, #100a1e, #14102a)", padding: "14px 20px", display: "flex", alignItems: "center", gap: 10, borderBottom: "1px solid #a78bfa33" }}>
+                <span style={{ fontSize: 20 }}>💜</span>
+                <div>
+                  <div style={{ fontSize: 16, fontWeight: 800, color: "#a78bfa", letterSpacing: 2, fontFamily: "Barlow Condensed, sans-serif" }}>SKIN CREDITS</div>
+                  <div style={{ fontSize: 12, color: "#c4b5fd", marginTop: 2 }}>Not cash — only become real cost when a player redeems for an RP card.</div>
+                </div>
+              </div>
+              <div style={{ padding: 20, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <div style={{ background: "#100a1e", border: "1px solid #a78bfa22", borderRadius: 8, padding: "14px 16px" }}>
+                  <div style={{ fontSize: 11, letterSpacing: 2, color: "#7A7A82", marginBottom: 6 }}>CREDITS OUTSTANDING</div>
+                  <div style={{ fontSize: 32, fontWeight: 800, fontFamily: "Barlow Condensed, sans-serif", color: "#a78bfa" }}>{financials.totalCreditsOwed.toFixed(2)}</div>
+                  <div style={{ fontSize: 11, color: "#6A6A72", marginTop: 4 }}>Future RP card liability</div>
+                </div>
+                <div style={{ background: "#100a1e", border: "1px solid #a78bfa22", borderRadius: 8, padding: "14px 16px" }}>
+                  <div style={{ fontSize: 11, letterSpacing: 2, color: "#7A7A82", marginBottom: 6 }}>CREDITS ISSUED ALL-TIME</div>
+                  <div style={{ fontSize: 32, fontWeight: 800, fontFamily: "Barlow Condensed, sans-serif", color: "#c4b5fd" }}>{financials.totalCreditsPaidOut.toFixed(2)}</div>
+                  <div style={{ fontSize: 11, color: "#6A6A72", marginTop: 4 }}>Created from real bet wins</div>
+                </div>
+              </div>
+            </div>
+
+            {/* ══════════════════════════════════════════════════════════════
+                PANEL 2 — FAKE MONEY  (dimmed gold, engagement only)
+            ══════════════════════════════════════════════════════════════ */}
+            <div style={{ border: "1px solid #C8AA6E33", borderRadius: 10, overflow: "hidden", opacity: 0.75 }}>
+              <div style={{ background: "#0d0c08", padding: "14px 20px", display: "flex", alignItems: "center", gap: 10, borderBottom: "1px solid #C8AA6E22" }}>
+                <span style={{ fontSize: 20 }}>🎮</span>
+                <div>
+                  <div style={{ fontSize: 16, fontWeight: 800, color: "#C8AA6E", letterSpacing: 2, fontFamily: "Barlow Condensed, sans-serif" }}>VIRTUAL GOLD — FAKE MONEY</div>
+                  <div style={{ fontSize: 12, color: "#7A7A82", marginTop: 2 }}>No financial impact. For engagement tracking only. Ignore for accounting.</div>
+                </div>
+              </div>
+              <div style={{ padding: 20 }}>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 10 }}>
+                  {[
+                    { label: "Virtual Bets", val: financials.virtual.totalBets, color: "#C8AA6E" },
+                    { label: "Player Wins", val: financials.virtual.wins, color: "#A0A0A8" },
+                    { label: "Player Losses", val: financials.virtual.losses, color: "#A0A0A8" },
+                    { label: "Fake $ Wagered", val: `$${financials.virtual.wagered.toFixed(2)}`, color: "#C8AA6E" },
+                    { label: "Player Win Rate", val: `${financials.virtual.winRate}%`, color: "#A0A0A8" },
+                  ].map(({ label, val, color }) => (
+                    <div key={label} style={{ background: "#0d0c08", border: "1px solid #C8AA6E15", borderRadius: 6, padding: "10px 12px", textAlign: "center" }}>
+                      <div style={{ fontSize: 10, letterSpacing: 1, color: "#555550", marginBottom: 4 }}>{label}</div>
+                      <div style={{ fontSize: 20, fontWeight: 700, fontFamily: "Barlow Condensed, sans-serif", color }}>{val}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Platform counts row */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
+              {[
+                { label: "Total Players", val: financials.totalPlayers, color: "#F0F0F0" },
+                { label: "PayPal Deposits", val: financials.totalDeposits, color: "#4ade80" },
+                { label: "RP Cards Sent", val: financials.totalRedemptionsFulfilled, color: "#C8AA6E" },
+                { label: "RP Cards Pending", val: financials.totalRedemptionsPending, color: "#fb923c" },
+              ].map(({ label, val, color }) => (
+                <div key={label} style={{ ...S.card, textAlign: "center" }}>
+                  <div style={S.label}>{label}</div>
+                  <div style={{ fontSize: 32, fontWeight: 800, fontFamily: "Barlow Condensed, sans-serif", color, marginTop: 6 }}>{val}</div>
+                </div>
+              ))}
+            </div>
+
+          </div>
+        )}
+
+
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12 }}>
                 {[
                   { label: "Total Deposited", val: `€${financials.totalDeposited.toFixed(2)}`, color: "#4ade80", desc: `${financials.totalDeposits} PayPal deposits` },
@@ -2923,114 +3067,6 @@ function AdminPanel({ adminToken, onLogout }) {
                   </div>
                 ))}
               </div>
-              <div style={{ marginTop: 10, background: "#0d180d", border: "1px solid #4ade8022", borderRadius: 6, padding: "12px 16px", fontSize: 13, color: "#86efac", lineHeight: 1.8 }}>
-                <strong style={{ color: "#F0F0F0" }}>Margin:</strong> Deposited <strong>€{financials.totalDeposited.toFixed(2)}</strong> − owed to players <strong>€{financials.totalRealOwed.toFixed(2)}</strong> − sent RP <strong>€{financials.totalFulfilled.toFixed(2)}</strong> − pending RP <strong>€{financials.totalPendingRedeem.toFixed(2)}</strong> = <strong style={{ color: financials.netMargin >= 0 ? "#3FB950" : "#C8464A", fontSize: 15 }}>€{financials.netMargin.toFixed(2)}</strong>
-              </div>
-            </div>
-
-            {/* ── SECTION 2: SKIN CREDITS ── */}
-            <div>
-              <div style={{ fontSize: 11, letterSpacing: 3, color: "#a78bfa", fontWeight: 700, marginBottom: 12 }}>💜 SKIN CREDITS (not real money)</div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12 }}>
-                {[
-                  { label: "Credits Outstanding", val: financials.totalCreditsOwed.toFixed(2), color: "#a78bfa", desc: "Unspent credits across all players" },
-                  { label: "Credits Issued (all-time)", val: financials.totalCreditsPaidOut.toFixed(2), color: "#c4b5fd", desc: "Total created from real bet wins" },
-                ].map(({ label, val, color, desc }) => (
-                  <div key={label} style={{ ...S.card, borderColor: "#a78bfa22" }}>
-                    <div style={S.label}>{label}</div>
-                    <div style={{ fontSize: 26, fontWeight: 700, fontFamily: "Barlow Condensed, sans-serif", color, marginTop: 6, marginBottom: 4 }}>{val}</div>
-                    <div style={{ fontSize: 12, color: "#7A7A82" }}>{desc}</div>
-                  </div>
-                ))}
-              </div>
-              <div style={{ marginTop: 10, background: "#14101e", border: "1px solid #a78bfa22", borderRadius: 6, padding: "12px 16px", fontSize: 13, color: "#c4b5fd", lineHeight: 1.6 }}>
-                Credits are <strong style={{ color: "#F0F0F0" }}>not cash</strong> — they only exist as a number in the database until a player redeems them for an RP card. Outstanding credits = your future RP card liability.
-              </div>
-            </div>
-
-            {/* ── SECTION 3: REAL BETS ── */}
-            <div>
-              <div style={{ fontSize: 11, letterSpacing: 3, color: "#4ade80", fontWeight: 700, marginBottom: 12 }}>🎮 REAL MONEY BETS</div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12 }}>
-                {[
-                  { label: "Total Real Bets", val: financials.real.totalBets, color: "#F0F0F0" },
-                  { label: "Player Wins", val: `${financials.real.wins} (${financials.real.winRate}%)`, color: "#F85149", desc: "Costs you credits" },
-                  { label: "Player Losses", val: `${financials.real.losses}`, color: "#3FB950", desc: "You keep the stake" },
-                  { label: "Real € Wagered", val: `€${financials.real.wagered.toFixed(2)}`, color: "#4ade80", desc: "Total staked in real bets" },
-                  { label: "Credits Created", val: financials.real.creditsPaidOut.toFixed(2), color: "#a78bfa", desc: "Issued to winning players" },
-                  { label: "Win Rate", val: `${financials.real.winRate}%`, color: financials.real.winRate > 55 ? "#F85149" : "#3FB950", desc: financials.real.winRate > 55 ? "⚠️ Above target" : "✓ Within target" },
-                ].map(({ label, val, color, desc }) => (
-                  <div key={label} style={{ ...S.card, textAlign: "center", borderColor: "#4ade8022" }}>
-                    <div style={S.label}>{label}</div>
-                    <div style={{ fontSize: 22, fontWeight: 700, fontFamily: "Barlow Condensed, sans-serif", color, marginTop: 6 }}>{val}</div>
-                    {desc && <div style={{ fontSize: 11, color: "#7A7A82", marginTop: 4 }}>{desc}</div>}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* ── SECTION 4: VIRTUAL BETS ── */}
-            <div>
-              <div style={{ fontSize: 11, letterSpacing: 3, color: "#C8AA6E", fontWeight: 700, marginBottom: 12 }}>🎮 VIRTUAL BETS (fake money — for info only)</div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12 }}>
-                {[
-                  { label: "Total Virtual Bets", val: financials.virtual.totalBets, color: "#F0F0F0" },
-                  { label: "Player Wins", val: `${financials.virtual.wins} (${financials.virtual.winRate}%)`, color: "#A0A0A8" },
-                  { label: "Player Losses", val: financials.virtual.losses, color: "#A0A0A8" },
-                  { label: "Virtual $ Wagered", val: `$${financials.virtual.wagered.toFixed(2)}`, color: "#C8AA6E", desc: "Fake money only" },
-                ].map(({ label, val, color, desc }) => (
-                  <div key={label} style={{ ...S.card, textAlign: "center", borderColor: "#C8AA6E22", opacity: 0.8 }}>
-                    <div style={S.label}>{label}</div>
-                    <div style={{ fontSize: 22, fontWeight: 700, fontFamily: "Barlow Condensed, sans-serif", color, marginTop: 6 }}>{val}</div>
-                    {desc && <div style={{ fontSize: 11, color: "#7A7A82", marginTop: 4 }}>{desc}</div>}
-                  </div>
-                ))}
-              </div>
-              <div style={{ marginTop: 10, background: "#141416", border: "1px solid #C8AA6E22", borderRadius: 6, padding: "10px 14px", fontSize: 12, color: "#7A7A82" }}>
-                Virtual bets have no financial impact. Numbers shown for engagement tracking only.
-              </div>
-            </div>
-
-            {/* ── SECTION 5: PENDING BETS AT RISK ── */}
-            {financials.pendingBetsCount > 0 && (
-              <div>
-                <div style={{ fontSize: 11, letterSpacing: 3, color: "#fb923c", fontWeight: 700, marginBottom: 12 }}>⏳ PENDING BETS (in progress)</div>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
-                  {[
-                    { label: "Active Bets", val: financials.pendingBetsCount, color: "#fb923c" },
-                    { label: "Real € at Stake", val: `€${financials.pendingRealAtStake.toFixed(2)}`, color: "#4ade80", desc: "Staked, awaiting result" },
-                    { label: "Virtual $ at Stake", val: `$${financials.pendingVirtualAtStake.toFixed(2)}`, color: "#C8AA6E", desc: "Fake money" },
-                  ].map(({ label, val, color, desc }) => (
-                    <div key={label} style={{ ...S.card, textAlign: "center", borderColor: "#fb923c33" }}>
-                      <div style={S.label}>{label}</div>
-                      <div style={{ fontSize: 22, fontWeight: 700, fontFamily: "Barlow Condensed, sans-serif", color, marginTop: 6 }}>{val}</div>
-                      {desc && <div style={{ fontSize: 11, color: "#7A7A82", marginTop: 4 }}>{desc}</div>}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* ── SECTION 6: PLATFORM SUMMARY ── */}
-            <div>
-              <div style={{ fontSize: 11, letterSpacing: 3, color: "#A0A0A8", fontWeight: 700, marginBottom: 12 }}>📊 PLATFORM</div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 12 }}>
-                {[
-                  { label: "Players", val: financials.totalPlayers, color: "#F0F0F0" },
-                  { label: "Total Deposits", val: financials.totalDeposits, color: "#4ade80" },
-                  { label: "RP Cards Sent", val: financials.totalRedemptionsFulfilled, color: "#C8AA6E" },
-                  { label: "RP Cards Pending", val: financials.totalRedemptionsPending, color: "#fb923c" },
-                ].map(({ label, val, color }) => (
-                  <div key={label} style={{ ...S.card, textAlign: "center" }}>
-                    <div style={S.label}>{label}</div>
-                    <div style={{ fontSize: 28, fontWeight: 700, fontFamily: "Barlow Condensed, sans-serif", color, marginTop: 6 }}>{val}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* ══ ACTIVITY TAB ═══════════════════════════════════════════════════ */}
         {!loading && tab === "activity" && (
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
