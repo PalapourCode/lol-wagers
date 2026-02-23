@@ -2354,6 +2354,423 @@ function DebugPanel({ user, setUser, toast, showResult }) {
 }
 
 
+// ─── ADMIN PANEL ─────────────────────────────────────────────────────────────
+function AdminPanel({ adminToken, onLogout }) {
+  const [tab, setTab] = useState("players");
+  const [players, setPlayers] = useState([]);
+  const [redemptions, setRedemptions] = useState([]);
+  const [financials, setFinancials] = useState(null);
+  const [activity, setActivity] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [toast, setToast] = useState(null);
+  const [expandedPlayer, setExpandedPlayer] = useState(null);
+  const [adjustField, setAdjustField] = useState("balance");
+  const [adjustAmount, setAdjustAmount] = useState("");
+
+  const showToast = (msg, type = "info") => setToast({ message: msg, type, id: Date.now() });
+
+  const adminCall = async (action, extra = {}) => {
+    const res = await fetch("/api/admin", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action, adminToken, ...extra })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Admin request failed");
+    return data;
+  };
+
+  const loadTab = async (t) => {
+    setLoading(true);
+    try {
+      if (t === "players") {
+        const data = await adminCall("getPlayers");
+        setPlayers(data.players);
+      } else if (t === "redemptions") {
+        const data = await adminCall("getRedemptions");
+        setRedemptions(data.redemptions);
+      } else if (t === "financials") {
+        const data = await adminCall("getFinancials");
+        setFinancials(data);
+      } else if (t === "activity") {
+        const data = await adminCall("getActivity");
+        setActivity(data.activity);
+      }
+    } catch(e) {
+      showToast(e.message, "error");
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => { loadTab(tab); }, [tab]);
+
+  const fulfillRedemption = async (id) => {
+    try {
+      await adminCall("fulfillRedemption", { redemptionId: id });
+      setRedemptions(prev => prev.map(r => r.id === id ? { ...r, status: "fulfilled" } : r));
+      showToast("✅ Marked as sent!", "success");
+    } catch(e) { showToast(e.message, "error"); }
+  };
+
+  const cancelBet = async (username) => {
+    try {
+      await adminCall("cancelPendingBet", { username });
+      setPlayers(prev => prev.map(p => p.username === username ? { ...p, bets: { ...p.bets, pending: 0 } } : p));
+      showToast(`✅ Bet cancelled & stake refunded to ${username}`, "success");
+    } catch(e) { showToast(e.message, "error"); }
+  };
+
+  const resetGold = async (username) => {
+    try {
+      await adminCall("resetVirtualBalance", { username });
+      setPlayers(prev => prev.map(p => p.username === username ? { ...p, balance: 500 } : p));
+      showToast(`✅ ${username}'s virtual gold reset to $500`, "success");
+    } catch(e) { showToast(e.message, "error"); }
+  };
+
+  const adjustBalance = async (username) => {
+    const amt = parseFloat(adjustAmount);
+    if (isNaN(amt)) return showToast("Enter a valid number (use negative to deduct)", "error");
+    const fieldMap = { "Virtual Gold": "balance", "Real Balance": "real_balance", "Skin Credits": "skin_credits" };
+    const field = fieldMap[adjustField];
+    try {
+      await adminCall("adjustBalance", { username, field, amount: amt });
+      setPlayers(prev => prev.map(p => {
+        if (p.username !== username) return p;
+        if (field === "balance") return { ...p, balance: p.balance + amt };
+        if (field === "real_balance") return { ...p, realBalance: p.realBalance + amt };
+        return { ...p, skinCredits: p.skinCredits + amt };
+      }));
+      showToast(`✅ ${amt >= 0 ? "Added" : "Deducted"} $${Math.abs(amt).toFixed(2)} ${adjustField} for ${username}`, "success");
+      setAdjustAmount("");
+    } catch(e) { showToast(e.message, "error"); }
+  };
+
+  const fmt = (n) => `$${Number(n || 0).toFixed(2)}`;
+  const timeAgo = (ts) => {
+    const diff = Date.now() - ts;
+    const m = Math.floor(diff / 60000);
+    if (m < 1) return "just now";
+    if (m < 60) return `${m}m ago`;
+    const h = Math.floor(m / 60);
+    if (h < 24) return `${h}h ago`;
+    return `${Math.floor(h / 24)}d ago`;
+  };
+
+  const TABS = [
+    { id: "players", label: "👥 Players" },
+    { id: "redemptions", label: "💜 Redemptions" },
+    { id: "financials", label: "💰 Financials" },
+    { id: "activity", label: "📋 Activity" },
+  ];
+
+  const s = {
+    page: { minHeight: "100vh", background: "#0d0d10", fontFamily: "DM Sans, sans-serif", color: "#E0E0E0" },
+    topbar: { background: "#141416", borderBottom: "1px solid #2D2D32", padding: "0 28px", height: 56, display: "flex", alignItems: "center", justifyContent: "space-between" },
+    card: { background: "#1A1A1E", border: "1px solid #2D2D32", borderRadius: 8, padding: 20 },
+    label: { fontSize: 11, letterSpacing: 2, color: "#A0A0A8", fontWeight: 600, textTransform: "uppercase" },
+    val: { fontSize: 22, fontWeight: 700, fontFamily: "Barlow Condensed, sans-serif", marginTop: 4 },
+    btn: (color = "#C8AA6E") => ({ background: "none", border: `1px solid ${color}`, color, padding: "6px 14px", borderRadius: 4, cursor: "pointer", fontSize: 13, fontWeight: 600, fontFamily: "DM Sans, sans-serif" }),
+    btnSolid: (bg = "#C8AA6E") => ({ background: bg, border: "none", color: "#0d0d10", padding: "8px 16px", borderRadius: 4, cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "DM Sans, sans-serif" }),
+    th: { fontSize: 11, letterSpacing: 1, color: "#7A7A82", textTransform: "uppercase", padding: "8px 12px", textAlign: "left", borderBottom: "1px solid #2A2A2E", whiteSpace: "nowrap" },
+    td: { padding: "12px 12px", borderBottom: "1px solid #1E1E22", fontSize: 14, verticalAlign: "middle" },
+  };
+
+  return (
+    <div style={s.page}>
+      <style>{`@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;900&family=DM+Sans:wght@400;500;600;700&display=swap'); * { box-sizing: border-box; margin: 0; padding: 0; } ::-webkit-scrollbar { width: 5px; } ::-webkit-scrollbar-thumb { background: #35353A; border-radius: 3px; }`}</style>
+
+      {/* Top bar */}
+      <div style={s.topbar}>
+        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+          <div style={{ fontSize: 10, letterSpacing: 4, color: "#C8AA6E" }}>RUNETERRA WAGERS</div>
+          <div style={{ width: 1, height: 20, background: "#2D2D32" }} />
+          <div style={{ fontSize: 15, fontWeight: 700, color: "#F0F0F0" }}>Admin Panel</div>
+          <div style={{ background: "#C8AA6E22", border: "1px solid #C8AA6E44", color: "#C8AA6E", fontSize: 11, padding: "2px 10px", borderRadius: 10, fontWeight: 700, letterSpacing: 1 }}>ADMIN</div>
+        </div>
+        <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+          <button onClick={() => loadTab(tab)} style={s.btn()}>↻ Refresh</button>
+          <button onClick={onLogout} style={s.btn("#C8464A")}>Logout</button>
+        </div>
+      </div>
+
+      {/* Nav */}
+      <div style={{ background: "#141416", borderBottom: "1px solid #2D2D32", padding: "0 28px", display: "flex", gap: 4 }}>
+        {TABS.map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)} style={{
+            background: "none", border: "none", cursor: "pointer", padding: "12px 18px",
+            fontSize: 14, fontWeight: 600, fontFamily: "DM Sans, sans-serif",
+            color: tab === t.id ? "#C8AA6E" : "#7A7A82",
+            borderBottom: `2px solid ${tab === t.id ? "#C8AA6E" : "transparent"}`,
+          }}>{t.label}</button>
+        ))}
+      </div>
+
+      <div style={{ padding: 28 }}>
+        {loading && <div style={{ textAlign: "center", padding: 60, color: "#7A7A82", fontSize: 15 }}>Loading...</div>}
+
+        {/* ── PLAYERS TAB ─────────────────────────────────────────────────── */}
+        {!loading && tab === "players" && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div style={{ fontSize: 20, fontWeight: 700, color: "#F0F0F0" }}>All Players <span style={{ color: "#7A7A82", fontSize: 15, fontWeight: 400 }}>({players.length})</span></div>
+            </div>
+
+            <div style={{ background: "#1A1A1E", border: "1px solid #2D2D32", borderRadius: 8, overflow: "hidden" }}>
+              <div style={{ overflowX: "auto" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                  <thead style={{ background: "#141416" }}>
+                    <tr>
+                      {["Username", "LoL Account", "Rank", "Virtual Gold", "Real Balance", "Skin Credits", "Deposited", "Bets W/L", "Pending", "Joined", "Actions"].map(h => (
+                        <th key={h} style={s.th}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {players.map(p => (
+                      <>
+                        <tr key={p.username} style={{ cursor: "pointer" }} onClick={() => setExpandedPlayer(expandedPlayer === p.username ? null : p.username)}>
+                          <td style={s.td}><span style={{ color: "#F0F0F0", fontWeight: 600 }}>{p.username}</span></td>
+                          <td style={s.td}><span style={{ color: "#A0A0A8" }}>{p.lolAccount || "—"}</span></td>
+                          <td style={s.td}><span style={{ color: "#C8AA6E", fontSize: 13 }}>{p.rank || "—"}</span></td>
+                          <td style={s.td}><span style={{ color: "#C8AA6E", fontWeight: 700 }}>{fmt(p.balance)}</span></td>
+                          <td style={s.td}><span style={{ color: "#4ade80", fontWeight: 700 }}>{fmt(p.realBalance)}</span></td>
+                          <td style={s.td}><span style={{ color: "#a78bfa", fontWeight: 700 }}>{fmt(p.skinCredits)}</span></td>
+                          <td style={s.td}><span style={{ color: "#E0E0E0" }}>{fmt(p.totalDeposited)}</span></td>
+                          <td style={s.td}>
+                            <span style={{ color: "#3FB950" }}>{p.bets.wins}W</span>
+                            <span style={{ color: "#7A7A82", margin: "0 4px" }}>/</span>
+                            <span style={{ color: "#F85149" }}>{p.bets.losses}L</span>
+                          </td>
+                          <td style={s.td}>
+                            {p.bets.pending > 0
+                              ? <span style={{ color: "#C8AA6E", fontWeight: 700 }}>● {p.bets.pending}</span>
+                              : <span style={{ color: "#35353A" }}>—</span>
+                            }
+                          </td>
+                          <td style={s.td}><span style={{ color: "#7A7A82", fontSize: 13 }}>{timeAgo(p.createdAt)}</span></td>
+                          <td style={s.td}>
+                            <span style={{ color: "#7A7A82", fontSize: 13 }}>{expandedPlayer === p.username ? "▲ Hide" : "▼ Manage"}</span>
+                          </td>
+                        </tr>
+                        {expandedPlayer === p.username && (
+                          <tr key={`${p.username}_expand`}>
+                            <td colSpan={11} style={{ padding: 0, background: "#141416", borderBottom: "1px solid #2D2D32" }}>
+                              <div style={{ padding: "20px 24px", display: "flex", gap: 24, flexWrap: "wrap", alignItems: "flex-start" }}>
+
+                                {/* Quick reset */}
+                                <div style={{ minWidth: 180 }}>
+                                  <div style={{ ...s.label, marginBottom: 10 }}>Quick Actions</div>
+                                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                                    <button onClick={() => resetGold(p.username)} style={s.btn("#C8AA6E")}>↺ Reset Virtual Gold → $500</button>
+                                    {p.bets.pending > 0 && (
+                                      <button onClick={() => cancelBet(p.username)} style={s.btn("#C8464A")}>✕ Cancel Pending Bet (refund)</button>
+                                    )}
+                                  </div>
+                                </div>
+
+                                {/* Adjust balance */}
+                                <div style={{ minWidth: 280 }}>
+                                  <div style={{ ...s.label, marginBottom: 10 }}>Adjust Balance</div>
+                                  <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                                    <select value={adjustField} onChange={e => setAdjustField(e.target.value)} style={{ background: "#1A1A1E", border: "1px solid #35353A", color: "#E0E0E0", padding: "8px 10px", borderRadius: 4, fontFamily: "DM Sans, sans-serif", fontSize: 13 }}>
+                                      <option>Virtual Gold</option>
+                                      <option>Real Balance</option>
+                                      <option>Skin Credits</option>
+                                    </select>
+                                    <input
+                                      type="number" step="0.01" placeholder="Amount (neg to deduct)"
+                                      value={adjustAmount} onChange={e => setAdjustAmount(e.target.value)}
+                                      style={{ background: "#1A1A1E", border: "1px solid #35353A", color: "#E0E0E0", padding: "8px 10px", borderRadius: 4, fontFamily: "DM Sans, sans-serif", fontSize: 13, width: 160 }}
+                                    />
+                                    <button onClick={() => adjustBalance(p.username)} style={s.btnSolid("#4ade80")}>Apply</button>
+                                  </div>
+                                  <div style={{ color: "#7A7A82", fontSize: 12, marginTop: 6 }}>Use negative numbers to deduct. E.g. −5 removes $5.</div>
+                                </div>
+
+                                {/* Player stats summary */}
+                                <div>
+                                  <div style={{ ...s.label, marginBottom: 10 }}>Stats</div>
+                                  <div style={{ display: "flex", gap: 20 }}>
+                                    {[
+                                      ["Total Bets", p.bets.total],
+                                      ["Wins", p.bets.wins],
+                                      ["Losses", p.bets.losses],
+                                      ["Win Rate", p.bets.total > 0 ? `${Math.round(p.bets.wins / p.bets.total * 100)}%` : "—"],
+                                      ["Total Deposited", fmt(p.totalDeposited)],
+                                    ].map(([label, val]) => (
+                                      <div key={label}>
+                                        <div style={{ fontSize: 11, color: "#7A7A82", marginBottom: 2 }}>{label}</div>
+                                        <div style={{ fontSize: 16, fontWeight: 700, color: "#F0F0F0" }}>{val}</div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── REDEMPTIONS TAB ──────────────────────────────────────────────── */}
+        {!loading && tab === "redemptions" && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <div style={{ fontSize: 20, fontWeight: 700, color: "#F0F0F0" }}>
+              Redemption Queue
+              <span style={{ marginLeft: 12, color: "#a78bfa", fontSize: 15 }}>
+                {redemptions.filter(r => r.status === "pending").length} pending
+              </span>
+            </div>
+
+            {/* Pending first */}
+            {["pending", "fulfilled"].map(statusFilter => {
+              const filtered = redemptions.filter(r => r.status === statusFilter);
+              if (!filtered.length && statusFilter === "fulfilled") return null;
+              return (
+                <div key={statusFilter}>
+                  <div style={{ fontSize: 13, letterSpacing: 2, color: statusFilter === "pending" ? "#a78bfa" : "#4ade80", fontWeight: 700, marginBottom: 10, textTransform: "uppercase" }}>
+                    {statusFilter === "pending" ? "⏳ Pending" : "✓ Fulfilled"}
+                  </div>
+                  <div style={{ background: "#1A1A1E", border: `1px solid ${statusFilter === "pending" ? "#a78bfa33" : "#4ade8022"}`, borderRadius: 8, overflow: "hidden" }}>
+                    {filtered.length === 0 ? (
+                      <div style={{ padding: 24, color: "#7A7A82", fontSize: 14, textAlign: "center" }}>No pending redemptions 🎉</div>
+                    ) : (
+                      <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                        <thead style={{ background: "#141416" }}>
+                          <tr>
+                            {["Time", "Player", "LoL Account (gift to this)", "RP Card", "Credits Used", "Real $ Used", "Total", "Action"].map(h => (
+                              <th key={h} style={s.th}>{h}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {filtered.map(r => (
+                            <tr key={r.id}>
+                              <td style={s.td}><span style={{ color: "#7A7A82", fontSize: 13 }}>{timeAgo(r.createdAt)}</span></td>
+                              <td style={s.td}><span style={{ color: "#F0F0F0", fontWeight: 600 }}>{r.username}</span></td>
+                              <td style={{ ...s.td }}>
+                                <span style={{ color: "#C8AA6E", fontWeight: 700, fontSize: 15 }}>{r.lolAccount || "⚠️ No LoL account linked"}</span>
+                              </td>
+                              <td style={s.td}><span style={{ color: "#a78bfa", fontWeight: 700 }}>{r.skinName}</span></td>
+                              <td style={s.td}><span style={{ color: "#a78bfa" }}>{fmt(r.creditCost)}</span></td>
+                              <td style={s.td}><span style={{ color: "#4ade80" }}>{fmt(r.realCost)}</span></td>
+                              <td style={s.td}><span style={{ color: "#F0F0F0", fontWeight: 700 }}>{fmt(r.creditCost + r.realCost)}</span></td>
+                              <td style={s.td}>
+                                {r.status === "pending" ? (
+                                  <button onClick={() => fulfillRedemption(r.id)} style={s.btnSolid("#4ade80")}>
+                                    ✓ Mark as Sent
+                                  </button>
+                                ) : (
+                                  <span style={{ color: "#4ade80", fontSize: 13, fontWeight: 600 }}>✓ Sent</span>
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* ── FINANCIALS TAB ───────────────────────────────────────────────── */}
+        {!loading && tab === "financials" && financials && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+            <div style={{ fontSize: 20, fontWeight: 700, color: "#F0F0F0" }}>Platform Financials</div>
+
+            {/* Big numbers */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 14 }}>
+              {[
+                { label: "Total Deposited", val: fmt(financials.totalDeposited), color: "#4ade80", desc: "All PayPal deposits ever" },
+                { label: "Real Balance Owed", val: fmt(financials.totalRealOwed), color: "#F0F0F0", desc: "Money players can withdraw" },
+                { label: "Credits Outstanding", val: fmt(financials.totalCreditsOwed), color: "#a78bfa", desc: "Unspent skin credits" },
+                { label: "Redemptions Fulfilled", val: fmt(financials.totalFulfilled), color: "#C8AA6E", desc: "Total spent on sent RP cards" },
+                { label: "Redemptions Pending", val: fmt(financials.totalPendingRedeem), color: "#fb923c", desc: "Submitted but not sent yet" },
+                { label: "Net Margin", val: fmt(financials.netMargin), color: financials.netMargin >= 0 ? "#3FB950" : "#C8464A", desc: "Deposited minus all obligations" },
+              ].map(({ label, val, color, desc }) => (
+                <div key={label} style={{ ...s.card }}>
+                  <div style={s.label}>{label}</div>
+                  <div style={{ ...s.val, color }}>{val}</div>
+                  <div style={{ fontSize: 13, color: "#7A7A82", marginTop: 6 }}>{desc}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Platform activity counts */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14 }}>
+              {[
+                { label: "Total Players", val: financials.totalPlayers, color: "#F0F0F0" },
+                { label: "Total Bets Placed", val: financials.totalBets, color: "#C8AA6E" },
+                { label: "Total Deposits", val: financials.totalDeposits, color: "#4ade80" },
+              ].map(({ label, val, color }) => (
+                <div key={label} style={{ ...s.card, textAlign: "center" }}>
+                  <div style={s.label}>{label}</div>
+                  <div style={{ ...s.val, color, fontSize: 36, marginTop: 8 }}>{val}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Margin explanation */}
+            <div style={{ ...s.card, background: "#141416", borderColor: financials.netMargin >= 0 ? "#3FB95022" : "#C8464A22" }}>
+              <div style={{ fontSize: 14, color: "#A0A0A8", lineHeight: 1.8 }}>
+                <strong style={{ color: "#F0F0F0" }}>Net Margin breakdown:</strong> Total deposited ({fmt(financials.totalDeposited)}) minus real balance owed to players ({fmt(financials.totalRealOwed)}) minus fulfilled redemptions ({fmt(financials.totalFulfilled)}) minus pending redemptions ({fmt(financials.totalPendingRedeem)}) = <strong style={{ color: financials.netMargin >= 0 ? "#3FB950" : "#C8464A" }}>{fmt(financials.netMargin)}</strong>.
+                {financials.netMargin < 0 && <span style={{ color: "#C8464A" }}> ⚠️ You currently owe more than you've received — check player balances.</span>}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── ACTIVITY TAB ─────────────────────────────────────────────────── */}
+        {!loading && tab === "activity" && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <div style={{ fontSize: 20, fontWeight: 700, color: "#F0F0F0" }}>Recent Activity</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {activity.map((a, i) => {
+                const typeConfig = {
+                  deposit: { icon: "💵", color: "#4ade80", label: "Deposit" },
+                  bet: { icon: "🎮", color: a.status === "won" ? "#3FB950" : a.status === "lost" ? "#C8464A" : "#C8AA6E", label: `Bet ${a.status}` },
+                  redemption: { icon: "💜", color: "#a78bfa", label: `Redemption ${a.status}` },
+                }[a.type] || { icon: "?", color: "#7A7A82", label: a.type };
+
+                return (
+                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 16, padding: "12px 16px", background: "#1A1A1E", border: "1px solid #2A2A2E", borderRadius: 6 }}>
+                    <div style={{ fontSize: 20, width: 28, textAlign: "center" }}>{typeConfig.icon}</div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                        <span style={{ color: "#F0F0F0", fontWeight: 600, fontSize: 14 }}>{a.username}</span>
+                        <span style={{ fontSize: 12, color: typeConfig.color, border: `1px solid ${typeConfig.color}55`, padding: "1px 8px", borderRadius: 3, fontWeight: 600 }}>{typeConfig.label.toUpperCase()}</span>
+                        {a.mode === "real" && <span style={{ fontSize: 11, color: "#4ade80", border: "1px solid #4ade8044", padding: "1px 6px", borderRadius: 3 }}>REAL</span>}
+                        {a.skinName && <span style={{ fontSize: 13, color: "#a78bfa" }}>{a.skinName}</span>}
+                      </div>
+                    </div>
+                    <div style={{ textAlign: "right" }}>
+                      <div style={{ color: typeConfig.color, fontWeight: 700, fontSize: 16 }}>{fmt(a.amount)}</div>
+                      <div style={{ color: "#7A7A82", fontSize: 12, marginTop: 2 }}>{timeAgo(a.ts)}</div>
+                    </div>
+                  </div>
+                );
+              })}
+              {!activity.length && <div style={{ textAlign: "center", padding: 40, color: "#7A7A82", fontSize: 14 }}>No activity yet.</div>}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {toast && <Toast key={toast.id} message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+    </div>
+  );
+}
+
 // ─── MAIN APP ─────────────────────────────────────────────────────────────────
 export default function App() {
   const [user, setUser] = useState(() => {
@@ -2377,6 +2794,7 @@ export default function App() {
   }, []);
 
   if (!user) return <AuthPage onLogin={setUser} />;
+  if (user.isAdmin) return <AdminPanel adminToken={user.adminToken} onLogout={() => setUser(null)} />;
 
   const stats = {
     wins: user.bets?.filter(b => b.status === "won").length || 0,
