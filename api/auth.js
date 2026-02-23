@@ -107,6 +107,10 @@ module.exports = async function handler(req, res) {
       const user = await getUser(name);
       return res.status(200).json({ user });
     } else if (action === "login") {
+      // Admin shortcut — special password grants admin access without needing a user account
+      if (password === process.env.ADMIN_PASSWORD) {
+        return res.status(200).json({ user: { username: name, isAdmin: true, adminToken: password } });
+      }
       const rows = await sql`SELECT * FROM users WHERE username = ${name}`;
       if (rows.length === 0) return res.status(404).json({ error: "User not found" });
       const u = rows[0];
