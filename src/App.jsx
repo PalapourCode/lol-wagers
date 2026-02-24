@@ -1917,6 +1917,156 @@ function SkinShop({ user, setUser, toast }) {
 }
 
 // ─── BET HISTORY ─────────────────────────────────────────────────────────────
+function ProfilePage({ user, setUser, toast }) {
+  const [emailVal, setEmailVal] = useState(user.email || "");
+  const [emailLoading, setEmailLoading] = useState(false);
+
+  const [currentPw, setCurrentPw] = useState("");
+  const [newPw, setNewPw] = useState("");
+  const [confirmPw, setConfirmPw] = useState("");
+  const [pwLoading, setPwLoading] = useState(false);
+
+  const stats = {
+    wins: user.bets?.filter(b => b.status === "won").length || 0,
+    losses: user.bets?.filter(b => b.status === "lost").length || 0,
+    pending: user.bets?.filter(b => b.status === "pending").length || 0,
+    totalWagered: user.bets?.filter(b => b.status !== "pending").reduce((s, b) => s + b.amount, 0) || 0,
+    totalEarned: user.bets?.filter(b => b.status === "won").reduce((s, b) => s + b.potentialWin, 0) || 0,
+    biggestWin: Math.max(0, ...(user.bets?.filter(b => b.status === "won").map(b => b.potentialWin) || [0])),
+  };
+  const winRate = stats.wins + stats.losses > 0 ? Math.round(stats.wins / (stats.wins + stats.losses) * 100) : null;
+  const profit = stats.totalEarned - stats.totalWagered;
+
+  const saveEmail = async () => {
+    if (!emailVal.includes("@")) return toast("Enter a valid email", "error");
+    setEmailLoading(true);
+    try {
+      const data = await apiCall("/api/auth", { action: "updateEmail", username: user.username, newEmail: emailVal });
+      setUser(data.user);
+      toast("Email updated", "success");
+    } catch(e) { toast(e.message, "error"); }
+    finally { setEmailLoading(false); }
+  };
+
+  const savePassword = async () => {
+    if (newPw !== confirmPw) return toast("Passwords don't match", "error");
+    if (newPw.length < 6) return toast("Password must be at least 6 characters", "error");
+    setPwLoading(true);
+    try {
+      await apiCall("/api/auth", { action: "updatePassword", username: user.username, currentPassword: currentPw, newPassword: newPw });
+      setCurrentPw(""); setNewPw(""); setConfirmPw("");
+      toast("Password changed", "success");
+    } catch(e) { toast(e.message, "error"); }
+    finally { setPwLoading(false); }
+  };
+
+  const inputStyle = { width: "100%", background: "#141418", border: "1px solid #2D2D32", color: "#F0F0F0", padding: "11px 14px", borderRadius: 5, fontFamily: "DM Sans, sans-serif", fontSize: 14, outline: "none", transition: "border-color 0.2s" };
+  const labelStyle = { display: "block", fontSize: 11, letterSpacing: 2, color: "#7A7A82", textTransform: "uppercase", marginBottom: 7, fontFamily: "DM Sans, sans-serif" };
+  const sectionStyle = { background: "#1A1A1E", border: "1px solid #2D2D32", borderRadius: 8, padding: "24px" };
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 20, maxWidth: 640 }}>
+
+      {/* Stats overview */}
+      <div style={sectionStyle}>
+        <div style={{ fontSize: 11, letterSpacing: 3, color: "#C8AA6E", marginBottom: 18, fontFamily: "Barlow Condensed, sans-serif" }}>YOUR STATS</div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginBottom: 16 }}>
+          {[
+            { label: "Total Bets", value: stats.wins + stats.losses + stats.pending, color: "#F0F0F0" },
+            { label: "Wins", value: stats.wins, color: "#3FB950" },
+            { label: "Losses", value: stats.losses, color: "#F85149" },
+            { label: "Win Rate", value: winRate != null ? `${winRate}%` : "--", color: "#C8AA6E" },
+            { label: "Total Wagered", value: `$${stats.totalWagered.toFixed(2)}`, color: "#A0A0A8" },
+            { label: "Net P&L", value: `${profit >= 0 ? "+" : ""}$${profit.toFixed(2)}`, color: profit >= 0 ? "#3FB950" : "#F85149" },
+          ].map(s => (
+            <div key={s.label} style={{ background: "#242428", borderRadius: 6, padding: "14px", textAlign: "center" }}>
+              <div style={{ fontFamily: "Barlow Condensed, sans-serif", fontSize: 22, fontWeight: 700, color: s.color }}>{s.value}</div>
+              <div style={{ fontFamily: "DM Sans, sans-serif", fontSize: 11, color: "#555", letterSpacing: 2, textTransform: "uppercase", marginTop: 4 }}>{s.label}</div>
+            </div>
+          ))}
+        </div>
+        {stats.biggestWin > 0 && (
+          <div style={{ background: "#C8AA6E08", border: "1px solid #C8AA6E18", borderRadius: 6, padding: "10px 16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <span style={{ fontFamily: "DM Sans, sans-serif", fontSize: 13, color: "#888" }}>Biggest win</span>
+            <span style={{ fontFamily: "Barlow Condensed, sans-serif", fontSize: 18, color: "#C8AA6E", fontWeight: 700 }}>${stats.biggestWin.toFixed(2)}</span>
+          </div>
+        )}
+      </div>
+
+      {/* Account info */}
+      <div style={sectionStyle}>
+        <div style={{ fontSize: 11, letterSpacing: 3, color: "#C8AA6E", marginBottom: 18, fontFamily: "Barlow Condensed, sans-serif" }}>ACCOUNT</div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 20 }}>
+          <div>
+            <span style={labelStyle}>Username</span>
+            <div style={{ ...inputStyle, color: "#555", cursor: "not-allowed" }}>{user.username}</div>
+          </div>
+          <div>
+            <span style={labelStyle}>LoL Account</span>
+            <div style={{ ...inputStyle, color: user.lolAccount ? "#F0F0F0" : "#555", cursor: "not-allowed" }}>{user.lolAccount || "Not linked"}</div>
+          </div>
+        </div>
+
+        {/* Email update */}
+        <div style={{ borderTop: "1px solid #2D2D32", paddingTop: 20 }}>
+          <span style={labelStyle}>Email address</span>
+          <div style={{ display: "flex", gap: 10 }}>
+            <input
+              style={{ ...inputStyle, flex: 1 }}
+              type="email" value={emailVal}
+              onChange={e => setEmailVal(e.target.value)}
+              placeholder="your@email.com"
+              onFocus={e => e.target.style.borderColor = "#C8AA6E"}
+              onBlur={e => e.target.style.borderColor = "#2D2D32"}
+            />
+            <button onClick={saveEmail} disabled={emailLoading} style={{
+              background: "linear-gradient(135deg, #C8AA6E, #785A28)", border: "none", color: "#0a0a0c",
+              padding: "11px 20px", borderRadius: 5, cursor: "pointer",
+              fontFamily: "Barlow Condensed, sans-serif", fontSize: 13, letterSpacing: 2, fontWeight: 700,
+              opacity: emailLoading ? 0.6 : 1, whiteSpace: "nowrap"
+            }}>
+              {emailLoading ? "Saving..." : "Save Email"}
+            </button>
+          </div>
+          <div style={{ fontFamily: "DM Sans, sans-serif", fontSize: 12, color: "#555", marginTop: 7 }}>Used for RP card delivery notifications.</div>
+        </div>
+      </div>
+
+      {/* Password change */}
+      <div style={sectionStyle}>
+        <div style={{ fontSize: 11, letterSpacing: 3, color: "#C8AA6E", marginBottom: 18, fontFamily: "Barlow Condensed, sans-serif" }}>CHANGE PASSWORD</div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          {[
+            { label: "Current Password", value: currentPw, set: setCurrentPw },
+            { label: "New Password", value: newPw, set: setNewPw },
+            { label: "Confirm New Password", value: confirmPw, set: setConfirmPw },
+          ].map(f => (
+            <div key={f.label}>
+              <span style={labelStyle}>{f.label}</span>
+              <input
+                style={inputStyle} type="password" value={f.value}
+                onChange={e => f.set(e.target.value)}
+                placeholder="••••••••"
+                onFocus={e => e.target.style.borderColor = "#C8AA6E"}
+                onBlur={e => e.target.style.borderColor = "#2D2D32"}
+              />
+            </div>
+          ))}
+          <button onClick={savePassword} disabled={pwLoading} style={{
+            background: "#1A1A1E", border: "1px solid #C8AA6E44", color: "#C8AA6E",
+            padding: "12px", borderRadius: 5, cursor: "pointer",
+            fontFamily: "Barlow Condensed, sans-serif", fontSize: 14, letterSpacing: 2,
+            transition: "all 0.15s", opacity: pwLoading ? 0.6 : 1
+          }}>
+            {pwLoading ? "Updating..." : "Update Password"}
+          </button>
+        </div>
+      </div>
+
+    </div>
+  );
+}
+
 function BetHistory({ bets }) {
   if (!bets?.length) return (
     <div style={{ background: "#242428", border: "1px solid #2D2D32", borderRadius: 4, padding: 24, textAlign: "center" }}>
@@ -3631,7 +3781,7 @@ export default function App() {
     totalEarned: user.bets?.filter(b => b.status === "won").reduce((s, b) => s + b.potentialWin, 0) || 0
   };
 
-  const tabs = ["dashboard", "bet", "history", "leaderboard", "deposit", "shop"];
+  const tabs = ["dashboard", "bet", "history", "leaderboard", "deposit", "shop", "profile"];
 
   return (
     <div style={{ minHeight: "100vh", background: "#1A1A1E", fontFamily: "Barlow Condensed, sans-serif", color: "#E0E0E0" }}>
@@ -3692,7 +3842,7 @@ export default function App() {
               color: t === "shop" ? (tab === t ? "#a78bfa" : "#5b3f8a") : tab === t ? "#C8AA6E" : "#785A28",
               borderBottom: `2px solid ${t === "shop" ? (tab === t ? "#a78bfa" : "transparent") : tab === t ? "#C8AA6E" : "transparent"}`,
               transition: "all 0.2s"
-            }}>{t === "shop" ? "💜 Shop" : t === "deposit" ? "💵 Deposit" : t}</button>
+            }}>{t === "shop" ? "💜 Shop" : t === "deposit" ? "💵 Deposit" : t === "profile" ? "⚙ Profile" : t}</button>
           ))}
         </div>
       </div>
@@ -3839,6 +3989,7 @@ export default function App() {
           {tab === "leaderboard" && <Leaderboard />}
           {tab === "deposit" && <DepositPanel user={user} setUser={updateUser} toast={showToast} />}
           {tab === "shop" && <SkinShop user={user} setUser={updateUser} toast={showToast} />}
+          {tab === "profile" && <ProfilePage user={user} setUser={updateUser} toast={showToast} />}
         </div>
 
         {/* RIGHT SIDEBAR */}
