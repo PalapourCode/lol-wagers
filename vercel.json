@@ -1,8 +1,1 @@
-{
-  "crons": [
-    {
-      "path": "/api/cron/resolve-bets",
-      "schedule": "0 4 * * *"
-    }
-  ]
-}
+{}
