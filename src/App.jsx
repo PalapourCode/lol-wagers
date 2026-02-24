@@ -1308,7 +1308,10 @@ function PlaceBet({ user, setUser, toast, betMode }) {
         mode: betMode
       });
       setUser(data.user);
-      toast(`Bet placed! Win to earn ${isReal ? `€${amount} back + €${(potentialWin - amount).toFixed(2)} skin credits` : `$${potentialWin}`}`, "success");
+      const winMsg = isReal
+        ? `€${amount} back + €${(potentialWin - amount).toFixed(2)} skin credits`
+        : `$${potentialWin}`;
+      toast(`Bet placed! Win to earn ${winMsg}`, "success");
     } catch(e) {
       toast(e.message, "error");
     }
