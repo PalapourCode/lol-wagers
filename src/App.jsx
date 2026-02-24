@@ -2780,6 +2780,7 @@ function AdminPanel({ adminToken, onLogout }) {
   const [financials, setFinancials] = useState(null);
   const [activity, setActivity] = useState([]);
   const [pendingBets, setPendingBets] = useState([]);
+  const [emailLogs, setEmailLogs] = useState([]);
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState(null);
   const [search, setSearch] = useState("");
@@ -2811,6 +2812,7 @@ function AdminPanel({ adminToken, onLogout }) {
       else if (t === "financials") { const d = await adminCall("getFinancials"); setFinancials(d); }
       else if (t === "activity") { const d = await adminCall("getActivity"); setActivity(d.activity); }
       else if (t === "pending") { const d = await adminCall("getPendingBets"); setPendingBets(d.bets); }
+      else if (t === "emails") { const d = await adminCall("getEmailLogs"); setEmailLogs(d.logs); }
     } catch(e) { showToast(e.message, "error"); }
     setLoading(false);
   };
@@ -2923,6 +2925,7 @@ function AdminPanel({ adminToken, onLogout }) {
     { id: "redemptions", label: "💜 Redemptions" },
     { id: "financials", label: "💰 Financials" },
     { id: "activity", label: "📋 Activity" },
+    { id: "emails", label: "✉️ Email Logs" + (emailLogs.filter(l => l.status === "failed").length ? ` ⚠️${emailLogs.filter(l => l.status === "failed").length}` : "") },
   ];
 
   const S = {
@@ -3495,6 +3498,66 @@ function AdminPanel({ adminToken, onLogout }) {
               );
             })}
             {!activity.length && <div style={{ textAlign: "center", padding: 48, color: "#7A7A82", fontSize: 14 }}>No activity yet.</div>}
+          </div>
+        )}
+
+        {/* ══ EMAIL LOGS TAB ══════════════════════════════════════════════════ */}
+        {!loading && tab === "emails" && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+              <div style={S.sectionTitle}>Email Logs <span style={{ color: "#7A7A82", fontSize: 14, fontWeight: 400 }}>— last 100 emails attempted</span></div>
+              <div style={{ display: "flex", gap: 16, fontSize: 13 }}>
+                <span style={{ color: "#3FB950" }}>✓ {emailLogs.filter(l => l.status === "sent").length} sent</span>
+                <span style={{ color: "#F85149" }}>✗ {emailLogs.filter(l => l.status === "failed").length} failed</span>
+              </div>
+            </div>
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
+                <thead>
+                  <tr>
+                    {["Time", "User", "Recipient", "Type", "Status", "Resend ID / Error"].map(h => (
+                      <th key={h} style={S.th}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {emailLogs.map(l => (
+                    <tr key={l.id} style={{ background: l.status === "failed" ? "#C8464A08" : "transparent" }}>
+                      <td style={S.td}><span style={{ color: "#7A7A82", fontSize: 12 }}>{timeAgo(l.sentAt)}</span></td>
+                      <td style={S.td}><span style={{ color: "#F0F0F0", fontWeight: 600 }}>{l.username}</span></td>
+                      <td style={S.td}><span style={{ color: "#A0A0A8", fontSize: 13 }}>{l.recipient}</span></td>
+                      <td style={S.td}>
+                        <span style={{
+                          fontSize: 11, fontWeight: 700, padding: "3px 8px", borderRadius: 3,
+                          background: l.type === "welcome" ? "#C8AA6E22" : "#a78bfa22",
+                          color: l.type === "welcome" ? "#C8AA6E" : "#a78bfa",
+                          border: `1px solid ${l.type === "welcome" ? "#C8AA6E44" : "#a78bfa44"}`
+                        }}>
+                          {l.type === "welcome" ? "WELCOME" : "RP CARD"}
+                        </span>
+                      </td>
+                      <td style={S.td}>
+                        <span style={{
+                          fontSize: 11, fontWeight: 700, padding: "3px 8px", borderRadius: 3,
+                          background: l.status === "sent" ? "#3FB95022" : "#C8464A22",
+                          color: l.status === "sent" ? "#3FB950" : "#F85149",
+                          border: `1px solid ${l.status === "sent" ? "#3FB95044" : "#C8464A44"}`
+                        }}>
+                          {l.status === "sent" ? "✓ SENT" : "✗ FAILED"}
+                        </span>
+                      </td>
+                      <td style={S.td}>
+                        {l.status === "sent"
+                          ? <span style={{ color: "#555", fontSize: 12, fontFamily: "monospace" }}>{l.resendId}</span>
+                          : <span style={{ color: "#F85149", fontSize: 12 }}>{l.error}</span>
+                        }
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {!emailLogs.length && <div style={{ textAlign: "center", padding: 48, color: "#7A7A82", fontSize: 14 }}>No emails logged yet. Send one to see it here.</div>}
           </div>
         )}
       </div>
