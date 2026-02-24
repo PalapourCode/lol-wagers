@@ -3434,26 +3434,6 @@ function AdminPanel({ adminToken, onLogout }) {
         )}
 
 
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12 }}>
-                {[
-                  { label: "Total Deposited", val: `€${financials.totalDeposited.toFixed(2)}`, color: "#4ade80", desc: `${financials.totalDeposits} PayPal deposits` },
-                  { label: "Real Balance Owed", val: `€${financials.totalRealOwed.toFixed(2)}`, color: "#F0F0F0", desc: "Sitting in player wallets" },
-                  { label: "Redemptions Fulfilled", val: `€${financials.totalFulfilled.toFixed(2)}`, color: "#C8AA6E", desc: `${financials.totalRedemptionsFulfilled} RP cards sent` },
-                  { label: "Redemptions Pending", val: `€${financials.totalPendingRedeem.toFixed(2)}`, color: "#fb923c", desc: `${financials.totalRedemptionsPending} cards not yet sent` },
-                  {
-                    label: "Net Margin",
-                    val: `€${financials.netMargin.toFixed(2)}`,
-                    color: financials.netMargin >= 0 ? "#3FB950" : "#C8464A",
-                    desc: financials.netMargin >= 0 ? "Platform is profitable" : "⚠️ Owe more than received"
-                  },
-                ].map(({ label, val, color, desc }) => (
-                  <div key={label} style={{ ...S.card, borderColor: "#4ade8022" }}>
-                    <div style={S.label}>{label}</div>
-                    <div style={{ fontSize: 26, fontWeight: 700, fontFamily: "Barlow Condensed, sans-serif", color, marginTop: 6, marginBottom: 4 }}>{val}</div>
-                    <div style={{ fontSize: 12, color: "#7A7A82" }}>{desc}</div>
-                  </div>
-                ))}
-              </div>
         {/* ══ ACTIVITY TAB ═══════════════════════════════════════════════════ */}
         {!loading && tab === "activity" && (
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
