@@ -3960,7 +3960,7 @@ function HextechIntro({ username, onComplete }) {
                 "--ty": `${Math.sin(angle*Math.PI/180)*dist}px`,
                 animation:`particleBurst 1s ${0.25+i*0.03}s ease-out both`,
                 boxShadow:`0 0 4px ${i%3===0?"#C8AA6E":"#00d4ff"}`,
-              } as any} />
+              }} />
             );
           })}
 
