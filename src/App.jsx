@@ -330,14 +330,7 @@ function RecentWinsScroll() {
   }, []);
 
   return (
-    <div style={{ background: "#1A1A1E", border: "1px solid #2A2A2E", borderRadius: 6, overflow: "hidden", marginTop: 16 }}>
-      <div style={{ padding: "8px 14px", borderBottom: "1px solid #222225", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <span style={{ fontSize: 9, letterSpacing: 3, color: "#A0A0A8" }}>RECENT ACTIVITY</span>
-        <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-          <div style={{ width: 5, height: 5, borderRadius: "50%", background: "#C8464A", animation: "pulse 1.5s ease-in-out infinite" }} />
-          <span style={{ fontSize: 9, color: "#C8464A", letterSpacing: 2 }}>LIVE</span>
-        </div>
-      </div>
+    <div>
       {wins.map((w, i) => (
         <div key={i} style={{
           padding: "10px 14px", borderBottom: "1px solid #222225",
@@ -353,7 +346,6 @@ function RecentWinsScroll() {
           <div style={{ fontSize: 14, fontWeight: 900, color: w.won ? "#3FB950" : "#F85149" }}>
             {w.won ? "+" : "-"}{w.amount}
           </div>
-        </div>
       ))}
     </div>
   );
@@ -574,7 +566,7 @@ function AuthPage({ onLogin }) {
             <div style={{ position: "absolute", top: 0, right: 0, width: 100, height: 100, background: "linear-gradient(225deg, #C8AA6E14, transparent)", borderRadius: "0 12px 0 0", pointerEvents: "none" }} />
 
             <div style={{ textAlign: "center", marginBottom: 28 }}>
-              <img src="/logo.png" alt="" style={{ width: 72, height: 72, objectFit: "contain", marginBottom: 10, filter: "drop-shadow(0 0 16px #C8AA6E44)" }} />
+              <img src="/logo.png" alt="" style={{ width: 220, height: 220, objectFit: "contain", marginBottom: 10, filter: "drop-shadow(0 0 32px #C8AA6E55)" }} />
               <div style={{ fontFamily: "Bebas Neue, sans-serif", fontSize: 26, color: "#C8AA6E", letterSpacing: 4 }}>
                 {mode === "login" ? "WELCOME BACK" : "JOIN THE RIFT"}
               </div>
