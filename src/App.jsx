@@ -2220,9 +2220,7 @@ function ChampMarket() {
         })}
       </div>
 
-      <div style={{ fontFamily: "DM Sans, sans-serif", fontSize: 11, color: "#2a2a32", textAlign: "center" }}>
-        Win rate data sourced from U.GG · Emerald+ · Patch {patch || "25.4"} · Session fluctuations are simulated
-      </div>
+
     </div>
   );
 }
