@@ -354,8 +354,6 @@ body { margin:0; padding:0; background:#0f1a0f; }
       if (!passwordValid) return res.status(401).json({ error: "Wrong password" });
       const full = await getUser(name);
       return res.status(200).json({ user: full });
-    } else {
-      return res.status(400).json({ error: "Unknown action" });
 
     } else if (action === "updateEmail") {
       const { username, newEmail } = req.body;
