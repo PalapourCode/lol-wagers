@@ -393,6 +393,16 @@ body{margin:0;padding:0;background:#060a10}
       }
       return res.status(200).json({ success: true });
 
+    } else if (action === "deletePlayer") {
+      const { username } = params;
+      if (!username) return res.status(400).json({ error: "Username required" });
+      // Delete in order to respect foreign keys
+      await sql`DELETE FROM skin_redemptions WHERE username = ${username}`;
+      await sql`DELETE FROM deposits WHERE username = ${username}`;
+      await sql`DELETE FROM bets WHERE username = ${username}`;
+      await sql`DELETE FROM users WHERE username = ${username}`;
+      return res.status(200).json({ success: true });
+
     } else {
       return res.status(400).json({ error: "Unknown action" });
     }
