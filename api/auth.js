@@ -115,72 +115,188 @@ module.exports = async function handler(req, res) {
         if (process.env.RESEND_API_KEY) {
           console.log("[EMAIL] Attempting welcome email to:", cleanEmail);
           const welcomeHtml = `<!DOCTYPE html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="dark">
-<style>@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
-@keyframes shimmerBar{0%{background-position:-200% center}100%{background-position:200% center}}
-@keyframes logoGlow{0%,100%{filter:drop-shadow(0 0 8px #C8AA6E44)}50%{filter:drop-shadow(0 0 24px #C8AA6Eaa) drop-shadow(0 0 48px #C8AA6E44)}}
-@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
-@keyframes cardShine{0%{background-position:-150% center}100%{background-position:250% center}}
-@keyframes rpFlash{0%,100%{color:#F0F0F0;text-shadow:none}50%{color:#C8AA6E;text-shadow:0 0 30px #C8AA6E88,0 0 60px #C8AA6E44}}
-@keyframes greenPulse{0%,100%{box-shadow:0 0 0 0 #4ade8033}50%{box-shadow:0 0 0 8px #4ade8000}}
-@keyframes float{0%,100%{transform:translateY(0px)}50%{transform:translateY(-6px)}}
-@keyframes stepIn{from{opacity:0;transform:translateX(-12px)}to{opacity:1;transform:translateX(0)}}
-@keyframes btnGlow{0%,100%{box-shadow:0 4px 20px #C8AA6E33}50%{box-shadow:0 4px 40px #C8AA6E66,0 0 80px #C8AA6E22}}
-@keyframes holo{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
-body{margin:0;padding:0;background:#060a10}
-.w{background:#060a10;padding:32px 16px}
-.e{font-family:Inter,Arial,sans-serif;max-width:560px;margin:0 auto;background:#0d1117;border-radius:14px;border:1px solid #C8AA6E44;overflow:hidden}
-.bar{height:5px;background:linear-gradient(90deg,#785A28,#C8AA6E,#fff8e7,#0BC4AA,#C8AA6E,#785A28);background-size:300% 100%;animation:shimmerBar 4s linear infinite}
-.hd{background:linear-gradient(175deg,#050e1a 0%,#071a0f 60%,#050e1a 100%);padding:52px 40px 44px;text-align:center}
-.logo{display:block;margin:0 auto 32px;width:280px;animation:float 5s ease-in-out infinite,logoGlow 3s ease-in-out infinite}
-.hd h1{color:#C8AA6E;font-size:30px;font-weight:800;margin:0 0 10px;letter-spacing:0.5px;line-height:1.2;animation:fadeUp 0.8s ease 0.2s both}
-.hd p{color:#86efac;font-size:17px;margin:0;font-weight:600;animation:fadeUp 0.8s ease 0.4s both}
-.dv{height:1px;background:linear-gradient(90deg,transparent,#C8AA6E44,transparent)}
-.bd{padding:44px 40px;animation:fadeUp 0.8s ease 0.5s both}
-.intro{color:#d4d4dc;font-size:16px;line-height:1.8;margin:0 0 36px}
-.intro strong{color:#C8AA6E;font-weight:700}
-.sb{background:#0d1520;border-radius:12px;padding:30px;margin-bottom:36px;border:1px solid #C8AA6E18}
-.sl{color:#C8AA6E;font-size:11px;letter-spacing:4px;margin:0 0 26px;font-weight:700;text-transform:uppercase}
-.st{display:flex;gap:16px;align-items:flex-start;margin-bottom:22px;animation:stepIn 0.6s ease both}
-.st:last-child{margin-bottom:0}
-.st:nth-child(2){animation-delay:0.1s}.st:nth-child(3){animation-delay:0.2s}.st:nth-child(4){animation-delay:0.3s}.st:nth-child(5){animation-delay:0.4s}
-.sn{background:#C8AA6E;color:#010A13;font-size:13px;font-weight:800;width:30px;height:30px;border-radius:50%;flex-shrink:0;line-height:30px;text-align:center}
-.st-t{color:#f0f0f0;font-size:16px;font-weight:700;margin:0 0 6px}
-.st-d{color:#8a8a9a;font-size:14px;margin:0;line-height:1.65}
-.cw{text-align:center;margin-bottom:10px}
-.ct{display:inline-block;background:linear-gradient(135deg,#C8AA6E 0%,#a07030 50%,#C8AA6E 100%);background-size:200% 100%;color:#010A13;text-decoration:none;padding:18px 56px;border-radius:8px;font-weight:800;font-size:15px;letter-spacing:2px;text-transform:uppercase;animation:btnGlow 2.5s ease-in-out infinite,shimmerBar 3s linear infinite}
-.ft{padding:24px 40px;text-align:center;border-top:1px solid #151520}
-.ft p{color:#444;font-size:13px;margin:0;line-height:1.8}
-.ft a{color:#C8AA6E66;text-decoration:none;font-weight:500}
-</style></head>
-<body><div class="w"><div class="e">
-<div class="bar"></div>
-<div class="hd">
-  <img class="logo" src="https://lol-wagers.vercel.app/logo.png" alt="LoL Wagers">
-  <h1>Welcome, ${name}</h1>
-  <p>Let's get winning.</p>
-</div>
-<div class="dv"></div>
-<div class="bd">
-  <p class="intro">You just joined <strong>LoL Wagers</strong>. Bet on yourself in ranked, win games, and cash out your credits for real RP cards sent straight to your account.</p>
-  <div class="sb">
-    <p class="sl">Getting started</p>
-    <div class="st"><div class="sn">1</div><div><p class="st-t">Link your LoL account</p><p class="st-d">Change your profile icon in-game to the one we show you. Takes 30 seconds to verify.</p></div></div>
-    <div class="st"><div class="sn">2</div><div><p class="st-t">Choose your stake</p><p class="st-d">Use your free virtual gold to start, or deposit real money to earn skin credits.</p></div></div>
-    <div class="st"><div class="sn">3</div><div><p class="st-t">Queue up and play</p><p class="st-d">Place your bet before you hit ranked. Play your game as you normally would.</p></div></div>
-    <div class="st"><div class="sn">4</div><div><p class="st-t">Get paid when you win</p><p class="st-d">We check your result through the Riot API. No screenshots, no waiting around.</p></div></div>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700&display=swap');
+@keyframes shimmer { 0% { background-position: -400% center; } 100% { background-position: 400% center; } }
+@keyframes glow { 0%,100% { opacity: 0.6; } 50% { opacity: 1; } }
+@keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.04); } }
+@keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+
+body { margin:0; padding:0; background:#0f1a0f; }
+.wrap { background:#0f1a0f; padding:0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!--[if mso]><table width="600" cellpadding="0" cellspacing="0"><tr><td><![endif]-->
+<div style="font-family:'DM Sans',Arial,sans-serif;max-width:600px;margin:0 auto;background:#0f1a0f;overflow:hidden">
+
+  <!-- TOP GOLD BAR - animated shimmer -->
+  <div style="height:6px;background:linear-gradient(90deg,#5a3e00,#C8AA6E,#ffe8a0,#C8AA6E,#5a3e00,#C8AA6E,#ffe8a0);background-size:400% 100%;animation:shimmer 4s linear infinite"></div>
+
+  <!-- HERO SECTION - casino felt green -->
+  <div style="background:linear-gradient(160deg,#0a1f0a 0%,#112211 40%,#0d1a18 100%);padding:52px 40px 44px;text-align:center;position:relative;overflow:hidden">
+
+    <!-- felt texture dots overlay -->
+    <div style="position:absolute;inset:0;background-image:radial-gradient(circle,#ffffff04 1px,transparent 1px);background-size:18px 18px;pointer-events:none"></div>
+
+    <!-- corner ornaments -->
+    <div style="position:absolute;top:16px;left:20px;width:40px;height:40px;border-top:2px solid #C8AA6E44;border-left:2px solid #C8AA6E44;border-radius:3px 0 0 0"></div>
+    <div style="position:absolute;top:16px;right:20px;width:40px;height:40px;border-top:2px solid #C8AA6E44;border-right:2px solid #C8AA6E44;border-radius:0 3px 0 0"></div>
+    <div style="position:absolute;bottom:16px;left:20px;width:40px;height:40px;border-bottom:2px solid #C8AA6E44;border-left:2px solid #C8AA6E44;border-radius:0 0 0 3px"></div>
+    <div style="position:absolute;bottom:16px;right:20px;width:40px;height:40px;border-bottom:2px solid #C8AA6E44;border-right:2px solid #C8AA6E44;border-radius:0 0 3px 0"></div>
+
+    <!-- logo -->
+    <img src="https://runeterra-wagers.online/logo.png" alt="Runeterra Wagers" width="200" style="display:block;margin:0 auto 20px;filter:drop-shadow(0 0 24px #C8AA6E66)">
+
+    <!-- headline -->
+    <div style="font-family:'Bebas Neue',Arial,sans-serif;font-size:48px;color:#C8AA6E;letter-spacing:6px;line-height:1;margin:0 0 6px;text-shadow:0 0 40px #C8AA6E66">WELCOME TO THE TABLE</div>
+    <div style="font-family:'Bebas Neue',Arial,sans-serif;font-size:22px;color:#F0F0F0;letter-spacing:4px;margin:0 0 18px;opacity:0.7">${name}</div>
+
+    <!-- divider with diamond -->
+    <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin:0 auto 20px;max-width:300px">
+      <div style="flex:1;height:1px;background:linear-gradient(90deg,transparent,#C8AA6E55)"></div>
+      <div style="width:8px;height:8px;background:#C8AA6E;transform:rotate(45deg)"></div>
+      <div style="flex:1;height:1px;background:linear-gradient(90deg,#C8AA6E55,transparent)"></div>
+    </div>
+
+    <div style="font-family:'DM Sans',Arial,sans-serif;font-size:16px;color:#86efac;font-weight:600;letter-spacing:1px">Let's get winning.</div>
   </div>
-  <div class="cw"><a href="https://lol-wagers.vercel.app" class="ct">Start Playing</a></div>
+
+  <!-- STATS BAR -->
+  <div style="background:#0a150a;border-top:1px solid #C8AA6E22;border-bottom:1px solid #C8AA6E22;padding:0">
+    <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse">
+      <tr>
+        <td width="33%" style="text-align:center;padding:16px 8px;border-right:1px solid #C8AA6E14">
+          <div style="font-family:'Bebas Neue',Arial,sans-serif;font-size:28px;color:#C8AA6E;letter-spacing:2px;line-height:1">1,847</div>
+          <div style="font-family:'DM Sans',Arial,sans-serif;font-size:10px;color:#555;letter-spacing:3px;text-transform:uppercase;margin-top:3px">Bets Placed</div>
+        </td>
+        <td width="33%" style="text-align:center;padding:16px 8px;border-right:1px solid #C8AA6E14">
+          <div style="font-family:'Bebas Neue',Arial,sans-serif;font-size:28px;color:#C8AA6E;letter-spacing:2px;line-height:1">$24,390</div>
+          <div style="font-family:'DM Sans',Arial,sans-serif;font-size:10px;color:#555;letter-spacing:3px;text-transform:uppercase;margin-top:3px">Gold Wagered</div>
+        </td>
+        <td width="33%" style="text-align:center;padding:16px 8px">
+          <div style="font-family:'Bebas Neue',Arial,sans-serif;font-size:28px;color:#3FB950;letter-spacing:2px;line-height:1">LIVE</div>
+          <div style="font-family:'DM Sans',Arial,sans-serif;font-size:10px;color:#555;letter-spacing:3px;text-transform:uppercase;margin-top:3px">Season 1 Active</div>
+        </td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- BODY -->
+  <div style="background:#0d1a0d;padding:40px">
+
+    <!-- intro line -->
+    <p style="font-family:'DM Sans',Arial,sans-serif;font-size:16px;color:#b0c8b0;line-height:1.8;margin:0 0 32px;text-align:center">
+      You just took a seat at the table. Bet on your next ranked game, win real rewards, cash out for RP cards. The Riot API handles everything — no screenshots, no disputes.
+    </p>
+
+    <!-- 4 steps as cards -->
+    <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin-bottom:32px">
+      <tr>
+        <td style="padding:0 0 12px 0">
+
+          <!-- step 1 -->
+          <div style="background:#0a1a0a;border:1px solid #C8AA6E22;border-left:3px solid #C8AA6E;border-radius:6px;padding:16px 20px;margin-bottom:10px">
+            <table width="100%" cellpadding="0" cellspacing="0"><tr>
+              <td width="44" style="vertical-align:top">
+                <div style="font-family:'Bebas Neue',Arial,sans-serif;font-size:36px;color:#C8AA6E33;letter-spacing:2px;line-height:1">01</div>
+              </td>
+              <td style="vertical-align:top;padding-left:12px">
+                <div style="font-family:'DM Sans',Arial,sans-serif;font-size:15px;font-weight:700;color:#E8E8E8;margin-bottom:4px">Link your LoL account</div>
+                <div style="font-family:'DM Sans',Arial,sans-serif;font-size:13px;color:#6a8a6a;line-height:1.6">Change your profile icon in-game to the one we show you. Takes 30 seconds to verify.</div>
+              </td>
+            </tr></table>
+          </div>
+
+          <!-- step 2 -->
+          <div style="background:#0a1a0a;border:1px solid #C8AA6E22;border-left:3px solid #C8AA6E99;border-radius:6px;padding:16px 20px;margin-bottom:10px">
+            <table width="100%" cellpadding="0" cellspacing="0"><tr>
+              <td width="44" style="vertical-align:top">
+                <div style="font-family:'Bebas Neue',Arial,sans-serif;font-size:36px;color:#C8AA6E28;letter-spacing:2px;line-height:1">02</div>
+              </td>
+              <td style="vertical-align:top;padding-left:12px">
+                <div style="font-family:'DM Sans',Arial,sans-serif;font-size:15px;font-weight:700;color:#E8E8E8;margin-bottom:4px">Stake before you queue</div>
+                <div style="font-family:'DM Sans',Arial,sans-serif;font-size:13px;color:#6a8a6a;line-height:1.6">Set your bet amount, then hit ranked. From $1 all the way up to $30.</div>
+              </td>
+            </tr></table>
+          </div>
+
+          <!-- step 3 -->
+          <div style="background:#0a1a0a;border:1px solid #C8AA6E22;border-left:3px solid #C8AA6E55;border-radius:6px;padding:16px 20px;margin-bottom:10px">
+            <table width="100%" cellpadding="0" cellspacing="0"><tr>
+              <td width="44" style="vertical-align:top">
+                <div style="font-family:'Bebas Neue',Arial,sans-serif;font-size:36px;color:#C8AA6E1e;letter-spacing:2px;line-height:1">03</div>
+              </td>
+              <td style="vertical-align:top;padding-left:12px">
+                <div style="font-family:'DM Sans',Arial,sans-serif;font-size:15px;font-weight:700;color:#E8E8E8;margin-bottom:4px">Play your game normally</div>
+                <div style="font-family:'DM Sans',Arial,sans-serif;font-size:13px;color:#6a8a6a;line-height:1.6">No restrictions. Queue into ranked and play like you always do.</div>
+              </td>
+            </tr></table>
+          </div>
+
+          <!-- step 4 -->
+          <div style="background:#0a1a0a;border:1px solid #3FB95033;border-left:3px solid #3FB950;border-radius:6px;padding:16px 20px">
+            <table width="100%" cellpadding="0" cellspacing="0"><tr>
+              <td width="44" style="vertical-align:top">
+                <div style="font-family:'Bebas Neue',Arial,sans-serif;font-size:36px;color:#3FB95033;letter-spacing:2px;line-height:1">04</div>
+              </td>
+              <td style="vertical-align:top;padding-left:12px">
+                <div style="font-family:'DM Sans',Arial,sans-serif;font-size:15px;font-weight:700;color:#E8E8E8;margin-bottom:4px">Get paid when you win</div>
+                <div style="font-family:'DM Sans',Arial,sans-serif;font-size:13px;color:#6a8a6a;line-height:1.6">Riot API verifies your result automatically. Credits hit your balance instantly.</div>
+              </td>
+            </tr></table>
+          </div>
+
+        </td>
+      </tr>
+    </table>
+
+    <!-- your balance box -->
+    <div style="background:linear-gradient(135deg,#0a2010,#081a08);border:1px solid #3FB95033;border-radius:8px;padding:24px;margin-bottom:28px;text-align:center">
+      <div style="font-family:'DM Sans',Arial,sans-serif;font-size:11px;color:#3FB95077;letter-spacing:4px;text-transform:uppercase;margin-bottom:8px">Your Starting Balance</div>
+      <div style="font-family:'Bebas Neue',Arial,sans-serif;font-size:52px;color:#3FB950;letter-spacing:4px;line-height:1;text-shadow:0 0 30px #3FB95055">$500</div>
+      <div style="font-family:'DM Sans',Arial,sans-serif;font-size:13px;color:#3FB95077;margin-top:6px">Virtual gold — ready to wager right now</div>
+    </div>
+
+    <!-- CTA button -->
+    <div style="text-align:center;margin-bottom:8px">
+      <a href="https://runeterra-wagers.online" style="display:inline-block;background:linear-gradient(135deg,#C8AA6E,#8a6820,#C8AA6E);background-size:300% 100%;color:#0a0a0c;text-decoration:none;padding:18px 60px;border-radius:6px;font-family:'Bebas Neue',Arial,sans-serif;font-size:20px;letter-spacing:4px;animation:shimmer 3s linear infinite">
+        ENTER THE RIFT
+      </a>
+    </div>
+
+  </div>
+
+  <!-- BOTTOM GOLD BAR -->
+  <div style="height:1px;background:linear-gradient(90deg,transparent,#C8AA6E44,transparent)"></div>
+  <div style="background:#080f08;padding:20px 40px;text-align:center">
+    <p style="font-family:'DM Sans',Arial,sans-serif;font-size:12px;color:#2a3a2a;margin:0;line-height:1.8">
+      <a href="https://runeterra-wagers.online" style="color:#C8AA6E33;text-decoration:none;font-weight:600">runeterra-wagers.online</a>
+      &nbsp;&nbsp;·&nbsp;&nbsp;You received this because you just signed up
+    </p>
+  </div>
+  <div style="height:6px;background:linear-gradient(90deg,#5a3e00,#C8AA6E,#ffe8a0,#C8AA6E,#5a3e00,#C8AA6E,#ffe8a0);background-size:400% 100%;animation:shimmer 4s linear infinite"></div>
+
 </div>
-<div class="ft"><p><a href="https://lol-wagers.vercel.app">lol-wagers.vercel.app</a> &nbsp; You got this email because you signed up.</p></div>
-</div></div></body></html>`;
+<!--[if mso]></td></tr></table><![endif]-->
+
+</div>
+</body>
+</html>`;
           const resendRes = await fetch("https://api.resend.com/emails", {
             method: "POST",
             headers: { "Content-Type": "application/json", "Authorization": `Bearer ${process.env.RESEND_API_KEY}` },
             body: JSON.stringify({
-              from: "LoL Wagers <onboarding@resend.dev>",
+              from: "Runeterra Wagers <noreply@runeterra-wagers.online>",
               to: cleanEmail,
-              subject: `Welcome to LoL Wagers, ${name}!`,
+              subject: `Welcome to Runeterra Wagers, ${name}!`,
               html: welcomeHtml
             })
           });
