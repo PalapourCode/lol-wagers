@@ -294,7 +294,7 @@ body { margin:0; padding:0; background:#0f1a0f; }
             method: "POST",
             headers: { "Content-Type": "application/json", "Authorization": `Bearer ${process.env.RESEND_API_KEY}` },
             body: JSON.stringify({
-              from: "Runeterra Wagers <noreply@runeterra-wagers.online>",
+              from: "Runeterra Wagers <onboarding@resend.dev>",
               to: cleanEmail,
               subject: `Welcome to Runeterra Wagers, ${name}!`,
               html: welcomeHtml
