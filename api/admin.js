@@ -46,6 +46,7 @@ module.exports = async function handler(req, res) {
       return res.status(200).json({
         players: users.map(u => ({
           username: u.username,
+          email: u.email || null,
           balance: Number(u.balance),
           realBalance: Number(u.real_balance || 0),
           skinCredits: Number(u.skin_credits || 0),
@@ -120,6 +121,56 @@ module.exports = async function handler(req, res) {
     } else if (action === "fulfillRedemption") {
       const { redemptionId } = params;
       await sql`UPDATE skin_redemptions SET status = 'fulfilled' WHERE id = ${redemptionId}`;
+
+      // Send email notification to player
+      try {
+        const rows = await sql`
+          SELECT r.skin_name, r.rp_cost, r.credit_cost, r.real_cost, r.username,
+                 u.email, u.lol_account
+          FROM skin_redemptions r
+          JOIN users u ON u.username = r.username
+          WHERE r.id = ${redemptionId}
+        `;
+        const r = rows[0];
+        if (r?.email && process.env.RESEND_API_KEY) {
+          await fetch("https://api.resend.com/emails", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${process.env.RESEND_API_KEY}`
+            },
+            body: JSON.stringify({
+              from: "LoL Wagers <noreply@lol-wagers.vercel.app>",
+              to: r.email,
+              subject: "🎮 Your RP Card Has Been Sent!",
+              html: `
+                <div style="background:#010A13;padding:40px;font-family:'Segoe UI',sans-serif;max-width:560px;margin:0 auto;border:1px solid #C8AA6E33;border-radius:12px">
+                  <div style="text-align:center;margin-bottom:32px">
+                    <div style="font-size:32px;margin-bottom:8px">⚔️</div>
+                    <h1 style="color:#C8AA6E;font-size:24px;margin:0;letter-spacing:2px">YOUR RP CARD IS ON ITS WAY</h1>
+                    <p style="color:#7A7A82;font-size:13px;margin-top:8px">lol-wagers.vercel.app</p>
+                  </div>
+                  <div style="background:#1A1A1E;border-radius:8px;padding:24px;margin-bottom:24px;border:1px solid #C8AA6E22">
+                    <p style="color:#A0A0A8;font-size:11px;letter-spacing:2px;margin:0 0 8px">CARD DETAILS</p>
+                    <p style="color:#F0F0F0;font-size:20px;font-weight:700;margin:0 0 4px">${r.skin_name}</p>
+                    <p style="color:#C8AA6E;font-size:14px;margin:0">${r.rp_cost} RP</p>
+                  </div>
+                  <div style="background:#0d1f0d;border-radius:8px;padding:16px 24px;margin-bottom:24px;border:1px solid #4ade8033">
+                    <p style="color:#86efac;font-size:13px;margin:0">✓ The RP card has been gifted to your linked account: <strong style="color:#fff">${r.lol_account || r.username}</strong></p>
+                  </div>
+                  <p style="color:#7A7A82;font-size:12px;text-align:center;margin:0">
+                    If you have any issues receiving your card, contact us directly.<br/>
+                    Good luck on the Rift, Summoner.
+                  </p>
+                </div>
+              `
+            })
+          });
+        }
+      } catch(emailErr) {
+        console.error("Email send failed:", emailErr.message);
+        // Don't fail the fulfillment if email fails
+      }
       return res.status(200).json({ success: true });
 
     // ── GET ALL PENDING BETS ─────────────────────────────────────────────────
