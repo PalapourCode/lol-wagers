@@ -2938,7 +2938,7 @@ function AdminPanel({ adminToken, onLogout }) {
   const [search, setSearch] = useState("");
   const [expandedPlayer, setExpandedPlayer] = useState(null);
   const [playerDetail, setPlayerDetail] = useState({});
-  const [adjustField, setAdjustField] = useState("balance");
+  const [adjustField, setAdjustField] = useState("Virtual Gold");
   const [adjustAmount, setAdjustAmount] = useState("");
   const [noteText, setNoteText] = useState("");
   const [detailTab, setDetailTab] = useState("bets");
@@ -3017,6 +3017,7 @@ function AdminPanel({ adminToken, onLogout }) {
     if (isNaN(amt)) return showToast("Enter a valid number (negative to deduct)", "error");
     const fieldMap = { "Virtual Gold": "balance", "Real Balance": "real_balance", "Skin Credits": "skin_credits" };
     const field = fieldMap[adjustField];
+    if (!field) return showToast("Select a valid wallet type", "error");
     try {
       const result = await adminCall("adjustBalance", { username, field, amount: amt });
       setPlayers(prev => prev.map(p => {
