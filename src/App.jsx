@@ -376,7 +376,7 @@ function AuthPage({ onLogin }) {
         localStorage.removeItem("rw_saved_username");
         localStorage.removeItem("rw_session_user");
       }
-      onLogin(data.user);
+      onLogin(data.user, mode === "register");
     } catch (e) { setError(e.message); }
     finally { setLoading(false); }
   };
@@ -2068,48 +2068,200 @@ function ProfilePage({ user, setUser, toast }) {
 }
 
 function BetHistory({ bets }) {
+  const [filter, setFilter] = useState("all"); // all | won | lost | pending
+  const [sort, setSort] = useState("newest"); // newest | oldest | biggest | smallest
+  const [view, setView] = useState("list"); // list | champions
+
   if (!bets?.length) return (
-    <div style={{ background: "#242428", border: "1px solid #2D2D32", borderRadius: 4, padding: 24, textAlign: "center" }}>
-      <div style={{ fontSize: 10, letterSpacing: 3, color: "#A0A0A8", marginBottom: 12 }}>BET HISTORY</div>
+    <div style={{ background: "#242428", border: "1px solid #2D2D32", borderRadius: 8, padding: 40, textAlign: "center" }}>
+      <div style={{ fontSize: 32, marginBottom: 12 }}>🎮</div>
+      <div style={{ fontSize: 10, letterSpacing: 3, color: "#A0A0A8", marginBottom: 8 }}>BET HISTORY</div>
       <p style={{ color: "#A0A0A8", fontFamily: "DM Sans, sans-serif", fontStyle: "italic" }}>No bets yet. Place your first wager.</p>
     </div>
   );
 
+  // ── COMPUTED STATS ──
+  const resolved = bets.filter(b => b.status !== "pending" && b.status !== "cancelled");
+  const wins = bets.filter(b => b.status === "won");
+  const losses = bets.filter(b => b.status === "lost");
+  const totalWagered = resolved.reduce((s, b) => s + b.amount, 0);
+  const totalEarned = wins.reduce((s, b) => s + b.potentialWin, 0);
+  const profit = totalEarned - totalWagered;
+  const winRate = resolved.length > 0 ? Math.round(wins.length / resolved.length * 100) : 0;
+
+  // ── WIN STREAK ──
+  const sortedResolved = [...resolved].sort((a, b) => b.placedAt - a.placedAt);
+  let currentStreak = 0, bestStreak = 0, tempStreak = 0;
+  for (let i = 0; i < sortedResolved.length; i++) {
+    if (sortedResolved[i].status === "won") {
+      if (i === 0 || sortedResolved[i - 1].status === "won") currentStreak++;
+      else if (i === 0) currentStreak = 1;
+    } else { if (i === 0) currentStreak = 0; }
+  }
+  // recalculate properly
+  currentStreak = 0;
+  for (const b of sortedResolved) {
+    if (b.status === "won") { currentStreak++; }
+    else break;
+  }
+  for (const b of sortedResolved) {
+    if (b.status === "won") { tempStreak++; bestStreak = Math.max(bestStreak, tempStreak); }
+    else tempStreak = 0;
+  }
+
+  // ── CHAMPION STATS ──
+  const champMap = {};
+  for (const b of resolved) {
+    const champ = b.result?.champion || "Unknown";
+    if (!champMap[champ]) champMap[champ] = { wins: 0, losses: 0, wagered: 0, earned: 0 };
+    if (b.status === "won") { champMap[champ].wins++; champMap[champ].earned += b.potentialWin; }
+    else champMap[champ].losses++;
+    champMap[champ].wagered += b.amount;
+  }
+  const champStats = Object.entries(champMap)
+    .map(([name, s]) => ({ name, ...s, total: s.wins + s.losses, wr: Math.round(s.wins / (s.wins + s.losses) * 100), profit: s.earned - s.wagered }))
+    .sort((a, b) => b.total - a.total);
+
+  // ── FILTERED + SORTED BETS ──
+  let displayed = [...bets];
+  if (filter === "won") displayed = displayed.filter(b => b.status === "won");
+  else if (filter === "lost") displayed = displayed.filter(b => b.status === "lost");
+  else if (filter === "pending") displayed = displayed.filter(b => b.status === "pending");
+  if (sort === "newest") displayed.sort((a, b) => b.placedAt - a.placedAt);
+  else if (sort === "oldest") displayed.sort((a, b) => a.placedAt - b.placedAt);
+  else if (sort === "biggest") displayed.sort((a, b) => b.amount - a.amount);
+  else if (sort === "smallest") displayed.sort((a, b) => a.amount - b.amount);
+
+  const btnBase = { border: "none", cursor: "pointer", fontFamily: "Barlow Condensed, sans-serif", fontSize: 12, letterSpacing: 2, padding: "7px 14px", borderRadius: 4, transition: "all 0.15s" };
+
   return (
-    <div style={{ background: "#242428", border: "1px solid #2D2D32", borderRadius: 4, padding: 24 }}>
-      <div style={{ fontSize: 10, letterSpacing: 3, color: "#A0A0A8", marginBottom: 16 }}>BET HISTORY</div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        {[...bets].reverse().map(bet => (
-          <div key={bet.id} style={{
-            background: "#1A1A1E", border: `1px solid ${bet.status === "won" ? "#0BC4AA33" : bet.status === "lost" ? "#C8464A33" : "#785A2833"}`,
-            borderRadius: 3, padding: "14px 16px",
-            display: "flex", justifyContent: "space-between", alignItems: "center"
-          }}>
-            <div>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{
-                  fontSize: 10, letterSpacing: 1,
-                  color: bet.status === "won" ? "#0BC4AA" : bet.status === "lost" ? "#C8464A" : "#C8AA6E",
-                  border: `1px solid ${bet.status === "won" ? "#0BC4AA" : bet.status === "lost" ? "#C8464A" : "#C8AA6E"}`,
-                  padding: "2px 8px", borderRadius: 2
-                }}>
-                  {bet.status.toUpperCase()}
-                </span>
-                {bet.result && <span style={{ color: "#A0A0A8", fontSize: 12, fontFamily: "DM Sans, sans-serif" }}>
-                  {bet.result.champion} · {bet.result.kills}/{bet.result.deaths}/{bet.result.assists}
-                </span>}
-              </div>
-              <div style={{ color: "#A0A0A8", fontSize: 11, marginTop: 4 }}>{timeAgo(bet.placedAt)}</div>
-            </div>
-            <div style={{ textAlign: "right" }}>
-              <div style={{ color: "#F0F0F0", fontSize: 16, fontWeight: 700 }}>
-                {bet.status === "won" ? "+" : bet.status === "pending" ? "" : "-"}{formatMoney(bet.status === "won" ? bet.potentialWin : bet.amount)}
-              </div>
-              <div style={{ color: "#A0A0A8", fontSize: 11 }}>bet: {formatMoney(bet.amount)}</div>
-            </div>
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+
+      {/* ── STATS BAR ── */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 8 }}>
+        {[
+          { label: "Total Bets", value: bets.length, color: "#F0F0F0" },
+          { label: "Win Rate", value: `${winRate}%`, color: "#C8AA6E" },
+          { label: "Best Streak", value: `${bestStreak}W`, color: "#3FB950" },
+          { label: "Current Streak", value: currentStreak > 0 ? `${currentStreak}W` : losses[0]?.placedAt > (wins[0]?.placedAt || 0) ? "L" : "--", color: currentStreak > 0 ? "#3FB950" : "#F85149" },
+          { label: "Net P&L", value: `${profit >= 0 ? "+" : ""}$${profit.toFixed(2)}`, color: profit >= 0 ? "#3FB950" : "#F85149" },
+        ].map(s => (
+          <div key={s.label} style={{ background: "#1A1A1E", border: "1px solid #2D2D32", borderRadius: 6, padding: "12px", textAlign: "center" }}>
+            <div style={{ fontFamily: "Barlow Condensed, sans-serif", fontSize: 20, fontWeight: 700, color: s.color }}>{s.value}</div>
+            <div style={{ fontFamily: "DM Sans, sans-serif", fontSize: 10, color: "#555", letterSpacing: 2, textTransform: "uppercase", marginTop: 3 }}>{s.label}</div>
           </div>
         ))}
       </div>
+
+      {/* ── CONTROLS ── */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
+        <div style={{ display: "flex", gap: 6 }}>
+          {/* view toggle */}
+          {[{ id: "list", label: "List" }, { id: "champions", label: "By Champion" }].map(v => (
+            <button key={v.id} onClick={() => setView(v.id)} style={{ ...btnBase, background: view === v.id ? "#C8AA6E" : "#1A1A1E", color: view === v.id ? "#0a0a0c" : "#785A28", border: `1px solid ${view === v.id ? "#C8AA6E" : "#2D2D32"}` }}>{v.label}</button>
+          ))}
+        </div>
+        <div style={{ display: "flex", gap: 6 }}>
+          {/* filter */}
+          {[["all", "All"], ["won", "Won"], ["lost", "Lost"], ["pending", "Pending"]].map(([id, label]) => (
+            <button key={id} onClick={() => setFilter(id)} style={{ ...btnBase, background: filter === id ? "#24242E" : "transparent", color: filter === id ? "#C8AA6E" : "#555", border: `1px solid ${filter === id ? "#C8AA6E33" : "#2D2D32"}` }}>{label}</button>
+          ))}
+          {/* sort */}
+          <select value={sort} onChange={e => setSort(e.target.value)} style={{ background: "#1A1A1E", border: "1px solid #2D2D32", color: "#A0A0A8", padding: "7px 10px", borderRadius: 4, fontFamily: "DM Sans, sans-serif", fontSize: 12, cursor: "pointer" }}>
+            <option value="newest">Newest first</option>
+            <option value="oldest">Oldest first</option>
+            <option value="biggest">Biggest stake</option>
+            <option value="smallest">Smallest stake</option>
+          </select>
+        </div>
+      </div>
+
+      {/* ── CHAMPION VIEW ── */}
+      {view === "champions" && (
+        <div style={{ background: "#1A1A1E", border: "1px solid #2D2D32", borderRadius: 8, overflow: "hidden" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <thead>
+              <tr>
+                {["Champion", "Games", "W / L", "Win Rate", "Net P&L"].map(h => (
+                  <th key={h} style={{ fontSize: 10, letterSpacing: 2, color: "#555", textTransform: "uppercase", padding: "12px 16px", textAlign: "left", borderBottom: "1px solid #2D2D32", background: "#141416", fontFamily: "DM Sans, sans-serif" }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {champStats.length === 0 && (
+                <tr><td colSpan={5} style={{ padding: 24, textAlign: "center", color: "#555", fontFamily: "DM Sans, sans-serif", fontSize: 13 }}>No resolved bets with champion data yet.</td></tr>
+              )}
+              {champStats.map(c => (
+                <tr key={c.name} style={{ borderBottom: "1px solid #1E1E22" }}>
+                  <td style={{ padding: "13px 16px", fontFamily: "Barlow Condensed, sans-serif", fontSize: 16, fontWeight: 700, color: "#F0F0F0" }}>{c.name}</td>
+                  <td style={{ padding: "13px 16px", color: "#A0A0A8", fontFamily: "DM Sans, sans-serif", fontSize: 14 }}>{c.total}</td>
+                  <td style={{ padding: "13px 16px", fontFamily: "DM Sans, sans-serif", fontSize: 14 }}>
+                    <span style={{ color: "#3FB950" }}>{c.wins}W</span>
+                    <span style={{ color: "#555", margin: "0 4px" }}>/</span>
+                    <span style={{ color: "#F85149" }}>{c.losses}L</span>
+                  </td>
+                  <td style={{ padding: "13px 16px" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <div style={{ flex: 1, height: 4, background: "#2D2D32", borderRadius: 2, maxWidth: 80 }}>
+                        <div style={{ height: "100%", width: `${c.wr}%`, background: c.wr >= 50 ? "#3FB950" : "#F85149", borderRadius: 2 }} />
+                      </div>
+                      <span style={{ fontFamily: "Barlow Condensed, sans-serif", fontSize: 15, color: c.wr >= 50 ? "#3FB950" : "#F85149", fontWeight: 700 }}>{c.wr}%</span>
+                    </div>
+                  </td>
+                  <td style={{ padding: "13px 16px", fontFamily: "Barlow Condensed, sans-serif", fontSize: 16, fontWeight: 700, color: c.profit >= 0 ? "#3FB950" : "#F85149" }}>
+                    {c.profit >= 0 ? "+" : ""}${c.profit.toFixed(2)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* ── LIST VIEW ── */}
+      {view === "list" && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          {displayed.length === 0 && (
+            <div style={{ textAlign: "center", padding: 32, color: "#555", fontFamily: "DM Sans, sans-serif", fontSize: 14 }}>No bets match this filter.</div>
+          )}
+          {displayed.map(bet => {
+            const isWon = bet.status === "won";
+            const isLost = bet.status === "lost";
+            const isPending = bet.status === "pending";
+            const color = isWon ? "#3FB950" : isLost ? "#F85149" : isPending ? "#C8AA6E" : "#555";
+            return (
+              <div key={bet.id} style={{ background: "#1A1A1E", border: `1px solid ${isWon ? "#3FB95022" : isLost ? "#F8514922" : "#2D2D32"}`, borderLeft: `3px solid ${color}`, borderRadius: 6, padding: "14px 16px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16 }}>
+                <div style={{ display: "flex", gap: 12, alignItems: "center", flex: 1 }}>
+                  <span style={{ fontFamily: "Barlow Condensed, sans-serif", fontSize: 12, letterSpacing: 2, color, border: `1px solid ${color}44`, padding: "3px 8px", borderRadius: 3, flexShrink: 0 }}>
+                    {bet.status.toUpperCase()}
+                  </span>
+                  <div>
+                    {bet.result?.champion && (
+                      <div style={{ fontFamily: "Barlow Condensed, sans-serif", fontSize: 16, color: "#E0E0E0", fontWeight: 700 }}>
+                        {bet.result.champion}
+                        <span style={{ fontFamily: "DM Sans, sans-serif", fontSize: 12, color: "#666", marginLeft: 8, fontWeight: 400 }}>
+                          {bet.result.kills}/{bet.result.deaths}/{bet.result.assists}
+                        </span>
+                      </div>
+                    )}
+                    <div style={{ fontFamily: "DM Sans, sans-serif", fontSize: 12, color: "#555", marginTop: 2 }}>
+                      {timeAgo(bet.placedAt)}
+                      {bet.odds && <span style={{ marginLeft: 8, color: "#C8AA6E55" }}>{bet.odds.toFixed(2)}x</span>}
+                      {bet.mode === "real" && <span style={{ marginLeft: 8, color: "#4ade8077", fontSize: 11, letterSpacing: 1 }}>REAL</span>}
+                    </div>
+                  </div>
+                </div>
+                <div style={{ textAlign: "right", flexShrink: 0 }}>
+                  <div style={{ fontFamily: "Barlow Condensed, sans-serif", fontSize: 18, fontWeight: 700, color: isWon ? "#3FB950" : isLost ? "#F85149" : "#C8AA6E" }}>
+                    {isWon ? "+" : isLost ? "-" : ""}{formatMoney(isWon ? bet.potentialWin : bet.amount)}
+                  </div>
+                  {isWon && <div style={{ fontFamily: "DM Sans, sans-serif", fontSize: 11, color: "#555", marginTop: 2 }}>stake: {formatMoney(bet.amount)}</div>}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
@@ -3717,6 +3869,127 @@ function AdminPanel({ adminToken, onLogout }) {
   );
 }
 
+// ─── HEXTECH INTRO ───────────────────────────────────────────────────────────
+function HextechIntro({ username, onComplete }) {
+  const [phase, setPhase] = useState(0);
+
+  useEffect(() => {
+    const t1 = setTimeout(() => setPhase(1), 400);
+    const t2 = setTimeout(() => setPhase(2), 2800);
+    const t3 = setTimeout(() => onComplete(), 3500);
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
+  }, [onComplete]);
+
+  return (
+    <div style={{
+      position: "fixed", inset: 0, zIndex: 99999,
+      background: phase === 2 ? "#ffffff" : "#000005",
+      transition: phase === 2 ? "background 0.4s ease" : "none",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      overflow: "hidden",
+    }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');
+        @keyframes crackGrow { from { opacity:0; stroke-dashoffset: 500; } to { opacity:1; stroke-dashoffset: 0; } }
+        @keyframes crackGlow { 0%,100% { filter: drop-shadow(0 0 3px #00d4ff) drop-shadow(0 0 8px #0088cc); } 50% { filter: drop-shadow(0 0 8px #00d4ff) drop-shadow(0 0 24px #00aaff); } }
+        @keyframes gateLeft { from { transform: translateX(0); } to { transform: translateX(-105%); } }
+        @keyframes gateRight { from { transform: translateX(0); } to { transform: translateX(105%); } }
+        @keyframes logoIn { 0% { opacity:0; transform:scale(0.5); filter:brightness(4) drop-shadow(0 0 80px #C8AA6E); } 70% { opacity:1; transform:scale(1.06); } 100% { opacity:1; transform:scale(1); filter:drop-shadow(0 0 24px #C8AA6E88); } }
+        @keyframes stamp { 0% { opacity:0; transform:scale(1.5); letter-spacing:20px; } 60% { opacity:1; transform:scale(1); } 100% { opacity:1; } }
+        @keyframes fadeUp { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
+        @keyframes particleBurst { 0% { transform:translate(0,0) scale(0); opacity:0; } 15% { opacity:1; } 100% { transform:translate(var(--tx),var(--ty)) scale(0.5); opacity:0; } }
+        @keyframes runeFloat { 0%,100%{transform:translateY(0) rotate(0deg);opacity:0.12;} 50%{transform:translateY(-18px) rotate(180deg);opacity:0.35;} }
+        @keyframes hexBg { 0%,100%{opacity:0.04;} 50%{opacity:0.1;} }
+      `}</style>
+
+      {/* hex dot grid */}
+      <div style={{ position:"absolute", inset:0, backgroundImage:"radial-gradient(circle, #00d4ff09 1px, transparent 1px)", backgroundSize:"38px 38px", opacity: phase >= 1 ? 1 : 0, transition:"opacity 0.5s" }} />
+      <div style={{ position:"absolute", inset:0, background:"radial-gradient(ellipse 55% 55% at 50% 50%, transparent 30%, #000005 75%)" }} />
+
+      {/* floating runes */}
+      {phase === 1 && [
+        { top:"12%", left:"8%",  ch:"✦", sz:26, d:"0s",   t:"3.2s" },
+        { top:"72%", left:"7%",  ch:"◆", sz:18, d:"0.3s", t:"4s"   },
+        { top:"18%", left:"88%", ch:"✦", sz:22, d:"0.5s", t:"3.5s" },
+        { top:"76%", left:"86%", ch:"◆", sz:20, d:"0.2s", t:"2.9s" },
+        { top:"48%", left:"4%",  ch:"✧", sz:14, d:"0.7s", t:"3.8s" },
+        { top:"46%", left:"93%", ch:"✧", sz:16, d:"0.4s", t:"3.3s" },
+      ].map((r,i) => (
+        <div key={i} style={{ position:"absolute", top:r.top, left:r.left, fontSize:r.sz, color:"#00d4ff", textShadow:"0 0 10px #00d4ff, 0 0 20px #0088cc", animation:`runeFloat ${r.t} ${r.d} ease-in-out infinite` }}>{r.ch}</div>
+      ))}
+
+      {/* energy cracks SVG */}
+      <svg style={{ position:"absolute", inset:0, width:"100%", height:"100%", pointerEvents:"none" }} viewBox="0 0 100 100" preserveAspectRatio="none">
+        {[
+          { d:"M50,50 L32,18 L26,4",   delay:"0s"    },
+          { d:"M50,50 L72,14 L82,1",   delay:"0.08s" },
+          { d:"M50,50 L14,52 L2,58",   delay:"0.14s" },
+          { d:"M50,50 L86,58 L99,52",  delay:"0.06s" },
+          { d:"M50,50 L38,82 L33,99",  delay:"0.18s" },
+          { d:"M50,50 L64,86 L70,99",  delay:"0.10s" },
+          { d:"M50,50 L18,32 L6,24",   delay:"0.04s" },
+          { d:"M50,50 L80,36 L96,28",  delay:"0.16s" },
+        ].map((c,i) => (
+          <path key={i} d={c.d} fill="none" stroke="#00d4ff" strokeWidth="0.4"
+            strokeDasharray="500" strokeDashoffset="500"
+            style={{ animation: phase >= 1 ? `crackGrow 0.5s ${c.delay} ease-out forwards, crackGlow 2s ${c.delay} ease-in-out infinite` : "none", filter:"drop-shadow(0 0 1px #00d4ff)" }}
+          />
+        ))}
+      </svg>
+
+      {/* gate panels */}
+      <div style={{ position:"absolute", inset:0, display:"flex", pointerEvents:"none" }}>
+        <div style={{ width:"50%", height:"100%", background:"linear-gradient(90deg,#000005 55%,#001830)", borderRight:"1.5px solid #00d4ff44", boxShadow:"inset -12px 0 40px #00d4ff18, 3px 0 20px #00d4ff33", animation: phase >= 1 ? "gateLeft 0.7s 0.2s cubic-bezier(0.4,0,0.2,1) both" : "none" }} />
+        <div style={{ width:"50%", height:"100%", background:"linear-gradient(270deg,#000005 55%,#001830)", borderLeft:"1.5px solid #00d4ff44", boxShadow:"inset 12px 0 40px #00d4ff18, -3px 0 20px #00d4ff33", animation: phase >= 1 ? "gateRight 0.7s 0.2s cubic-bezier(0.4,0,0.2,1) both" : "none" }} />
+      </div>
+
+      {/* center content */}
+      {phase === 1 && (
+        <div style={{ position:"relative", zIndex:10, textAlign:"center", display:"flex", flexDirection:"column", alignItems:"center" }}>
+
+          {/* particle burst */}
+          {Array.from({length:20},(_,i) => {
+            const angle = (i/20)*360;
+            const dist = 70 + (i%3)*50;
+            return (
+              <div key={i} style={{
+                position:"absolute", width:3, height:3, borderRadius:"50%",
+                background: i%3===0 ? "#C8AA6E" : i%3===1 ? "#00d4ff" : "#ffffff",
+                top:"50%", left:"50%", marginTop:-1.5, marginLeft:-1.5,
+                "--tx": `${Math.cos(angle*Math.PI/180)*dist}px`,
+                "--ty": `${Math.sin(angle*Math.PI/180)*dist}px`,
+                animation:`particleBurst 1s ${0.25+i*0.03}s ease-out both`,
+                boxShadow:`0 0 4px ${i%3===0?"#C8AA6E":"#00d4ff"}`,
+              } as any} />
+            );
+          })}
+
+          {/* logo */}
+          <img src="/logo.png" alt="" onError={e => (e.target as HTMLImageElement).style.display="none"} style={{ width:160, height:160, objectFit:"contain", marginBottom:20, animation:"logoIn 0.8s 0.35s cubic-bezier(0.34,1.4,0.64,1) both" }} />
+
+          {/* SUMMONER ACCEPTED */}
+          <div style={{ fontFamily:"Bebas Neue,sans-serif", fontSize:"clamp(32px,5.5vw,68px)", color:"#C8AA6E", letterSpacing:8, lineHeight:1, textShadow:"0 0 30px #C8AA6E88, 0 0 60px #C8AA6E33", animation:"stamp 0.6s 0.85s cubic-bezier(0.34,1.2,0.64,1) both", marginBottom:10 }}>
+            SUMMONER ACCEPTED
+          </div>
+
+          {/* username */}
+          <div style={{ fontFamily:"Bebas Neue,sans-serif", fontSize:"clamp(16px,2.8vw,30px)", color:"#00d4ff", letterSpacing:6, textShadow:"0 0 16px #00d4ff99", animation:"fadeUp 0.5s 1.25s ease both", marginBottom:8 }}>
+            {username}
+          </div>
+
+          {/* tagline */}
+          <div style={{ fontFamily:"DM Sans,sans-serif", fontSize:13, color:"#C8AA6E55", letterSpacing:4, textTransform:"uppercase", animation:"fadeUp 0.5s 1.55s ease both" }}>
+            Welcome to the Rift
+          </div>
+        </div>
+      )}
+
+      {/* flash white overlay */}
+      {phase === 2 && <div style={{ position:"absolute", inset:0, background:"white" }} />}
+    </div>
+  );
+}
+
 // ─── MAIN APP ─────────────────────────────────────────────────────────────────
 export default function App() {
   const [user, setUser] = useState(() => {
@@ -3729,7 +4002,13 @@ export default function App() {
   const [toast, setToast] = useState(null);
   const [region, setRegion] = useState("euw1");
   const [resultScreen, setResultScreen] = useState(null);
-  const [walletMode, setWalletMode] = useState("virtual"); // "virtual" | "real"
+  const [walletMode, setWalletMode] = useState("virtual");
+  const [showIntro, setShowIntro] = useState(false);
+
+  const handleLogin = useCallback((userData, isNew = false) => {
+    setUser(userData);
+    if (isNew) setShowIntro(true);
+  }, []);
 
   const showToast = useCallback((message, type = "info") => {
     setToast({ message, type, id: Date.now() });
@@ -3771,7 +4050,7 @@ export default function App() {
     return () => clearInterval(interval);
   }, [hasPendingBet, user?.username]);
 
-  if (!user) return <AuthPage onLogin={setUser} />;
+  if (!user) return <AuthPage onLogin={handleLogin} />;
   if (user.isAdmin) return <AdminPanel adminToken={user.adminToken} onLogout={() => setUser(null)} />;
 
   const stats = {
@@ -3785,6 +4064,7 @@ export default function App() {
 
   return (
     <div style={{ minHeight: "100vh", background: "#1A1A1E", fontFamily: "Barlow Condensed, sans-serif", color: "#E0E0E0" }}>
+      {showIntro && <HextechIntro username={user.username} onComplete={() => setShowIntro(false)} />}
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700;800;900&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; }
