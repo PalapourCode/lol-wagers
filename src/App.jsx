@@ -425,7 +425,7 @@ function AuthPage({ onLogin }) {
       {/* nav */}
       <nav style={{ position: "relative", zIndex: 10, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 48px", height: 68, borderBottom: "1px solid #C8AA6E14", background: "#0a0a0ccc", backdropFilter: "blur(12px)" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <img src="/logo.png" alt="" style={{ width: 48, height: 48, objectFit: "contain" }} />
+          <img src="/logo.png" alt="" onError={e => e.target.style.display='none'} style={{ width: 48, height: 48, objectFit: "contain" }} />
           <div>
             <div style={{ fontFamily: "Bebas Neue, sans-serif", fontSize: 20, color: "#C8AA6E", letterSpacing: 4, lineHeight: 1 }}>RUNETERRA</div>
             <div style={{ fontFamily: "Bebas Neue, sans-serif", fontSize: 12, color: "#44444a", letterSpacing: 5, lineHeight: 1 }}>WAGERS</div>
@@ -567,7 +567,7 @@ function AuthPage({ onLogin }) {
             <div style={{ position: "absolute", top: 0, right: 0, width: 100, height: 100, background: "linear-gradient(225deg, #C8AA6E14, transparent)", borderRadius: "0 12px 0 0", pointerEvents: "none" }} />
 
             <div style={{ textAlign: "center", marginBottom: 28 }}>
-              <img src="/logo.png" alt="" style={{ width: 220, height: 220, objectFit: "contain", marginBottom: 10, filter: "drop-shadow(0 0 32px #C8AA6E55)" }} />
+              <img src="/logo.png" alt="" onError={e => e.target.style.display='none'} style={{ width: 220, height: 220, objectFit: "contain", marginBottom: 10, filter: "drop-shadow(0 0 32px #C8AA6E55)" }} />
               <div style={{ fontFamily: "Bebas Neue, sans-serif", fontSize: 26, color: "#C8AA6E", letterSpacing: 4 }}>
                 {mode === "login" ? "WELCOME BACK" : "JOIN THE RIFT"}
               </div>
@@ -2881,6 +2881,16 @@ function AdminPanel({ adminToken, onLogout }) {
     } catch(e) { showToast(e.message, "error"); }
   };
 
+  const deletePlayer = async (username) => {
+    if (!window.confirm(`DELETE ${username}? This will erase all their bets, deposits and redemptions. Cannot be undone.`)) return;
+    try {
+      await adminCall("deletePlayer", { username });
+      setPlayers(prev => prev.filter(p => p.username !== username));
+      if (selectedPlayer?.username === username) setSelectedPlayer(null);
+      showToast(`✅ ${username} deleted`, "success");
+    } catch(e) { showToast(e.message, "error"); }
+  };
+
   const saveNote = async (username) => {
     try {
       await adminCall("saveNote", { username, note: noteText });
@@ -3054,6 +3064,7 @@ function AdminPanel({ adminToken, onLogout }) {
                                       {p.bets.pending > 0 && (
                                         <button onClick={() => cancelBet(p.username)} style={S.btn("#C8464A")}>✕ Cancel Pending Bet & Refund</button>
                                       )}
+                                      <button onClick={() => deletePlayer(p.username)} style={{ ...S.btn("#C8464A"), marginTop: 8, borderTop: "1px solid #35353A", paddingTop: 12, opacity: 0.7 }}>🗑 Delete Account</button>
                                     </div>
                                   </div>
 
