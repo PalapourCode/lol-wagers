@@ -58,6 +58,18 @@ async function initDB() {
     )
   `;
   await sql`ALTER TABLE skin_redemptions ADD COLUMN IF NOT EXISTS real_cost NUMERIC DEFAULT 0`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS email_logs (
+      id SERIAL PRIMARY KEY,
+      username TEXT,
+      recipient TEXT,
+      type TEXT,
+      status TEXT,
+      resend_id TEXT,
+      error TEXT,
+      sent_at BIGINT DEFAULT EXTRACT(EPOCH FROM NOW()) * 1000
+    )
+  `;
 }
 
 async function getUser(username) {
@@ -302,8 +314,13 @@ body { margin:0; padding:0; background:#0f1a0f; }
           });
           const resendData = await resendRes.json();
           console.log("[EMAIL] Resend response:", resendRes.status, JSON.stringify(resendData));
+          const emailStatus = resendRes.status === 200 ? "sent" : "failed";
+          const resendId = resendData.id || null;
+          const emailError = resendData.message || null;
+          await sql`INSERT INTO email_logs (username, recipient, type, status, resend_id, error) VALUES (${name}, ${cleanEmail}, ${"welcome"}, ${emailStatus}, ${resendId}, ${emailError})`;
         } else {
           console.log("[EMAIL] No RESEND_API_KEY found");
+          await sql`INSERT INTO email_logs (username, recipient, type, status, error) VALUES (${name}, ${cleanEmail}, ${"welcome"}, ${"failed"}, ${"No RESEND_API_KEY"})`;
         }
       } catch(emailErr) { console.error("[EMAIL] Exception:", emailErr.message); }
 
