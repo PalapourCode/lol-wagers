@@ -346,6 +346,7 @@ function RecentWinsScroll() {
           <div style={{ fontSize: 14, fontWeight: 900, color: w.won ? "#3FB950" : "#F85149" }}>
             {w.won ? "+" : "-"}{w.amount}
           </div>
+        </div>
       ))}
     </div>
   );
