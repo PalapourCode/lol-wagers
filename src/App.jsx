@@ -1933,7 +1933,7 @@ const MARKET_ROLES = [
   {
     role: "TOP",
     color: "#f97316",
-    icon: "⚔️",
+    icon: "https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-clash/global/default/assets/images/position-selector/positions/icon-position-top.png",
     champs: [
       { id: "Ornn",      base: 52.79, trend: "up",   color: "#e2b96f" },
       { id: "Kayle",     base: 52.80, trend: "up",   color: "#fde68a" },
@@ -1944,7 +1944,7 @@ const MARKET_ROLES = [
   {
     role: "JUNGLE",
     color: "#4ade80",
-    icon: "🌿",
+    icon: "https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-clash/global/default/assets/images/position-selector/positions/icon-position-jungle.png",
     champs: [
       { id: "Khazix",    base: 51.67, trend: "up",   color: "#a78bfa", display: "Kha'Zix" },
       { id: "Ekko",      base: 52.23, trend: "up",   color: "#60a5fa" },
@@ -1955,7 +1955,7 @@ const MARKET_ROLES = [
   {
     role: "MID",
     color: "#818cf8",
-    icon: "✨",
+    icon: "https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-clash/global/default/assets/images/position-selector/positions/icon-position-middle.png",
     champs: [
       { id: "Ahri",      base: 52.38, trend: "up",   color: "#f9a8d4" },
       { id: "Xerath",    base: 52.09, trend: "up",   color: "#93c5fd" },
@@ -1966,7 +1966,7 @@ const MARKET_ROLES = [
   {
     role: "ADC",
     color: "#38bdf8",
-    icon: "🏹",
+    icon: "https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-clash/global/default/assets/images/position-selector/positions/icon-position-bottom.png",
     champs: [
       { id: "Jinx",      base: 51.85, trend: "up",   color: "#e879f9" },
       { id: "Caitlyn",   base: 50.70, trend: "up",   color: "#7dd3fc" },
@@ -1977,7 +1977,7 @@ const MARKET_ROLES = [
   {
     role: "SUPPORT",
     color: "#facc15",
-    icon: "🛡️",
+    icon: "https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-clash/global/default/assets/images/position-selector/positions/icon-position-utility.png",
     champs: [
       { id: "Nami",      base: 52.00, trend: "up",   color: "#67e8f9" },
       { id: "Thresh",    base: 51.28, trend: "up",   color: "#4ade80" },
@@ -2103,7 +2103,7 @@ function ChampMarket() {
         {MARKET_ROLES.map(r => (
           <button key={r.role} className="role-btn" onClick={() => { setSelectedRole(r.role); setSelectedChamp(r.champs[0].id); }}
             style={{ background: selectedRole === r.role ? `${r.color}18` : "#141418", border: `1px solid ${selectedRole === r.role ? r.color : "#2D2D32"}`, borderRadius: 6, padding: "8px 14px", cursor: "pointer", fontFamily: "Bebas Neue, sans-serif", fontSize: 14, letterSpacing: 2, color: selectedRole === r.role ? r.color : "#555", transition: "all 0.15s", opacity: selectedRole === r.role ? 1 : 0.7 }}>
-            {r.icon} {r.role}
+            <img src={r.icon} alt={r.role} style={{ width: 16, height: 16, objectFit: "contain", filter: selectedRole === r.role ? "none" : "grayscale(1) opacity(0.5)" }} /> {r.role}
           </button>
         ))}
       </div>
@@ -2210,7 +2210,7 @@ function ChampMarket() {
           return (
             <div key={r.role} onClick={() => { setSelectedRole(r.role); setSelectedChamp(r.champs[0].id); }}
               style={{ background: selectedRole === r.role ? `${r.color}0d` : "#0d0d10", border: `1px solid ${selectedRole === r.role ? r.color+"44" : "#1e1e24"}`, borderRadius: 8, padding: "12px", cursor: "pointer", transition: "all 0.15s" }}>
-              <div style={{ fontFamily: "DM Sans, sans-serif", fontSize: 10, color: r.color, letterSpacing: 2, marginBottom: 6 }}>{r.icon} {r.role}</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 5, fontFamily: "DM Sans, sans-serif", fontSize: 10, color: r.color, letterSpacing: 2, marginBottom: 6 }}><img src={r.icon} alt={r.role} style={{ width: 14, height: 14, objectFit: "contain" }} /> {r.role}</div>
               <div style={{ fontFamily: "Bebas Neue, sans-serif", fontSize: 14, color: "#D0D0D8" }}>{top?.display || top?.id}</div>
               <div style={{ fontFamily: "Bebas Neue, sans-serif", fontSize: 18, color: "#F0F0F0" }}>{topCur.toFixed(2)}%</div>
               <div style={{ fontFamily: "DM Sans, sans-serif", fontSize: 11, color: topChg >= 0 ? "#4ade80" : "#f87171", marginTop: 2 }}>{topChg >= 0 ? "+" : ""}{topChg.toFixed(2)}%</div>
@@ -2299,7 +2299,7 @@ function MarketTeaser({ onNavigate }) {
           const chg = hist.length ? cur - hist[0] : 0;
           return (
             <div key={c.id} style={{ background: "#141418", borderRadius: 6, padding: "8px 8px" }}>
-              <div style={{ fontFamily: "DM Sans, sans-serif", fontSize: 9, color: c.roleColor, letterSpacing: 2, marginBottom: 3 }}>{c.roleIcon} {c.roleName}</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 4, fontFamily: "DM Sans, sans-serif", fontSize: 9, color: c.roleColor, letterSpacing: 2, marginBottom: 3 }}><img src={c.roleIcon} alt={c.roleName} style={{ width: 12, height: 12, objectFit: "contain" }} /> {c.roleName}</div>
               <div style={{ fontFamily: "Barlow Condensed, sans-serif", fontSize: 12, fontWeight: 700, color: "#C0C0C8", marginBottom: 1 }}>{c.display || c.id}</div>
               <div style={{ fontFamily: "Bebas Neue, sans-serif", fontSize: 16, color: "#F0F0F0" }}>{cur.toFixed(2)}%</div>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 4 }}>
