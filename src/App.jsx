@@ -364,6 +364,7 @@ function AuthPage({ onLogin }) {
   const [mode, setMode] = useState("login");
   const [username, setUsername] = useState(() => localStorage.getItem("rw_saved_username") || "");
   const [password, setPassword] = useState("");
+  const [email, setEmail] = useState("");
   const [rememberMe, setRememberMe] = useState(() => !!localStorage.getItem("rw_saved_username"));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -372,7 +373,7 @@ function AuthPage({ onLogin }) {
     if (!username.trim() || !password.trim()) return setError("Fill all fields");
     setLoading(true); setError("");
     try {
-      const data = await apiCall("/api/auth", { action: mode === "register" ? "register" : "login", username: username.trim(), password });
+      const data = await apiCall("/api/auth", { action: mode === "register" ? "register" : "login", username: username.trim(), password, email: email.trim() || undefined });
       if (rememberMe) {
         localStorage.setItem("rw_saved_username", username.trim());
         localStorage.setItem("rw_session_user", JSON.stringify(data.user));
@@ -533,6 +534,27 @@ function AuthPage({ onLogin }) {
                 />
               </div>
             ))}
+
+            {/* Email — register only */}
+            {mode === "register" && (
+              <div style={{ marginBottom: 14 }}>
+                <label style={{ display: "block", fontSize: 9, letterSpacing: 3, color: "#A0A0A8", marginBottom: 6 }}>
+                  EMAIL <span style={{ color: "#555", fontWeight: 400, letterSpacing: 1 }}>(for card delivery notifications)</span>
+                </label>
+                <input
+                  className="auth-input"
+                  type="email" value={email} placeholder="you@example.com"
+                  onChange={e => setEmail(e.target.value)}
+                  onKeyDown={e => e.key === "Enter" && handle()}
+                  style={{
+                    width: "100%", background: "#1A1A1E", border: "1px solid #2D2D32",
+                    color: "#F0F0F0", padding: "11px 14px", borderRadius: 4,
+                    fontFamily: "Barlow Condensed, sans-serif", fontSize: 13, outline: "none",
+                    transition: "border-color 0.2s"
+                  }}
+                />
+              </div>
+            )}
 
             {error && (
               <div style={{ background: "#C8464A11", border: "1px solid #C8464A33", borderRadius: 3, padding: "10px 14px", marginBottom: 14 }}>
@@ -2973,7 +2995,7 @@ function AdminPanel({ adminToken, onLogout }) {
                 <table style={{ width: "100%", borderCollapse: "collapse" }}>
                   <thead>
                     <tr>
-                      {["Username", "LoL Account", "Rank", "🎮 Virtual", "💵 Real", "💜 Credits", "Deposited", "Bets", "W/L", "Pending", "Joined", "Note", ""].map(h => (
+                      {["Username", "LoL Account", "Rank", "Email", "🎮 Virtual", "💵 Real", "💜 Credits", "Deposited", "Bets", "W/L", "Pending", "Joined", "Note", ""].map(h => (
                         <th key={h} style={S.th}>{h}</th>
                       ))}
                     </tr>
@@ -2985,6 +3007,7 @@ function AdminPanel({ adminToken, onLogout }) {
                           <td style={S.td}><span style={{ color: "#F0F0F0", fontWeight: 700 }}>{p.username}</span></td>
                           <td style={S.td}><span style={{ color: p.lolAccount ? "#C8AA6E" : "#35353A", fontSize: 13 }}>{p.lolAccount || "—"}</span></td>
                           <td style={S.td}><span style={{ color: "#A0A0A8", fontSize: 13 }}>{p.rank || "—"}</span></td>
+                          <td style={S.td}><span style={{ color: p.email ? "#86efac" : "#35353A", fontSize: 12 }}>{p.email || "—"}</span></td>
                           <td style={S.td}><span style={{ color: "#C8AA6E", fontWeight: 700 }}>{fmt(p.balance)}</span></td>
                           <td style={S.td}><span style={{ color: "#4ade80", fontWeight: 700 }}>{fmt(p.realBalance)}</span></td>
                           <td style={S.td}><span style={{ color: "#a78bfa", fontWeight: 700 }}>{fmt(p.skinCredits)}</span></td>
