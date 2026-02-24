@@ -17,6 +17,7 @@ async function initDB() {
   `;
   await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS real_balance NUMERIC DEFAULT 0`;
   await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS skin_credits NUMERIC DEFAULT 0`;
+  await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS email TEXT DEFAULT NULL`;
   await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS region TEXT DEFAULT 'euw1'`;
   await sql`
     CREATE TABLE IF NOT EXISTS bets (
@@ -66,6 +67,7 @@ async function getUser(username) {
   const bets = await sql`SELECT * FROM bets WHERE username = ${username} ORDER BY placed_at ASC`;
   return {
     username: u.username,
+    email: u.email || null,
     balance: Number(u.balance),
     realBalance: Number(u.real_balance || 0),
     skinCredits: Number(u.skin_credits || 0),
@@ -96,7 +98,7 @@ module.exports = async function handler(req, res) {
 
   await initDB();
 
-  const { action, username, password } = req.body;
+  const { action, username, password, email } = req.body;
   if (!username || !password) return res.status(400).json({ error: "Missing fields" });
   const name = username.trim().toLowerCase();
 
@@ -104,7 +106,8 @@ module.exports = async function handler(req, res) {
     if (action === "register") {
       const existing = await sql`SELECT username FROM users WHERE username = ${name}`;
       if (existing.length > 0) return res.status(409).json({ error: "Username already taken" });
-      await sql`INSERT INTO users (username, password) VALUES (${name}, ${password})`;
+      const cleanEmail = email ? email.trim().toLowerCase() : null;
+      await sql`INSERT INTO users (username, password, email) VALUES (${name}, ${password}, ${cleanEmail})`;
       const user = await getUser(name);
       return res.status(200).json({ user });
     } else if (action === "login") {
