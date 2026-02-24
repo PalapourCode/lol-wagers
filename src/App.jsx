@@ -3869,126 +3869,176 @@ function AdminPanel({ adminToken, onLogout }) {
   );
 }
 
+
 // ─── HEXTECH INTRO ───────────────────────────────────────────────────────────
 function HextechIntro({ username, onComplete }) {
   const [phase, setPhase] = useState(0);
+  // 0=dark boot, 1=gate+logo+text, 2=blade slash wipe out
 
   useEffect(() => {
-    const t1 = setTimeout(() => setPhase(1), 400);
-    const t2 = setTimeout(() => setPhase(2), 2800);
-    const t3 = setTimeout(() => onComplete(), 3500);
+    const t1 = setTimeout(() => setPhase(1), 350);
+    const t2 = setTimeout(() => setPhase(2), 2700);
+    const t3 = setTimeout(() => onComplete(), 3550);
     return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
   }, [onComplete]);
 
+  // Synth audio — gate open sting on phase 1
+  useEffect(() => {
+    if (phase !== 1) return;
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      // low rumble
+      const buf = ctx.createBuffer(1, ctx.sampleRate * 0.9, ctx.sampleRate);
+      const d = buf.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = (Math.random()*2-1) * Math.pow(1 - i/d.length, 1.8) * 0.15;
+      const src = ctx.createBufferSource(); src.buffer = buf;
+      const g = ctx.createGain(); g.gain.setValueAtTime(0.5, 0); g.gain.exponentialRampToValueAtTime(0.001, 0.9);
+      src.connect(g); g.connect(ctx.destination); src.start();
+      // hextech high tone
+      const osc = ctx.createOscillator(); osc.type = "sine";
+      osc.frequency.setValueAtTime(1200, 0); osc.frequency.exponentialRampToValueAtTime(280, 0.35);
+      const g2 = ctx.createGain(); g2.gain.setValueAtTime(0, 0); g2.gain.linearRampToValueAtTime(0.1, 0.04); g2.gain.exponentialRampToValueAtTime(0.001, 0.5);
+      osc.connect(g2); g2.connect(ctx.destination); osc.start(); osc.stop(ctx.currentTime + 0.5);
+    } catch(_) {}
+  }, [phase]);
+
+  // Blade slash sound on phase 2
+  useEffect(() => {
+    if (phase !== 2) return;
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = ctx.createOscillator(); osc.type = "sawtooth";
+      osc.frequency.setValueAtTime(3200, 0); osc.frequency.exponentialRampToValueAtTime(180, 0.22);
+      const g = ctx.createGain(); g.gain.setValueAtTime(0.14, 0); g.gain.exponentialRampToValueAtTime(0.001, 0.28);
+      osc.connect(g); g.connect(ctx.destination); osc.start(); osc.stop(ctx.currentTime + 0.3);
+    } catch(_) {}
+  }, [phase]);
+
   return (
-    <div style={{
-      position: "fixed", inset: 0, zIndex: 99999,
-      background: phase === 2 ? "#ffffff" : "#000005",
-      transition: phase === 2 ? "background 0.4s ease" : "none",
-      display: "flex", alignItems: "center", justifyContent: "center",
-      overflow: "hidden",
-    }}>
+    <div style={{ position:"fixed", inset:0, zIndex:99999, overflow:"hidden", background:"#000005" }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');
-        @keyframes crackGrow { from { opacity:0; stroke-dashoffset: 500; } to { opacity:1; stroke-dashoffset: 0; } }
-        @keyframes crackGlow { 0%,100% { filter: drop-shadow(0 0 3px #00d4ff) drop-shadow(0 0 8px #0088cc); } 50% { filter: drop-shadow(0 0 8px #00d4ff) drop-shadow(0 0 24px #00aaff); } }
-        @keyframes gateLeft { from { transform: translateX(0); } to { transform: translateX(-105%); } }
-        @keyframes gateRight { from { transform: translateX(0); } to { transform: translateX(105%); } }
-        @keyframes logoIn { 0% { opacity:0; transform:scale(0.5); filter:brightness(4) drop-shadow(0 0 80px #C8AA6E); } 70% { opacity:1; transform:scale(1.06); } 100% { opacity:1; transform:scale(1); filter:drop-shadow(0 0 24px #C8AA6E88); } }
-        @keyframes stamp { 0% { opacity:0; transform:scale(1.5); letter-spacing:20px; } 60% { opacity:1; transform:scale(1); } 100% { opacity:1; } }
-        @keyframes fadeUp { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
-        @keyframes particleBurst { 0% { transform:translate(0,0) scale(0); opacity:0; } 15% { opacity:1; } 100% { transform:translate(var(--tx),var(--ty)) scale(0.5); opacity:0; } }
-        @keyframes runeFloat { 0%,100%{transform:translateY(0) rotate(0deg);opacity:0.12;} 50%{transform:translateY(-18px) rotate(180deg);opacity:0.35;} }
-        @keyframes hexBg { 0%,100%{opacity:0.04;} 50%{opacity:0.1;} }
+        @keyframes hexIn      { from{opacity:0} to{opacity:1} }
+        @keyframes crackDraw  { from{stroke-dashoffset:600} to{stroke-dashoffset:0} }
+        @keyframes crackGlow  { 0%,100%{filter:drop-shadow(0 0 2px #00d4ff) drop-shadow(0 0 5px #007ab8)} 50%{filter:drop-shadow(0 0 5px #00d4ff) drop-shadow(0 0 18px #00aaee)} }
+        @keyframes gateL      { 0%{transform:translateX(0)} 100%{transform:translateX(-102%)} }
+        @keyframes gateR      { 0%{transform:translateX(0)} 100%{transform:translateX(102%)} }
+        @keyframes logoSlam   { 0%{opacity:0;transform:scale(0.25) rotate(-6deg);filter:brightness(8) drop-shadow(0 0 90px #C8AA6E)} 50%{opacity:1;transform:scale(1.12) rotate(1.5deg)} 72%{transform:scale(0.96) rotate(0deg)} 100%{opacity:1;transform:scale(1);filter:drop-shadow(0 0 18px #C8AA6E55)} }
+        @keyframes textSlam   { 0%{opacity:0;transform:scaleX(1.8) scaleY(0.5);letter-spacing:28px} 55%{opacity:1;transform:scaleX(1) scaleY(1)} 100%{opacity:1} }
+        @keyframes subIn      { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes ringPulse  { 0%,100%{opacity:0.1;transform:scale(1)} 50%{opacity:0.22;transform:scale(1.06)} }
+        @keyframes orbitSpin  { from{transform:rotate(0deg) translateX(var(--r)) rotate(0deg)} to{transform:rotate(360deg) translateX(var(--r)) rotate(-360deg)} }
+        @keyframes runeBlink  { 0%,100%{opacity:0.18} 50%{opacity:0.45} }
+        @keyframes burstOut   { 0%{transform:translate(0,0);opacity:1} 100%{transform:translate(var(--tx),var(--ty));opacity:0} }
+        @keyframes slashWipe  { 0%{clip-path:polygon(-8% 0%,-8% 0%,-8% 100%,-8% 100%)} 100%{clip-path:polygon(-8% 0%,118% 0%,108% 100%,-8% 100%)} }
+        @keyframes trailMove  { 0%{left:-8%;opacity:0} 15%{opacity:1} 100%{left:112%;opacity:0} }
+        @keyframes vigIn      { from{opacity:0} to{opacity:1} }
       `}</style>
 
-      {/* hex dot grid */}
-      <div style={{ position:"absolute", inset:0, backgroundImage:"radial-gradient(circle, #00d4ff09 1px, transparent 1px)", backgroundSize:"38px 38px", opacity: phase >= 1 ? 1 : 0, transition:"opacity 0.5s" }} />
-      <div style={{ position:"absolute", inset:0, background:"radial-gradient(ellipse 55% 55% at 50% 50%, transparent 30%, #000005 75%)" }} />
+      {/* dot grid */}
+      <div style={{ position:"absolute", inset:0, backgroundImage:"radial-gradient(circle,#00d4ff08 1px,transparent 1px)", backgroundSize:"36px 36px", animation:"hexIn 0.55s ease both" }} />
+      {/* vignette */}
+      <div style={{ position:"absolute", inset:0, background:"radial-gradient(ellipse 62% 62% at 50% 50%,transparent 18%,#000005 72%)", animation:"vigIn 0.6s ease both" }} />
 
-      {/* floating runes */}
-      {phase === 1 && [
-        { top:"12%", left:"8%",  ch:"✦", sz:26, d:"0s",   t:"3.2s" },
-        { top:"72%", left:"7%",  ch:"◆", sz:18, d:"0.3s", t:"4s"   },
-        { top:"18%", left:"88%", ch:"✦", sz:22, d:"0.5s", t:"3.5s" },
-        { top:"76%", left:"86%", ch:"◆", sz:20, d:"0.2s", t:"2.9s" },
-        { top:"48%", left:"4%",  ch:"✧", sz:14, d:"0.7s", t:"3.8s" },
-        { top:"46%", left:"93%", ch:"✧", sz:16, d:"0.4s", t:"3.3s" },
-      ].map((r,i) => (
-        <div key={i} style={{ position:"absolute", top:r.top, left:r.left, fontSize:r.sz, color:"#00d4ff", textShadow:"0 0 10px #00d4ff, 0 0 20px #0088cc", animation:`runeFloat ${r.t} ${r.d} ease-in-out infinite` }}>{r.ch}</div>
+      {/* concentric rings */}
+      {phase >= 1 && [160,260,360].map((r,i) => (
+        <div key={i} style={{ position:"absolute", top:"50%", left:"50%", width:r*2, height:r*2, marginTop:-r, marginLeft:-r, border:"1px solid #00d4ff18", borderRadius:"50%", animation:`ringPulse ${1.8+i*0.5}s ${i*0.25}s ease-in-out infinite` }} />
       ))}
 
-      {/* energy cracks SVG */}
+      {/* orbiting rune dots */}
+      {phase === 1 && [
+        { r:"170px", delay:"0s",   dur:"5s",   ch:"✦", sz:13 },
+        { r:"170px", delay:"1.25s",dur:"5s",   ch:"◆", sz:9  },
+        { r:"170px", delay:"2.5s", dur:"5s",   ch:"✧", sz:11 },
+        { r:"170px", delay:"3.75s",dur:"5s",   ch:"✦", sz:9  },
+      ].map((o,i) => (
+        <div key={i} style={{ position:"absolute", top:"50%", left:"50%", width:0, height:0, "--r":o.r, animation:`orbitSpin ${o.dur} ${o.delay} linear infinite` }}>
+          <div style={{ fontSize:o.sz, color:"#00d4ff", textShadow:"0 0 8px #00d4ff66", animation:`runeBlink 2s ${o.delay} ease-in-out infinite`, marginLeft:-o.sz/2, marginTop:-o.sz/2 }}>{o.ch}</div>
+        </div>
+      ))}
+
+      {/* energy cracks */}
       <svg style={{ position:"absolute", inset:0, width:"100%", height:"100%", pointerEvents:"none" }} viewBox="0 0 100 100" preserveAspectRatio="none">
         {[
-          { d:"M50,50 L32,18 L26,4",   delay:"0s"    },
-          { d:"M50,50 L72,14 L82,1",   delay:"0.08s" },
-          { d:"M50,50 L14,52 L2,58",   delay:"0.14s" },
-          { d:"M50,50 L86,58 L99,52",  delay:"0.06s" },
-          { d:"M50,50 L38,82 L33,99",  delay:"0.18s" },
-          { d:"M50,50 L64,86 L70,99",  delay:"0.10s" },
-          { d:"M50,50 L18,32 L6,24",   delay:"0.04s" },
-          { d:"M50,50 L80,36 L96,28",  delay:"0.16s" },
+          {d:"M50,50 L29,14 L22,1",  dl:"0s"   },{d:"M50,50 L75,11 L85,0",  dl:"0.07s"},
+          {d:"M50,50 L11,46 L0,52",  dl:"0.13s"},{d:"M50,50 L89,52 L100,46",dl:"0.05s"},
+          {d:"M50,50 L35,85 L29,100",dl:"0.17s"},{d:"M50,50 L67,87 L74,100",dl:"0.09s"},
+          {d:"M50,50 L15,28 L3,20",  dl:"0.03s"},{d:"M50,50 L83,32 L98,24", dl:"0.15s"},
+          {d:"M50,50 L44,20 L40,6",  dl:"0.11s"},{d:"M50,50 L59,80 L64,96", dl:"0.06s"},
         ].map((c,i) => (
-          <path key={i} d={c.d} fill="none" stroke="#00d4ff" strokeWidth="0.4"
-            strokeDasharray="500" strokeDashoffset="500"
-            style={{ animation: phase >= 1 ? `crackGrow 0.5s ${c.delay} ease-out forwards, crackGlow 2s ${c.delay} ease-in-out infinite` : "none", filter:"drop-shadow(0 0 1px #00d4ff)" }}
-          />
+          <path key={i} d={c.d} fill="none" stroke="#00d4ff" strokeWidth="0.3"
+            strokeDasharray="600" strokeDashoffset="600"
+            style={{ animation: phase >= 1 ? `crackDraw 0.45s ${c.dl} ease-out forwards, crackGlow 2.2s ${c.dl} ease-in-out infinite` : "none" }} />
         ))}
       </svg>
 
       {/* gate panels */}
-      <div style={{ position:"absolute", inset:0, display:"flex", pointerEvents:"none" }}>
-        <div style={{ width:"50%", height:"100%", background:"linear-gradient(90deg,#000005 55%,#001830)", borderRight:"1.5px solid #00d4ff44", boxShadow:"inset -12px 0 40px #00d4ff18, 3px 0 20px #00d4ff33", animation: phase >= 1 ? "gateLeft 0.7s 0.2s cubic-bezier(0.4,0,0.2,1) both" : "none" }} />
-        <div style={{ width:"50%", height:"100%", background:"linear-gradient(270deg,#000005 55%,#001830)", borderLeft:"1.5px solid #00d4ff44", boxShadow:"inset 12px 0 40px #00d4ff18, -3px 0 20px #00d4ff33", animation: phase >= 1 ? "gateRight 0.7s 0.2s cubic-bezier(0.4,0,0.2,1) both" : "none" }} />
-      </div>
+      {phase <= 1 && (
+        <div style={{ position:"absolute", inset:0, display:"flex", pointerEvents:"none" }}>
+          <div style={{ width:"50%", height:"100%", background:"linear-gradient(90deg,#000005 48%,#001428)", borderRight:"1px solid #00d4ff44", boxShadow:"inset -6px 0 24px #00d4ff14,2px 0 12px #00d4ff2a", animation: phase >= 1 ? "gateL 0.6s 0.12s cubic-bezier(0.55,0,0.1,1) both" : "none" }} />
+          <div style={{ width:"50%", height:"100%", background:"linear-gradient(270deg,#000005 48%,#001428)", borderLeft:"1px solid #00d4ff44", boxShadow:"inset 6px 0 24px #00d4ff14,-2px 0 12px #00d4ff2a", animation: phase >= 1 ? "gateR 0.6s 0.12s cubic-bezier(0.55,0,0.1,1) both" : "none" }} />
+        </div>
+      )}
 
       {/* center content */}
       {phase === 1 && (
-        <div style={{ position:"relative", zIndex:10, textAlign:"center", display:"flex", flexDirection:"column", alignItems:"center" }}>
-
-          {/* particle burst */}
-          {Array.from({length:20},(_,i) => {
-            const angle = (i/20)*360;
-            const dist = 70 + (i%3)*50;
+        <div style={{ position:"absolute", inset:0, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", zIndex:10 }}>
+          {/* burst particles */}
+          {Array.from({length:26},(_,i) => {
+            const a = (i/26)*360;
+            const dist = 55 + (i%5)*28;
             return (
               <div key={i} style={{
-                position:"absolute", width:3, height:3, borderRadius:"50%",
-                background: i%3===0 ? "#C8AA6E" : i%3===1 ? "#00d4ff" : "#ffffff",
-                top:"50%", left:"50%", marginTop:-1.5, marginLeft:-1.5,
-                "--tx": `${Math.cos(angle*Math.PI/180)*dist}px`,
-                "--ty": `${Math.sin(angle*Math.PI/180)*dist}px`,
-                animation:`particleBurst 1s ${0.25+i*0.03}s ease-out both`,
-                boxShadow:`0 0 4px ${i%3===0?"#C8AA6E":"#00d4ff"}`,
+                position:"absolute", width:i%6===0?6:i%3===0?4:2.5, height:i%6===0?6:i%3===0?4:2.5, borderRadius:"50%",
+                background: i%4===0?"#C8AA6E": i%4===1?"#00d4ff": i%4===2?"#ffffff":"#C8AA6E77",
+                top:"50%", left:"50%",
+                "--tx":`${Math.cos(a*Math.PI/180)*dist}px`,
+                "--ty":`${Math.sin(a*Math.PI/180)*dist}px`,
+                animation:`burstOut 1s ${0.18+i*0.022}s cubic-bezier(0.15,0.85,0.25,1) both`,
+                boxShadow:`0 0 4px ${i%4===0?"#C8AA6E":"#00d4ff"}`,
               }} />
             );
           })}
 
           {/* logo */}
-          <img src="/logo.png" alt="" onError={e => e.target.style.display="none"} style={{ width:160, height:160, objectFit:"contain", marginBottom:20, animation:"logoIn 0.8s 0.35s cubic-bezier(0.34,1.4,0.64,1) both" }} />
+          <img src="/logo.png" alt="" onError={e => { e.target.style.display="none"; }}
+            style={{ width:152, height:152, objectFit:"contain", marginBottom:20, animation:"logoSlam 0.72s 0.28s cubic-bezier(0.34,1.56,0.64,1) both" }} />
 
           {/* SUMMONER ACCEPTED */}
-          <div style={{ fontFamily:"Bebas Neue,sans-serif", fontSize:"clamp(32px,5.5vw,68px)", color:"#C8AA6E", letterSpacing:8, lineHeight:1, textShadow:"0 0 30px #C8AA6E88, 0 0 60px #C8AA6E33", animation:"stamp 0.6s 0.85s cubic-bezier(0.34,1.2,0.64,1) both", marginBottom:10 }}>
+          <div style={{ fontFamily:"Bebas Neue,sans-serif", fontSize:"clamp(26px,4.8vw,60px)", color:"#C8AA6E", letterSpacing:7, lineHeight:1, textShadow:"0 0 22px #C8AA6E66,0 0 45px #C8AA6E22", animation:"textSlam 0.52s 0.78s cubic-bezier(0.22,1,0.36,1) both", marginBottom:12 }}>
             SUMMONER ACCEPTED
           </div>
 
           {/* username */}
-          <div style={{ fontFamily:"Bebas Neue,sans-serif", fontSize:"clamp(16px,2.8vw,30px)", color:"#00d4ff", letterSpacing:6, textShadow:"0 0 16px #00d4ff99", animation:"fadeUp 0.5s 1.25s ease both", marginBottom:8 }}>
+          <div style={{ fontFamily:"Bebas Neue,sans-serif", fontSize:"clamp(14px,2.4vw,26px)", color:"#00d4ff", letterSpacing:7, textShadow:"0 0 12px #00d4ffaa", animation:"subIn 0.38s 1.18s ease both", marginBottom:10 }}>
             {username}
           </div>
 
-          {/* tagline */}
-          <div style={{ fontFamily:"DM Sans,sans-serif", fontSize:13, color:"#C8AA6E55", letterSpacing:4, textTransform:"uppercase", animation:"fadeUp 0.5s 1.55s ease both" }}>
+          {/* ornament divider */}
+          <div style={{ display:"flex", alignItems:"center", gap:10, animation:"subIn 0.38s 1.4s ease both", marginBottom:8 }}>
+            <div style={{ width:48, height:1, background:"linear-gradient(90deg,transparent,#C8AA6E55)" }} />
+            <div style={{ width:6, height:6, background:"#C8AA6E", transform:"rotate(45deg)", boxShadow:"0 0 10px #C8AA6E" }} />
+            <div style={{ width:48, height:1, background:"linear-gradient(90deg,#C8AA6E55,transparent)" }} />
+          </div>
+
+          {/* welcome to the rift */}
+          <div style={{ fontFamily:"DM Sans,sans-serif", fontSize:11, color:"#C8AA6E44", letterSpacing:5, textTransform:"uppercase", animation:"subIn 0.38s 1.6s ease both" }}>
             Welcome to the Rift
           </div>
         </div>
       )}
 
-      {/* flash white overlay */}
-      {phase === 2 && <div style={{ position:"absolute", inset:0, background:"white" }} />}
+      {/* blade slash wipe exit */}
+      {phase === 2 && (
+        <>
+          <div style={{ position:"absolute", inset:0, background:"linear-gradient(108deg,#000005 0%,#001428 45%,#000005 100%)", animation:"slashWipe 0.65s cubic-bezier(0.55,0,0.08,1) forwards", zIndex:20 }} />
+          <div style={{ position:"absolute", top:0, bottom:0, width:"5%", background:"linear-gradient(90deg,transparent,#00d4ff55,#ffffffaa,#00d4ff55,transparent)", animation:"trailMove 0.65s cubic-bezier(0.55,0,0.08,1) forwards", zIndex:21 }} />
+        </>
+      )}
     </div>
   );
 }
+
 
 // ─── MAIN APP ─────────────────────────────────────────────────────────────────
 export default function App() {
@@ -4007,7 +4057,7 @@ export default function App() {
 
   const handleLogin = useCallback((userData, isNew = false) => {
     setUser(userData);
-    if (isNew) setShowIntro(true);
+    if (!userData.isAdmin) setShowIntro(true);
   }, []);
 
   const showToast = useCallback((message, type = "info") => {
