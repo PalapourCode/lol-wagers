@@ -4276,9 +4276,9 @@ function HextechIntro({ username, onComplete }) {
   // 0=dark boot, 1=gate+logo+text, 2=blade slash wipe out
 
   useEffect(() => {
-    const t1 = setTimeout(() => setPhase(1), 350);
-    const t2 = setTimeout(() => setPhase(2), 2700);
-    const t3 = setTimeout(() => onComplete(), 3550);
+    const t1 = setTimeout(() => setPhase(1), 100);
+    const t2 = setTimeout(() => setPhase(2), 1800);
+    const t3 = setTimeout(() => onComplete(), 2350);
     return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
   }, [onComplete]);
 
@@ -4323,9 +4323,9 @@ function HextechIntro({ username, onComplete }) {
         @keyframes crackGlow  { 0%,100%{filter:drop-shadow(0 0 2px #00d4ff) drop-shadow(0 0 5px #007ab8)} 50%{filter:drop-shadow(0 0 5px #00d4ff) drop-shadow(0 0 18px #00aaee)} }
         @keyframes gateL      { 0%{transform:translateX(0)} 100%{transform:translateX(-102%)} }
         @keyframes gateR      { 0%{transform:translateX(0)} 100%{transform:translateX(102%)} }
-        @keyframes logoSlam   { 0%{opacity:0;transform:scale(0.25) rotate(-6deg);filter:brightness(8) drop-shadow(0 0 90px #C8AA6E)} 50%{opacity:1;transform:scale(1.12) rotate(1.5deg)} 72%{transform:scale(0.96) rotate(0deg)} 100%{opacity:1;transform:scale(1);filter:drop-shadow(0 0 18px #C8AA6E55)} }
-        @keyframes textSlam   { 0%{opacity:0;transform:scaleX(1.8) scaleY(0.5);letter-spacing:28px} 55%{opacity:1;transform:scaleX(1) scaleY(1)} 100%{opacity:1} }
-        @keyframes subIn      { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes logoSlam   { 0%{opacity:0;transform:scale(0.3) rotate(-4deg);filter:brightness(6) drop-shadow(0 0 60px #C8AA6E)} 55%{opacity:1;transform:scale(1.08) rotate(1deg)} 78%{transform:scale(0.97) rotate(0deg)} 100%{opacity:1;transform:scale(1);filter:drop-shadow(0 0 14px #C8AA6E55)} }
+        @keyframes textSlam   { 0%{opacity:0;transform:scaleX(1.5) scaleY(0.6);letter-spacing:20px} 50%{opacity:1;transform:scaleX(1) scaleY(1)} 100%{opacity:1} }
+        @keyframes subIn      { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
         @keyframes ringPulse  { 0%,100%{opacity:0.1;transform:scale(1)} 50%{opacity:0.22;transform:scale(1.06)} }
         @keyframes orbitSpin  { from{transform:rotate(0deg) translateX(var(--r)) rotate(0deg)} to{transform:rotate(360deg) translateX(var(--r)) rotate(-360deg)} }
         @keyframes runeBlink  { 0%,100%{opacity:0.18} 50%{opacity:0.45} }
@@ -4368,15 +4368,15 @@ function HextechIntro({ username, onComplete }) {
         ].map((c,i) => (
           <path key={i} d={c.d} fill="none" stroke="#00d4ff" strokeWidth="0.3"
             strokeDasharray="600" strokeDashoffset="600"
-            style={{ animation: phase >= 1 ? `crackDraw 0.45s ${c.dl} ease-out forwards, crackGlow 2.2s ${c.dl} ease-in-out infinite` : "none" }} />
+            style={{ animation: phase >= 1 ? `crackDraw 0.25s ${c.dl} ease-out forwards, crackGlow 2.2s ${c.dl} ease-in-out infinite` : "none" }} />
         ))}
       </svg>
 
       {/* gate panels */}
       {phase <= 1 && (
         <div style={{ position:"absolute", inset:0, display:"flex", pointerEvents:"none" }}>
-          <div style={{ width:"50%", height:"100%", background:"linear-gradient(90deg,#000005 48%,#001428)", borderRight:"1px solid #00d4ff44", boxShadow:"inset -6px 0 24px #00d4ff14,2px 0 12px #00d4ff2a", animation: phase >= 1 ? "gateL 0.6s 0.12s cubic-bezier(0.55,0,0.1,1) both" : "none" }} />
-          <div style={{ width:"50%", height:"100%", background:"linear-gradient(270deg,#000005 48%,#001428)", borderLeft:"1px solid #00d4ff44", boxShadow:"inset 6px 0 24px #00d4ff14,-2px 0 12px #00d4ff2a", animation: phase >= 1 ? "gateR 0.6s 0.12s cubic-bezier(0.55,0,0.1,1) both" : "none" }} />
+          <div style={{ width:"50%", height:"100%", background:"linear-gradient(90deg,#000005 48%,#001428)", borderRight:"1px solid #00d4ff44", boxShadow:"inset -6px 0 24px #00d4ff14,2px 0 12px #00d4ff2a", animation: phase >= 1 ? "gateL 0.35s 0s cubic-bezier(0.55,0,0.1,1) both" : "none" }} />
+          <div style={{ width:"50%", height:"100%", background:"linear-gradient(270deg,#000005 48%,#001428)", borderLeft:"1px solid #00d4ff44", boxShadow:"inset 6px 0 24px #00d4ff14,-2px 0 12px #00d4ff2a", animation: phase >= 1 ? "gateR 0.35s 0s cubic-bezier(0.55,0,0.1,1) both" : "none" }} />
         </div>
       )}
 
@@ -4402,27 +4402,27 @@ function HextechIntro({ username, onComplete }) {
 
           {/* logo */}
           <img src="/logo.png" alt="" onError={e => { e.target.style.display="none"; }}
-            style={{ width:152, height:152, objectFit:"contain", marginBottom:20, animation:"logoSlam 0.72s 0.28s cubic-bezier(0.34,1.56,0.64,1) both" }} />
+            style={{ width:152, height:152, objectFit:"contain", marginBottom:20, animation:"logoSlam 0.45s 0.18s cubic-bezier(0.34,1.56,0.64,1) both" }} />
 
           {/* SUMMONER ACCEPTED */}
-          <div style={{ fontFamily:"Bebas Neue,sans-serif", fontSize:"clamp(26px,4.8vw,60px)", color:"#C8AA6E", letterSpacing:7, lineHeight:1, textShadow:"0 0 22px #C8AA6E66,0 0 45px #C8AA6E22", animation:"textSlam 0.52s 0.78s cubic-bezier(0.22,1,0.36,1) both", marginBottom:12 }}>
+          <div style={{ fontFamily:"Bebas Neue,sans-serif", fontSize:"clamp(26px,4.8vw,60px)", color:"#C8AA6E", letterSpacing:7, lineHeight:1, textShadow:"0 0 22px #C8AA6E66,0 0 45px #C8AA6E22", animation:"textSlam 0.35s 0.48s cubic-bezier(0.22,1,0.36,1) both", marginBottom:12 }}>
             SUMMONER ACCEPTED
           </div>
 
           {/* username */}
-          <div style={{ fontFamily:"Bebas Neue,sans-serif", fontSize:"clamp(14px,2.4vw,26px)", color:"#00d4ff", letterSpacing:7, textShadow:"0 0 12px #00d4ffaa", animation:"subIn 0.38s 1.18s ease both", marginBottom:10 }}>
+          <div style={{ fontFamily:"Bebas Neue,sans-serif", fontSize:"clamp(14px,2.4vw,26px)", color:"#00d4ff", letterSpacing:7, textShadow:"0 0 12px #00d4ffaa", animation:"subIn 0.25s 0.72s ease both", marginBottom:10 }}>
             {username}
           </div>
 
           {/* ornament divider */}
-          <div style={{ display:"flex", alignItems:"center", gap:10, animation:"subIn 0.38s 1.4s ease both", marginBottom:8 }}>
+          <div style={{ display:"flex", alignItems:"center", gap:10, animation:"subIn 0.25s 0.88s ease both", marginBottom:8 }}>
             <div style={{ width:48, height:1, background:"linear-gradient(90deg,transparent,#C8AA6E55)" }} />
             <div style={{ width:6, height:6, background:"#C8AA6E", transform:"rotate(45deg)", boxShadow:"0 0 10px #C8AA6E" }} />
             <div style={{ width:48, height:1, background:"linear-gradient(90deg,#C8AA6E55,transparent)" }} />
           </div>
 
           {/* welcome to the rift */}
-          <div style={{ fontFamily:"DM Sans,sans-serif", fontSize:11, color:"#C8AA6E44", letterSpacing:5, textTransform:"uppercase", animation:"subIn 0.38s 1.6s ease both" }}>
+          <div style={{ fontFamily:"DM Sans,sans-serif", fontSize:11, color:"#C8AA6E44", letterSpacing:5, textTransform:"uppercase", animation:"subIn 0.25s 1.0s ease both" }}>
             Welcome to the Rift
           </div>
         </div>
@@ -4431,8 +4431,8 @@ function HextechIntro({ username, onComplete }) {
       {/* blade slash wipe exit */}
       {phase === 2 && (
         <>
-          <div style={{ position:"absolute", inset:0, background:"linear-gradient(108deg,#000005 0%,#001428 45%,#000005 100%)", animation:"slashWipe 0.65s cubic-bezier(0.55,0,0.08,1) forwards", zIndex:20 }} />
-          <div style={{ position:"absolute", top:0, bottom:0, width:"5%", background:"linear-gradient(90deg,transparent,#00d4ff55,#ffffffaa,#00d4ff55,transparent)", animation:"trailMove 0.65s cubic-bezier(0.55,0,0.08,1) forwards", zIndex:21 }} />
+          <div style={{ position:"absolute", inset:0, background:"linear-gradient(108deg,#000005 0%,#001428 45%,#000005 100%)", animation:"slashWipe 0.38s cubic-bezier(0.55,0,0.08,1) forwards", zIndex:20 }} />
+          <div style={{ position:"absolute", top:0, bottom:0, width:"5%", background:"linear-gradient(90deg,transparent,#00d4ff55,#ffffffaa,#00d4ff55,transparent)", animation:"trailMove 0.38s cubic-bezier(0.55,0,0.08,1) forwards", zIndex:21 }} />
         </>
       )}
     </div>
