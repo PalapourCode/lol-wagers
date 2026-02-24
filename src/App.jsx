@@ -3965,7 +3965,7 @@ function HextechIntro({ username, onComplete }) {
           })}
 
           {/* logo */}
-          <img src="/logo.png" alt="" onError={e => (e.target as HTMLImageElement).style.display="none"} style={{ width:160, height:160, objectFit:"contain", marginBottom:20, animation:"logoIn 0.8s 0.35s cubic-bezier(0.34,1.4,0.64,1) both" }} />
+          <img src="/logo.png" alt="" onError={e => e.target.style.display="none"} style={{ width:160, height:160, objectFit:"contain", marginBottom:20, animation:"logoIn 0.8s 0.35s cubic-bezier(0.34,1.4,0.64,1) both" }} />
 
           {/* SUMMONER ACCEPTED */}
           <div style={{ fontFamily:"Bebas Neue,sans-serif", fontSize:"clamp(32px,5.5vw,68px)", color:"#C8AA6E", letterSpacing:8, lineHeight:1, textShadow:"0 0 30px #C8AA6E88, 0 0 60px #C8AA6E33", animation:"stamp 0.6s 0.85s cubic-bezier(0.34,1.2,0.64,1) both", marginBottom:10 }}>
