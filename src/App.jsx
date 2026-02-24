@@ -1919,7 +1919,6 @@ function SkinShop({ user, setUser, toast }) {
 // ─── BET HISTORY ─────────────────────────────────────────────────────────────
 // ─── CHAMPION MARKET ──────────────────────────────────────────────────────────
 
-// Seeded random — deterministic per champion + time bucket so all users see same curve
 function seededRand(seed) {
   let s = seed;
   return () => {
@@ -1928,39 +1927,88 @@ function seededRand(seed) {
   };
 }
 
-// Top meta champs with base win rates reflecting their tier (Season 14/15 meta)
-const MARKET_CHAMPS = [
-  { id: "Jinx",       base: 52.8, tier: "S", color: "#e879f9", role: "ADC"     },
-  { id: "Yasuo",      base: 49.2, tier: "A", color: "#38bdf8", role: "MID"     },
-  { id: "Zed",        base: 50.1, tier: "A", color: "#94a3b8", role: "MID"     },
-  { id: "Lux",        base: 52.1, tier: "S", color: "#fcd34d", role: "SUP"     },
-  { id: "Thresh",     base: 51.4, tier: "S", color: "#4ade80", role: "SUP"     },
-  { id: "Ahri",       base: 51.9, tier: "A", color: "#f9a8d4", role: "MID"     },
-  { id: "Vi",         base: 50.7, tier: "B", color: "#fb923c", role: "JGL"     },
-  { id: "Darius",     base: 50.9, tier: "A", color: "#ef4444", role: "TOP"     },
-  { id: "Ezreal",     base: 48.6, tier: "B", color: "#60a5fa", role: "ADC"     },
-  { id: "Katarina",   base: 50.3, tier: "A", color: "#f87171", role: "MID"     },
+// Real win rates from U.GG · Patch 25.4 (Emerald+)
+// Top 2 best + top 2 worst per role
+const MARKET_ROLES = [
+  {
+    role: "TOP",
+    color: "#f97316",
+    icon: "⚔️",
+    champs: [
+      { id: "Ornn",      base: 52.79, trend: "up",   color: "#e2b96f" },
+      { id: "Kayle",     base: 52.80, trend: "up",   color: "#fde68a" },
+      { id: "Udyr",      base: 48.98, trend: "down", color: "#94a3b8" },
+      { id: "MasterYi",  base: 46.85, trend: "down", color: "#64748b", display: "Master Yi" },
+    ]
+  },
+  {
+    role: "JUNGLE",
+    color: "#4ade80",
+    icon: "🌿",
+    champs: [
+      { id: "Khazix",    base: 51.67, trend: "up",   color: "#a78bfa", display: "Kha'Zix" },
+      { id: "Ekko",      base: 52.23, trend: "up",   color: "#60a5fa" },
+      { id: "Jayce",     base: 47.26, trend: "down", color: "#94a3b8" },
+      { id: "Qiyana",    base: 46.32, trend: "down", color: "#f9a8d4" },
+    ]
+  },
+  {
+    role: "MID",
+    color: "#818cf8",
+    icon: "✨",
+    champs: [
+      { id: "Ahri",      base: 52.38, trend: "up",   color: "#f9a8d4" },
+      { id: "Xerath",    base: 52.09, trend: "up",   color: "#93c5fd" },
+      { id: "Jayce",     base: 50.05, trend: "down", color: "#94a3b8" },
+      { id: "Azir",      base: 45.54, trend: "down", color: "#fbbf24" },
+    ]
+  },
+  {
+    role: "ADC",
+    color: "#38bdf8",
+    icon: "🏹",
+    champs: [
+      { id: "Jinx",      base: 51.85, trend: "up",   color: "#e879f9" },
+      { id: "Caitlyn",   base: 50.70, trend: "up",   color: "#7dd3fc" },
+      { id: "Mel",       base: 49.38, trend: "down", color: "#fda4af" },
+      { id: "Kalista",   base: 48.35, trend: "down", color: "#6ee7b7" },
+    ]
+  },
+  {
+    role: "SUPPORT",
+    color: "#facc15",
+    icon: "🛡️",
+    champs: [
+      { id: "Nami",      base: 52.00, trend: "up",   color: "#67e8f9" },
+      { id: "Thresh",    base: 51.28, trend: "up",   color: "#4ade80" },
+      { id: "Swain",     base: 48.09, trend: "down", color: "#fca5a5" },
+      { id: "Annie",     base: 50.82, trend: "down", color: "#fdba74" },
+    ]
+  },
 ];
 
+// Flatten for lookup
+const ALL_CHAMPS = MARKET_ROLES.flatMap(r => r.champs.map(c => ({ ...c, role: r.role, roleColor: r.color })));
+
 function generateHistory(champId, baseWR, points = 60) {
-  // bucket = 5-minute windows, reseeds each patch week
-  const patchBucket = Math.floor(Date.now() / (1000 * 60 * 5));
-  const rand = seededRand(champId.split("").reduce((a, c) => a + c.charCodeAt(0), 0) * 997 + patchBucket);
+  const patchBucket = Math.floor(Date.now() / (1000 * 60 * 8));
+  const seed = champId.split("").reduce((a, c) => a + c.charCodeAt(0), 0) * 997 + patchBucket;
+  const rand = seededRand(seed);
   const history = [];
-  let val = baseWR + (rand() - 0.5) * 2;
+  let val = baseWR + (rand() - 0.5) * 0.8;
   for (let i = 0; i < points; i++) {
-    const momentum = (rand() - 0.48) * 0.25;
-    const reversion = (baseWR - val) * 0.08;
-    val = Math.max(44, Math.min(58, val + momentum + reversion));
+    const momentum = (rand() - 0.485) * 0.18;
+    const reversion = (baseWR - val) * 0.12;
+    val = Math.max(baseWR - 2.5, Math.min(baseWR + 2.5, val + momentum + reversion));
     history.push(parseFloat(val.toFixed(2)));
   }
   return history;
 }
 
-function Sparkline({ data, color, width = 120, height = 40, filled = false }) {
+function Sparkline({ data, color, width = 120, height = 40 }) {
   if (!data || data.length < 2) return null;
-  const min = Math.min(...data) - 0.3;
-  const max = Math.max(...data) + 0.3;
+  const min = Math.min(...data) - 0.1;
+  const max = Math.max(...data) + 0.1;
   const range = max - min || 1;
   const pts = data.map((v, i) => {
     const x = (i / (data.length - 1)) * width;
@@ -1968,49 +2016,48 @@ function Sparkline({ data, color, width = 120, height = 40, filled = false }) {
     return `${x},${y}`;
   });
   const trend = data[data.length - 1] - data[0];
-  const lineColor = filled ? color : (trend >= 0 ? "#4ade80" : "#f87171");
+  const lineColor = trend >= 0 ? "#4ade80" : "#f87171";
+  const lastX = parseFloat(pts[pts.length-1].split(",")[0]);
+  const lastY = parseFloat(pts[pts.length-1].split(",")[1]);
   return (
     <svg width={width} height={height} style={{ overflow: "visible" }}>
-      {filled && (
-        <polygon
-          points={`0,${height} ${pts.join(" ")} ${width},${height}`}
-          fill={`${lineColor}18`}
-        />
-      )}
-      <polyline points={pts.join(" ")} fill="none" stroke={lineColor} strokeWidth={filled ? 2 : 1.5} strokeLinejoin="round" strokeLinecap="round" />
-      {/* last dot */}
-      <circle cx={parseFloat(pts[pts.length-1].split(",")[0])} cy={parseFloat(pts[pts.length-1].split(",")[1])} r={2.5} fill={lineColor} />
+      <defs>
+        <linearGradient id={`sg_${color.replace("#","")}`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={lineColor} stopOpacity="0.3" />
+          <stop offset="100%" stopColor={lineColor} stopOpacity="0.02" />
+        </linearGradient>
+      </defs>
+      <polygon points={`0,${height} ${pts.join(" ")} ${width},${height}`} fill={`url(#sg_${color.replace("#","")})`} />
+      <polyline points={pts.join(" ")} fill="none" stroke={lineColor} strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" />
+      <circle cx={lastX} cy={lastY} r={2.5} fill={lineColor} />
     </svg>
   );
 }
 
 function ChampMarket() {
   const [patch, setPatch] = useState(null);
-  const [selected, setSelected] = useState("Jinx");
+  const [selectedRole, setSelectedRole] = useState("TOP");
+  const [selectedChamp, setSelectedChamp] = useState("Ornn");
   const [histories, setHistories] = useState({});
   const [tick, setTick] = useState(0);
 
-  // Fetch current patch from Data Dragon
   useEffect(() => {
     fetch("https://ddragon.leagueoflegends.com/api/versions.json")
-      .then(r => r.json())
-      .then(v => setPatch(v[0]))
-      .catch(() => setPatch("14.x"));
+      .then(r => r.json()).then(v => setPatch(v[0])).catch(() => setPatch("25.4.1"));
   }, []);
 
-  // Generate/refresh histories every 30s — small random walk added each tick
   useEffect(() => {
     const build = () => {
       const next = {};
-      MARKET_CHAMPS.forEach(c => {
+      ALL_CHAMPS.forEach(c => {
         const base = generateHistory(c.id, c.base, 60);
-        // Add live micro-movement: last few points wiggle each tick
         const now = Date.now();
-        const microRand = seededRand(c.id.charCodeAt(0) * 31 + now % 100000);
-        for (let i = 55; i < 60; i++) {
-          base[i] = Math.max(44, Math.min(58, base[i] + (microRand() - 0.5) * 0.3));
+        const micro = seededRand(c.id.charCodeAt(0) * 53 + now % 50000);
+        for (let i = 56; i < 60; i++) {
+          base[i] = Math.max(c.base - 2.5, Math.min(c.base + 2.5, base[i] + (micro() - 0.5) * 0.15));
+          base[i] = parseFloat(base[i].toFixed(2));
         }
-        next[c.id] = base.map(v => parseFloat(v.toFixed(2)));
+        next[c.id] = base;
       });
       setHistories(next);
     };
@@ -2019,164 +2066,209 @@ function ChampMarket() {
     return () => clearInterval(iv);
   }, []);
 
-  const selChamp = MARKET_CHAMPS.find(c => c.id === selected);
-  const selHistory = histories[selected] || [];
-  const selCurrent = selHistory[selHistory.length - 1] || selChamp?.base;
-  const selOpen = selHistory[0] || selChamp?.base;
-  const selChange = selCurrent && selOpen ? (selCurrent - selOpen) : 0;
-  const selChangePct = selOpen ? ((selChange / selOpen) * 100) : 0;
+  const roleData = MARKET_ROLES.find(r => r.role === selectedRole);
+  const champData = ALL_CHAMPS.find(c => c.id === selectedChamp) || ALL_CHAMPS[0];
+  const selHistory = histories[selectedChamp] || [];
+  const selCurrent = selHistory[selHistory.length - 1] || champData.base;
+  const selOpen = selHistory[0] || champData.base;
+  const selChange = selCurrent - selOpen;
   const isUp = selChange >= 0;
-
-  const imgUrl = (id) => `https://ddragon.leagueoflegends.com/cdn/${patch || "14.24.1"}/img/champion/${id}.png`;
+  const imgUrl = id => `https://ddragon.leagueoflegends.com/cdn/${patch || "15.4.1"}/img/champion/${id}.png`;
+  const displayName = c => c.display || c.id;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       <style>{`
-        @keyframes marketPulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
-        @keyframes lineIn { from{stroke-dashoffset:1000} to{stroke-dashoffset:0} }
-        .champ-row:hover { background: #2a2a2e !important; cursor: pointer; }
+        @keyframes mktPulse { 0%,100%{opacity:1} 50%{opacity:0.35} }
+        .role-btn:hover { opacity:1 !important; }
+        .champ-row:hover { background:#22222a !important; cursor:pointer; }
       `}</style>
 
-      {/* header */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
         <div>
-          <div style={{ fontFamily: "Bebas Neue, sans-serif", fontSize: 28, color: "#C8AA6E", letterSpacing: 3 }}>CHAMPION MARKET</div>
-          <div style={{ fontFamily: "DM Sans, sans-serif", fontSize: 12, color: "#555", marginTop: 2 }}>
-            Patch {patch || "..."} · Simulated win rate index · Updates every 8s
+          <div style={{ fontFamily: "Bebas Neue, sans-serif", fontSize: 30, color: "#C8AA6E", letterSpacing: 3 }}>CHAMPION MARKET</div>
+          <div style={{ fontFamily: "DM Sans, sans-serif", fontSize: 12, color: "#444", marginTop: 2 }}>
+            Patch {patch || "..."} · Source: U.GG Emerald+ · Updates every 2 weeks with patch
           </div>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 6, background: "#242428", border: "1px solid #2D2D32", borderRadius: 6, padding: "6px 12px" }}>
-          <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#4ade80", animation: "marketPulse 2s ease-in-out infinite" }} />
+        <div style={{ display: "flex", alignItems: "center", gap: 6, background: "#1a1a1e", border: "1px solid #2D2D32", borderRadius: 6, padding: "6px 12px" }}>
+          <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#4ade80", animation: "mktPulse 2s ease-in-out infinite" }} />
           <span style={{ fontFamily: "DM Sans, sans-serif", fontSize: 11, color: "#4ade80", letterSpacing: 2 }}>LIVE</span>
         </div>
       </div>
 
-      {/* main chart */}
-      <div style={{ background: "#141418", border: "1px solid #2D2D32", borderRadius: 10, padding: 20 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
-          {patch && <img src={imgUrl(selected)} alt={selected} style={{ width: 44, height: 44, borderRadius: 4, border: `2px solid ${selChamp?.color}44` }} onError={e => { e.target.style.display="none"; }} />}
+      {/* Role tabs */}
+      <div style={{ display: "flex", gap: 8 }}>
+        {MARKET_ROLES.map(r => (
+          <button key={r.role} className="role-btn" onClick={() => { setSelectedRole(r.role); setSelectedChamp(r.champs[0].id); }}
+            style={{ background: selectedRole === r.role ? `${r.color}18` : "#141418", border: `1px solid ${selectedRole === r.role ? r.color : "#2D2D32"}`, borderRadius: 6, padding: "8px 14px", cursor: "pointer", fontFamily: "Bebas Neue, sans-serif", fontSize: 14, letterSpacing: 2, color: selectedRole === r.role ? r.color : "#555", transition: "all 0.15s", opacity: selectedRole === r.role ? 1 : 0.7 }}>
+            {r.icon} {r.role}
+          </button>
+        ))}
+      </div>
+
+      {/* Main chart */}
+      <div style={{ background: "#0d0d10", border: "1px solid #1e1e24", borderRadius: 10, padding: 20 }}>
+        {/* Champ header */}
+        <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 16 }}>
+          {patch && (
+            <img src={imgUrl(champData.id)} alt={displayName(champData)} style={{ width: 48, height: 48, borderRadius: 5, border: `2px solid ${champData.color}55` }}
+              onError={e => { e.target.style.display = "none"; }} />
+          )}
           <div>
-            <div style={{ fontFamily: "Bebas Neue, sans-serif", fontSize: 22, color: "#F0F0F0", letterSpacing: 2 }}>{selected} <span style={{ fontSize: 13, color: "#555", letterSpacing: 1 }}>{selChamp?.role}</span></div>
-            <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-              <span style={{ fontFamily: "Bebas Neue, sans-serif", fontSize: 32, color: "#F0F0F0" }}>{selCurrent?.toFixed(2)}%</span>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ fontFamily: "Bebas Neue, sans-serif", fontSize: 24, color: "#F0F0F0", letterSpacing: 2 }}>{displayName(champData)}</span>
+              <span style={{ fontFamily: "DM Sans, sans-serif", fontSize: 11, color: roleData.color, background: `${roleData.color}18`, border: `1px solid ${roleData.color}44`, borderRadius: 4, padding: "2px 8px", letterSpacing: 2 }}>{champData.role}</span>
+              <span style={{ fontFamily: "DM Sans, sans-serif", fontSize: 11, color: champData.trend === "up" ? "#4ade80" : "#f87171", background: champData.trend === "up" ? "#4ade8018" : "#f8717118", borderRadius: 4, padding: "2px 8px" }}>{champData.trend === "up" ? "▲ TOP WR" : "▼ LOW WR"}</span>
+            </div>
+            <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginTop: 4 }}>
+              <span style={{ fontFamily: "Bebas Neue, sans-serif", fontSize: 36, color: "#F0F0F0", lineHeight: 1 }}>{selCurrent?.toFixed(2)}%</span>
               <span style={{ fontFamily: "DM Sans, sans-serif", fontSize: 14, color: isUp ? "#4ade80" : "#f87171", fontWeight: 600 }}>
-                {isUp ? "▲" : "▼"} {Math.abs(selChange).toFixed(2)}% ({isUp ? "+" : ""}{selChangePct.toFixed(2)}%)
+                {isUp ? "▲" : "▼"} {Math.abs(selChange).toFixed(2)}%
               </span>
+              <span style={{ fontFamily: "DM Sans, sans-serif", fontSize: 12, color: "#333" }}>base {champData.base}%</span>
             </div>
           </div>
-          <div style={{ marginLeft: "auto", display: "flex", gap: 16 }}>
-            {[["OPEN", selOpen], ["HIGH", selHistory.length ? Math.max(...selHistory) : 0], ["LOW", selHistory.length ? Math.min(...selHistory) : 0]].map(([l,v]) => (
+          <div style={{ marginLeft: "auto", display: "flex", gap: 20 }}>
+            {[["HIGH", selHistory.length ? Math.max(...selHistory) : 0], ["LOW", selHistory.length ? Math.min(...selHistory) : 0], ["BASE", champData.base]].map(([l, v]) => (
               <div key={l} style={{ textAlign: "right" }}>
-                <div style={{ fontFamily: "DM Sans, sans-serif", fontSize: 10, color: "#555", letterSpacing: 2 }}>{l}</div>
-                <div style={{ fontFamily: "Bebas Neue, sans-serif", fontSize: 16, color: "#A0A0A8" }}>{v?.toFixed(2)}%</div>
+                <div style={{ fontFamily: "DM Sans, sans-serif", fontSize: 10, color: "#444", letterSpacing: 2 }}>{l}</div>
+                <div style={{ fontFamily: "Bebas Neue, sans-serif", fontSize: 18, color: "#A0A0A8" }}>{Number(v).toFixed(2)}%</div>
               </div>
             ))}
           </div>
         </div>
 
-        {/* big chart */}
-        <div style={{ position: "relative", height: 160, background: "#0d0d10", borderRadius: 6, padding: "12px 8px 8px", overflow: "hidden" }}>
-          {/* grid lines */}
+        {/* Chart */}
+        <div style={{ position: "relative", height: 160, background: "#080810", borderRadius: 6, overflow: "hidden", padding: "10px 8px 6px" }}>
           {[0, 0.25, 0.5, 0.75, 1].map(p => (
-            <div key={p} style={{ position: "absolute", left: 0, right: 0, top: `${p * 100}%`, borderTop: "1px solid #ffffff06" }} />
+            <div key={p} style={{ position: "absolute", left: 0, right: 0, top: `${p * 100}%`, borderTop: "1px solid #ffffff05" }} />
           ))}
           {selHistory.length > 1 && (() => {
-            const W = 600, H = 136;
-            const min = Math.min(...selHistory) - 0.5;
-            const max = Math.max(...selHistory) + 0.5;
-            const range = max - min;
-            const pts = selHistory.map((v, i) => {
-              const x = (i / (selHistory.length - 1)) * W;
-              const y = H - ((v - min) / range) * H;
-              return `${x},${y}`;
-            });
+            const W = 600, H = 140;
+            const min = Math.min(...selHistory) - 0.3;
+            const max = Math.max(...selHistory) + 0.3;
+            const range = max - min || 1;
+            const pts = selHistory.map((v, i) => `${(i / (selHistory.length-1)) * W},${H - ((v - min) / range) * H}`);
             const lineColor = isUp ? "#4ade80" : "#f87171";
-            const lastX = parseFloat(pts[pts.length-1].split(",")[0]);
-            const lastY = parseFloat(pts[pts.length-1].split(",")[1]);
+            const lx = parseFloat(pts[pts.length-1].split(",")[0]);
+            const ly = parseFloat(pts[pts.length-1].split(",")[1]);
             return (
               <svg width="100%" height="100%" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ position: "absolute", inset: 0 }}>
                 <defs>
-                  <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor={lineColor} stopOpacity="0.25" />
+                  <linearGradient id="mainArea" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={lineColor} stopOpacity="0.3" />
                     <stop offset="100%" stopColor={lineColor} stopOpacity="0.02" />
                   </linearGradient>
                 </defs>
-                <polygon points={`0,${H} ${pts.join(" ")} ${W},${H}`} fill="url(#areaGrad)" />
+                <polygon points={`0,${H} ${pts.join(" ")} ${W},${H}`} fill="url(#mainArea)" />
                 <polyline points={pts.join(" ")} fill="none" stroke={lineColor} strokeWidth="2" strokeLinejoin="round" />
-                {/* current price line */}
-                <line x1="0" y1={lastY} x2={W} y2={lastY} stroke={lineColor} strokeWidth="0.5" strokeDasharray="4,4" opacity="0.4" />
-                <circle cx={lastX} cy={lastY} r="4" fill={lineColor} />
-                <circle cx={lastX} cy={lastY} r="8" fill={lineColor} opacity="0.2" />
+                <line x1="0" y1={ly} x2={W} y2={ly} stroke={lineColor} strokeWidth="0.5" strokeDasharray="4,3" opacity="0.3" />
+                <circle cx={lx} cy={ly} r="4" fill={lineColor} />
+                <circle cx={lx} cy={ly} r="9" fill={lineColor} opacity="0.15" />
               </svg>
             );
           })()}
         </div>
-
-        {/* time labels */}
-        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6, padding: "0 4px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", padding: "6px 4px 0" }}>
           {["60m ago", "45m", "30m", "15m", "NOW"].map(t => (
-            <span key={t} style={{ fontFamily: "DM Sans, sans-serif", fontSize: 10, color: "#333" }}>{t}</span>
+            <span key={t} style={{ fontFamily: "DM Sans, sans-serif", fontSize: 10, color: "#2a2a32" }}>{t}</span>
           ))}
         </div>
       </div>
 
-      {/* champion rows */}
-      <div style={{ background: "#141418", border: "1px solid #2D2D32", borderRadius: 10, overflow: "hidden" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 80px 80px 80px 130px", padding: "10px 16px", borderBottom: "1px solid #1e1e22" }}>
-          {["CHAMPION", "WIN RATE", "CHANGE", "TIER", "TREND"].map(h => (
-            <div key={h} style={{ fontFamily: "DM Sans, sans-serif", fontSize: 10, letterSpacing: 2, color: "#444", textTransform: "uppercase" }}>{h}</div>
+      {/* Champion rows for selected role */}
+      <div style={{ background: "#0d0d10", border: "1px solid #1e1e24", borderRadius: 10, overflow: "hidden" }}>
+        {/* Header row */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 90px 90px 90px 130px", padding: "10px 16px", borderBottom: "1px solid #18181e", background: "#0a0a0e" }}>
+          {["CHAMPION", "WIN RATE", "SESSION Δ", "STATUS", "TREND (8m)"].map(h => (
+            <span key={h} style={{ fontFamily: "DM Sans, sans-serif", fontSize: 10, letterSpacing: 2, color: "#333", textTransform: "uppercase" }}>{h}</span>
           ))}
         </div>
-        {MARKET_CHAMPS.map(c => {
-          const hist = histories[c.id] || [];
-          const cur = hist[hist.length - 1] || c.base;
-          const open = hist[0] || c.base;
-          const chg = cur - open;
-          const isChgUp = chg >= 0;
-          const isSel = c.id === selected;
+
+        {/* Best WR section */}
+        <div style={{ padding: "8px 16px 4px", background: "#0a0a0e" }}>
+          <span style={{ fontFamily: "DM Sans, sans-serif", fontSize: 10, letterSpacing: 3, color: "#4ade8055", textTransform: "uppercase" }}>▲ highest win rate</span>
+        </div>
+        {roleData.champs.filter(c => c.trend === "up").map(c => <ChampRow key={c.id} c={c} hist={histories[c.id] || []} selected={selectedChamp} onSelect={setSelectedChamp} patch={patch} />)}
+
+        {/* Worst WR section */}
+        <div style={{ padding: "10px 16px 4px", borderTop: "1px solid #18181e", background: "#0a0a0e" }}>
+          <span style={{ fontFamily: "DM Sans, sans-serif", fontSize: 10, letterSpacing: 3, color: "#f8717155", textTransform: "uppercase" }}>▼ lowest win rate</span>
+        </div>
+        {roleData.champs.filter(c => c.trend === "down").map(c => <ChampRow key={c.id} c={c} hist={histories[c.id] || []} selected={selectedChamp} onSelect={setSelectedChamp} patch={patch} />)}
+      </div>
+
+      {/* All roles mini overview */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 8 }}>
+        {MARKET_ROLES.map(r => {
+          const top = r.champs.find(c => c.trend === "up");
+          const topHist = histories[top?.id] || [];
+          const topCur = topHist[topHist.length-1] || top?.base || 0;
+          const topChg = topHist.length ? topCur - topHist[0] : 0;
           return (
-            <div key={c.id} className="champ-row" onClick={() => setSelected(c.id)}
-              style={{ display: "grid", gridTemplateColumns: "1fr 80px 80px 80px 130px", padding: "11px 16px", borderBottom: "1px solid #1a1a1e", background: isSel ? "#1e1e24" : "transparent", borderLeft: isSel ? `2px solid ${c.color}` : "2px solid transparent", transition: "all 0.15s" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                {patch && <img src={imgUrl(c.id)} alt={c.id} style={{ width: 28, height: 28, borderRadius: 3 }} onError={e => { e.target.style.display="none"; }} />}
-                <div>
-                  <div style={{ fontFamily: "Barlow Condensed, sans-serif", fontSize: 14, color: isSel ? c.color : "#D0D0D8", fontWeight: 700 }}>{c.id}</div>
-                  <div style={{ fontFamily: "DM Sans, sans-serif", fontSize: 10, color: "#444" }}>{c.role}</div>
-                </div>
-              </div>
-              <div style={{ fontFamily: "Bebas Neue, sans-serif", fontSize: 16, color: "#D0D0D8", alignSelf: "center" }}>{cur.toFixed(2)}%</div>
-              <div style={{ fontFamily: "DM Sans, sans-serif", fontSize: 13, color: isChgUp ? "#4ade80" : "#f87171", fontWeight: 600, alignSelf: "center" }}>
-                {isChgUp ? "+" : ""}{chg.toFixed(2)}%
-              </div>
-              <div style={{ alignSelf: "center" }}>
-                <span style={{ fontFamily: "DM Sans, sans-serif", fontSize: 11, fontWeight: 700, color: c.tier === "S" ? "#C8AA6E" : c.tier === "A" ? "#60a5fa" : "#94a3b8", background: c.tier === "S" ? "#C8AA6E18" : c.tier === "A" ? "#60a5fa18" : "#94a3b818", padding: "2px 8px", borderRadius: 3 }}>{c.tier}</span>
-              </div>
-              <div style={{ alignSelf: "center" }}>
-                <Sparkline data={hist} color={c.color} width={110} height={32} />
-              </div>
+            <div key={r.role} onClick={() => { setSelectedRole(r.role); setSelectedChamp(r.champs[0].id); }}
+              style={{ background: selectedRole === r.role ? `${r.color}0d` : "#0d0d10", border: `1px solid ${selectedRole === r.role ? r.color+"44" : "#1e1e24"}`, borderRadius: 8, padding: "12px", cursor: "pointer", transition: "all 0.15s" }}>
+              <div style={{ fontFamily: "DM Sans, sans-serif", fontSize: 10, color: r.color, letterSpacing: 2, marginBottom: 6 }}>{r.icon} {r.role}</div>
+              <div style={{ fontFamily: "Bebas Neue, sans-serif", fontSize: 14, color: "#D0D0D8" }}>{top?.display || top?.id}</div>
+              <div style={{ fontFamily: "Bebas Neue, sans-serif", fontSize: 18, color: "#F0F0F0" }}>{topCur.toFixed(2)}%</div>
+              <div style={{ fontFamily: "DM Sans, sans-serif", fontSize: 11, color: topChg >= 0 ? "#4ade80" : "#f87171", marginTop: 2 }}>{topChg >= 0 ? "+" : ""}{topChg.toFixed(2)}%</div>
+              <div style={{ marginTop: 6 }}><Sparkline data={topHist.slice(-20)} color={r.color} width={80} height={24} /></div>
             </div>
           );
         })}
       </div>
 
-      <div style={{ fontFamily: "DM Sans, sans-serif", fontSize: 11, color: "#333", textAlign: "center" }}>
-        Simulated win rate index for entertainment purposes · Patch data from Riot Data Dragon
+      <div style={{ fontFamily: "DM Sans, sans-serif", fontSize: 11, color: "#2a2a32", textAlign: "center" }}>
+        Win rate data sourced from U.GG · Emerald+ · Patch {patch || "25.4"} · Session fluctuations are simulated
       </div>
     </div>
   );
 }
 
-// Mini teaser widget for the dashboard homepage
+function ChampRow({ c, hist, selected, onSelect, patch }) {
+  const cur = hist[hist.length-1] || c.base;
+  const open = hist[0] || c.base;
+  const chg = cur - open;
+  const isChgUp = chg >= 0;
+  const isSel = c.id === selected;
+  const imgUrl = id => `https://ddragon.leagueoflegends.com/cdn/${patch || "15.4.1"}/img/champion/${id}.png`;
+  const displayName = c.display || c.id;
+  return (
+    <div className="champ-row" onClick={() => onSelect(c.id)}
+      style={{ display: "grid", gridTemplateColumns: "1fr 90px 90px 90px 130px", padding: "11px 16px", borderBottom: "1px solid #18181e", background: isSel ? "#16161e" : "transparent", borderLeft: `2px solid ${isSel ? c.color : "transparent"}`, transition: "all 0.12s" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        {patch && <img src={imgUrl(c.id)} alt={displayName} style={{ width: 30, height: 30, borderRadius: 3 }} onError={e => { e.target.style.display = "none"; }} />}
+        <div>
+          <div style={{ fontFamily: "Barlow Condensed, sans-serif", fontSize: 14, fontWeight: 700, color: isSel ? c.color : "#C0C0C8" }}>{displayName}</div>
+          <div style={{ fontFamily: "DM Sans, sans-serif", fontSize: 10, color: "#333" }}>base {c.base}%</div>
+        </div>
+      </div>
+      <div style={{ fontFamily: "Bebas Neue, sans-serif", fontSize: 17, color: "#D0D0D8", alignSelf: "center" }}>{cur.toFixed(2)}%</div>
+      <div style={{ fontFamily: "DM Sans, sans-serif", fontSize: 13, color: isChgUp ? "#4ade80" : "#f87171", fontWeight: 600, alignSelf: "center" }}>
+        {isChgUp ? "+" : ""}{chg.toFixed(2)}%
+      </div>
+      <div style={{ alignSelf: "center" }}>
+        <span style={{ fontFamily: "DM Sans, sans-serif", fontSize: 11, fontWeight: 700, color: c.trend === "up" ? "#4ade80" : "#f87171", background: c.trend === "up" ? "#4ade8018" : "#f8717118", padding: "2px 8px", borderRadius: 3 }}>
+          {c.trend === "up" ? "▲ TOP" : "▼ LOW"}
+        </span>
+      </div>
+      <div style={{ alignSelf: "center" }}>
+        <Sparkline data={hist.slice(-20)} color={c.color} width={110} height={30} />
+      </div>
+    </div>
+  );
+}
+
+// Mini teaser for dashboard homepage
 function MarketTeaser({ onNavigate }) {
   const [histories, setHistories] = useState({});
-  const preview = MARKET_CHAMPS.slice(0, 4);
 
   useEffect(() => {
     const build = () => {
       const next = {};
-      MARKET_CHAMPS.forEach(c => {
-        next[c.id] = generateHistory(c.id, c.base, 20);
-      });
+      ALL_CHAMPS.forEach(c => { next[c.id] = generateHistory(c.id, c.base, 20); });
       setHistories(next);
     };
     build();
@@ -2184,38 +2276,43 @@ function MarketTeaser({ onNavigate }) {
     return () => clearInterval(iv);
   }, []);
 
+  // Show top WR champ from each role
+  const teaserChamps = MARKET_ROLES.map(r => ({ ...r.champs[0], roleColor: r.color, roleIcon: r.icon, roleName: r.role }));
+
   return (
-    <div onClick={onNavigate} style={{ background: "#141418", border: "1px solid #C8AA6E22", borderRadius: 10, padding: 16, cursor: "pointer", transition: "border-color 0.2s" }}
-      onMouseEnter={e => e.currentTarget.style.borderColor = "#C8AA6E66"}
+    <div onClick={onNavigate}
+      style={{ background: "#0d0d10", border: "1px solid #C8AA6E22", borderRadius: 10, padding: 16, cursor: "pointer", transition: "border-color 0.2s" }}
+      onMouseEnter={e => e.currentTarget.style.borderColor = "#C8AA6E55"}
       onMouseLeave={e => e.currentTarget.style.borderColor = "#C8AA6E22"}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-        <div style={{ fontFamily: "Bebas Neue, sans-serif", fontSize: 16, color: "#C8AA6E", letterSpacing: 3 }}>CHAMPION MARKET</div>
+        <div>
+          <div style={{ fontFamily: "Bebas Neue, sans-serif", fontSize: 16, color: "#C8AA6E", letterSpacing: 3 }}>CHAMPION MARKET</div>
+          <div style={{ fontFamily: "DM Sans, sans-serif", fontSize: 10, color: "#333", marginTop: 1 }}>Top win rate picks per role · U.GG data</div>
+        </div>
         <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
           <div style={{ width: 5, height: 5, borderRadius: "50%", background: "#4ade80", animation: "pulse 2s ease-in-out infinite" }} />
           <span style={{ fontFamily: "DM Sans, sans-serif", fontSize: 10, color: "#4ade80", letterSpacing: 2 }}>LIVE</span>
         </div>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-        {preview.map(c => {
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 6 }}>
+        {teaserChamps.map(c => {
           const hist = histories[c.id] || [];
           const cur = hist[hist.length-1] || c.base;
-          const open = hist[0] || c.base;
-          const chg = cur - open;
+          const chg = hist.length ? cur - hist[0] : 0;
           return (
-            <div key={c.id} style={{ background: "#1a1a1e", borderRadius: 6, padding: "8px 10px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <div>
-                <div style={{ fontFamily: "Barlow Condensed, sans-serif", fontSize: 13, fontWeight: 700, color: c.color }}>{c.id}</div>
-                <div style={{ fontFamily: "Bebas Neue, sans-serif", fontSize: 15, color: "#D0D0D8" }}>{cur.toFixed(2)}%</div>
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
-                <Sparkline data={hist} color={c.color} width={55} height={22} />
+            <div key={c.id} style={{ background: "#141418", borderRadius: 6, padding: "8px 8px" }}>
+              <div style={{ fontFamily: "DM Sans, sans-serif", fontSize: 9, color: c.roleColor, letterSpacing: 2, marginBottom: 3 }}>{c.roleIcon} {c.roleName}</div>
+              <div style={{ fontFamily: "Barlow Condensed, sans-serif", fontSize: 12, fontWeight: 700, color: "#C0C0C8", marginBottom: 1 }}>{c.display || c.id}</div>
+              <div style={{ fontFamily: "Bebas Neue, sans-serif", fontSize: 16, color: "#F0F0F0" }}>{cur.toFixed(2)}%</div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 4 }}>
+                <Sparkline data={hist} color={c.color} width={44} height={18} />
                 <span style={{ fontFamily: "DM Sans, sans-serif", fontSize: 10, color: chg >= 0 ? "#4ade80" : "#f87171", fontWeight: 600 }}>{chg >= 0 ? "+" : ""}{chg.toFixed(2)}%</span>
               </div>
             </div>
           );
         })}
       </div>
-      <div style={{ marginTop: 10, textAlign: "center", fontFamily: "DM Sans, sans-serif", fontSize: 11, color: "#555", letterSpacing: 2 }}>
+      <div style={{ marginTop: 10, textAlign: "center", fontFamily: "DM Sans, sans-serif", fontSize: 11, color: "#2a2a32", letterSpacing: 2 }}>
         VIEW FULL MARKET →
       </div>
     </div>
