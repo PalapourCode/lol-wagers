@@ -339,6 +339,28 @@ body { margin:0; padding:0; background:#0f1a0f; }
       return res.status(200).json({ user: full });
     } else {
       return res.status(400).json({ error: "Unknown action" });
+
+    } else if (action === "updateEmail") {
+      const { username, newEmail } = req.body;
+      if (!username || !newEmail) return res.status(400).json({ error: "Missing fields" });
+      if (!newEmail.includes("@")) return res.status(400).json({ error: "Invalid email" });
+      const clean = newEmail.trim().toLowerCase();
+      await sql`UPDATE users SET email = ${clean} WHERE username = ${username}`;
+      const user = await getUser(username);
+      return res.status(200).json({ user });
+
+    } else if (action === "updatePassword") {
+      const { username, currentPassword, newPassword } = req.body;
+      if (!username || !currentPassword || !newPassword) return res.status(400).json({ error: "Missing fields" });
+      if (newPassword.length < 6) return res.status(400).json({ error: "Password must be at least 6 characters" });
+      const rows = await sql`SELECT * FROM users WHERE username = ${username}`;
+      if (!rows.length) return res.status(404).json({ error: "User not found" });
+      if (rows[0].password !== currentPassword) return res.status(401).json({ error: "Current password is incorrect" });
+      await sql`UPDATE users SET password = ${newPassword} WHERE username = ${username}`;
+      return res.status(200).json({ success: true });
+
+    } else {
+      return res.status(400).json({ error: "Unknown action — fallthrough" });
     }
   } catch (e) {
     return res.status(500).json({ error: e.message });
