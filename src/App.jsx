@@ -497,7 +497,7 @@ function AuthPage({ onLogin }) {
         <div style={{ paddingTop: 64 }}>
 
           <div style={{ display: "inline-flex", alignItems: "center", gap: 10, marginBottom: 20, animation: "fadeUp 0.6s ease both" }}>
-            <div style={{ height: 1, width: 28, background: "#C8AA6E" }} />
+            <img src="/logo.png" alt="" onError={e => { e.target.style.display="none"; }} style={{ width: 28, height: 28, objectFit: "contain", filter: "drop-shadow(0 0 4px #C8AA6E88)" }} />
             <span style={{ fontFamily: "DM Sans, sans-serif", fontSize: 11, letterSpacing: 4, color: "#C8AA6E", textTransform: "uppercase" }}>Ranked Betting Platform</span>
           </div>
 
@@ -645,7 +645,7 @@ function AuthPage({ onLogin }) {
             )}
 
             <div style={{ marginTop: 18, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-              {["Solo/Duo ranked only", "Riot API verified", "$30 max virtual bet", "5% platform rake"].map(t => (
+              {["Solo/Duo ranked only", "Riot API verified", "$30 max virtual bet", "Real money bets from $0.5 to $1"].map(t => (
                 <div key={t} style={{ display: "flex", alignItems: "center", gap: 6 }}>
                   <div style={{ width: 4, height: 4, borderRadius: "50%", background: "#C8AA6E33", flexShrink: 0 }} />
                   <span style={{ fontFamily: "DM Sans, sans-serif", fontSize: 11, color: "#333" }}>{t}</span>
