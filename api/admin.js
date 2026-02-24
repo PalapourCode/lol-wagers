@@ -214,16 +214,20 @@ body{margin:0;padding:0;background:#060a10}
 </div>
 <div class="ft"><p><a href="https://lol-wagers.vercel.app">lol-wagers.vercel.app</a> &nbsp; Good luck out there.</p></div>
 </div></div></body></html>`;
-          await fetch("https://api.resend.com/emails", {
+          const cardResendRes = await fetch("https://api.resend.com/emails", {
             method: "POST",
             headers: { "Content-Type": "application/json", "Authorization": `Bearer ${process.env.RESEND_API_KEY}` },
             body: JSON.stringify({
-              from: "LoL Wagers <noreply@lol-wagers.vercel.app>",
+              from: "Runeterra Wagers <onboarding@resend.dev>",
               to: r.email,
               subject: `Your ${r.skin_name} card has been sent!`,
               html: cardHtml
             })
           });
+          const cardResendData = await cardResendRes.json();
+          console.log("[EMAIL] Card email response:", cardResendRes.status, JSON.stringify(cardResendData));
+          const cardStatus = cardResendRes.status === 200 ? "sent" : "failed";
+          await sql`INSERT INTO email_logs (username, recipient, type, status, resend_id, error) VALUES (${r.username}, ${r.email}, ${"rp_card"}, ${cardStatus}, ${cardResendData.id || null}, ${cardResendData.message || null})`;
         }
             } catch(emailErr) {
         console.error("Email send failed:", emailErr.message);
@@ -392,6 +396,19 @@ body{margin:0;padding:0;background:#060a10}
         await sql`UPDATE users SET balance = balance + ${Number(bet.amount)} WHERE username = ${username}`;
       }
       return res.status(200).json({ success: true });
+
+    } else if (action === "getEmailLogs") {
+      const logs = await sql`SELECT * FROM email_logs ORDER BY sent_at DESC LIMIT 100`;
+      return res.status(200).json({ logs: logs.map(l => ({
+        id: Number(l.id),
+        username: l.username,
+        recipient: l.recipient,
+        type: l.type,
+        status: l.status,
+        resendId: l.resend_id,
+        error: l.error,
+        sentAt: Number(l.sent_at),
+      }))});
 
     } else if (action === "deletePlayer") {
       const { username } = params;
