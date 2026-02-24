@@ -2256,6 +2256,10 @@ function ResultScreen({ result, bet, onClose }) {
       background: bgGradient,
       display: "flex", alignItems: "center", justifyContent: "center",
       overflow: "hidden",
+      "--accent-88": accentColor + "88",
+      "--accent-44": accentColor + "44",
+      "--accent-cc": accentColor + "cc",
+      "--accent-33": accentColor + "33",
     }}>
       <style>{`
         @keyframes teemoFall {
@@ -2295,8 +2299,8 @@ function ResultScreen({ result, bet, onClose }) {
           100% { transform: scale(1) rotate(0deg); opacity: 1; }
         }
         @keyframes pulseGlow {
-          0%,100% { text-shadow: 0 0 30px ${accentColor}88, 0 0 60px ${accentColor}44; }
-          50%      { text-shadow: 0 0 60px ${accentColor}cc, 0 0 120px ${accentColor}88, 0 0 200px ${accentColor}33; }
+          0%,100% { text-shadow: 0 0 30px var(--accent-88), 0 0 60px var(--accent-44); }
+          50%      { text-shadow: 0 0 60px var(--accent-cc), 0 0 120px var(--accent-88), 0 0 200px var(--accent-33); }
         }
         @keyframes shimmerGold {
           0%   { background-position: -300% center; }
