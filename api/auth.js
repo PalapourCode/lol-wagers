@@ -113,6 +113,7 @@ module.exports = async function handler(req, res) {
       // Send welcome email
       try {
         if (process.env.RESEND_API_KEY) {
+          console.log("[EMAIL] Attempting welcome email to:", cleanEmail);
           const welcomeHtml = `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="dark">
 <style>@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
@@ -173,18 +174,22 @@ body{margin:0;padding:0;background:#060a10}
 </div>
 <div class="ft"><p><a href="https://lol-wagers.vercel.app">lol-wagers.vercel.app</a> &nbsp; You got this email because you signed up.</p></div>
 </div></div></body></html>`;
-          await fetch("https://api.resend.com/emails", {
+          const resendRes = await fetch("https://api.resend.com/emails", {
             method: "POST",
             headers: { "Content-Type": "application/json", "Authorization": `Bearer ${process.env.RESEND_API_KEY}` },
             body: JSON.stringify({
-              from: "LoL Wagers <noreply@lol-wagers.vercel.app>",
+              from: "LoL Wagers <onboarding@resend.dev>",
               to: cleanEmail,
               subject: `Welcome to LoL Wagers, ${name}!`,
               html: welcomeHtml
             })
           });
+          const resendData = await resendRes.json();
+          console.log("[EMAIL] Resend response:", resendRes.status, JSON.stringify(resendData));
+        } else {
+          console.log("[EMAIL] No RESEND_API_KEY found");
         }
-      } catch(emailErr) { console.error("Welcome email failed:", emailErr.message); }
+      } catch(emailErr) { console.error("[EMAIL] Exception:", emailErr.message); }
 
             const user = await getUser(name);
       return res.status(200).json({ user });
