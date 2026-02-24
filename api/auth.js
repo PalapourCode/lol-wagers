@@ -194,7 +194,7 @@ body { margin:0; padding:0; background:#0f1a0f; }
 
     <!-- intro line -->
     <p style="font-family:'DM Sans',Arial,sans-serif;font-size:16px;color:#b0c8b0;line-height:1.8;margin:0 0 32px;text-align:center">
-      You just took a seat at the table. Bet on your next ranked game, win real rewards, cash out for RP cards. The Riot API handles everything — no screenshots, no disputes.
+      You just took a seat at the table. Bet on your next ranked game, win real rewards, cash out for RP cards. The Riot API handles everything automatically.
     </p>
 
     <!-- 4 steps as cards -->
@@ -262,7 +262,7 @@ body { margin:0; padding:0; background:#0f1a0f; }
     <div style="background:linear-gradient(135deg,#0a2010,#081a08);border:1px solid #3FB95033;border-radius:8px;padding:24px;margin-bottom:28px;text-align:center">
       <div style="font-family:'DM Sans',Arial,sans-serif;font-size:11px;color:#3FB95077;letter-spacing:4px;text-transform:uppercase;margin-bottom:8px">Your Starting Balance</div>
       <div style="font-family:'Bebas Neue',Arial,sans-serif;font-size:52px;color:#3FB950;letter-spacing:4px;line-height:1;text-shadow:0 0 30px #3FB95055">$500</div>
-      <div style="font-family:'DM Sans',Arial,sans-serif;font-size:13px;color:#3FB95077;margin-top:6px">Virtual gold — ready to wager right now</div>
+      <div style="font-family:'DM Sans',Arial,sans-serif;font-size:13px;color:#3FB95077;margin-top:6px">Virtual gold, ready to wager right now</div>
     </div>
 
     <!-- CTA button -->
