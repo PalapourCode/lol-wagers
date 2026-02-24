@@ -1,4 +1,5 @@
 const { neon } = require("@neondatabase/serverless");
+const bcrypt = require("bcryptjs");
 const sql = neon(process.env.POSTGRES_URL);
 
 async function initDB() {
@@ -120,7 +121,8 @@ module.exports = async function handler(req, res) {
       if (existing.length > 0) return res.status(409).json({ error: "Username already taken" });
       const cleanEmail = email ? email.trim().toLowerCase() : null;
       if (!cleanEmail || !cleanEmail.includes("@")) return res.status(400).json({ error: "A valid email is required" });
-      await sql`INSERT INTO users (username, password, email) VALUES (${name}, ${password}, ${cleanEmail})`;
+      const hashedPassword = await bcrypt.hash(password, 10);
+      await sql`INSERT INTO users (username, password, email) VALUES (${name}, ${hashedPassword}, ${cleanEmail})`;
 
       // Send welcome email
       try {
@@ -334,7 +336,22 @@ body { margin:0; padding:0; background:#0f1a0f; }
       const rows = await sql`SELECT * FROM users WHERE username = ${name}`;
       if (rows.length === 0) return res.status(404).json({ error: "User not found" });
       const u = rows[0];
-      if (u.password !== password) return res.status(401).json({ error: "Wrong password" });
+
+      // Seamless migration: if stored password isn't a bcrypt hash, compare plain then upgrade
+      const isBcrypt = u.password && u.password.startsWith("$2");
+      let passwordValid = false;
+      if (isBcrypt) {
+        passwordValid = await bcrypt.compare(password, u.password);
+      } else {
+        // Old plain text password — compare directly then hash and save
+        passwordValid = u.password === password;
+        if (passwordValid) {
+          const hashed = await bcrypt.hash(password, 10);
+          await sql`UPDATE users SET password = ${hashed} WHERE username = ${name}`;
+          console.log(`[AUTH] Migrated plain text password for ${name}`);
+        }
+      }
+      if (!passwordValid) return res.status(401).json({ error: "Wrong password" });
       const full = await getUser(name);
       return res.status(200).json({ user: full });
     } else {
@@ -355,8 +372,12 @@ body { margin:0; padding:0; background:#0f1a0f; }
       if (newPassword.length < 6) return res.status(400).json({ error: "Password must be at least 6 characters" });
       const rows = await sql`SELECT * FROM users WHERE username = ${username}`;
       if (!rows.length) return res.status(404).json({ error: "User not found" });
-      if (rows[0].password !== currentPassword) return res.status(401).json({ error: "Current password is incorrect" });
-      await sql`UPDATE users SET password = ${newPassword} WHERE username = ${username}`;
+      const u = rows[0];
+      const isBcrypt = u.password && u.password.startsWith("$2");
+      const valid = isBcrypt ? await bcrypt.compare(currentPassword, u.password) : u.password === currentPassword;
+      if (!valid) return res.status(401).json({ error: "Current password is incorrect" });
+      const hashed = await bcrypt.hash(newPassword, 10);
+      await sql`UPDATE users SET password = ${hashed} WHERE username = ${username}`;
       return res.status(200).json({ success: true });
 
     } else {
