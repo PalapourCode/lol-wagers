@@ -438,11 +438,36 @@ function AuthPage({ onLogin }) {
             <div style={{ fontFamily: "Bebas Neue, sans-serif", fontSize: 12, color: "#44444a", letterSpacing: 5, lineHeight: 1 }}>WAGERS</div>
           </div>
         </div>
-        <div style={{ display: "flex", gap: 28, alignItems: "center" }}>
-          <span style={{ fontFamily: "DM Sans, sans-serif", fontSize: 12, color: "#44444a", letterSpacing: 2 }}>SEASON 1</span>
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#3FB950", boxShadow: "0 0 8px #3FB950" }} />
-            <span style={{ fontFamily: "DM Sans, sans-serif", fontSize: 11, color: "#3FB950", letterSpacing: 2 }}>LIVE</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <style>{`
+            @keyframes seasonGlow { 0%,100% { box-shadow: 0 0 12px #C8AA6E22, inset 0 0 12px #C8AA6E08; border-color: #C8AA6E33; } 50% { box-shadow: 0 0 28px #C8AA6E44, inset 0 0 20px #C8AA6E14; border-color: #C8AA6E77; } }
+            @keyframes livePulse { 0%,100% { opacity: 1; transform: scale(1); box-shadow: 0 0 6px #3FB950; } 50% { opacity: 0.6; transform: scale(0.85); box-shadow: 0 0 14px #3FB950; } }
+            @keyframes badgeShimmer { 0% { background-position: -200% center; } 100% { background-position: 200% center; } }
+            @keyframes countUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+          `}</style>
+          {/* Season badge */}
+          <div style={{
+            display: "flex", alignItems: "center", gap: 10, padding: "6px 16px 6px 10px",
+            background: "linear-gradient(135deg, #C8AA6E12, #C8AA6E06)",
+            border: "1px solid #C8AA6E33", borderRadius: 6,
+            animation: "seasonGlow 3s ease-in-out infinite",
+            position: "relative", overflow: "hidden"
+          }}>
+            {/* shimmer sweep */}
+            <div style={{ position: "absolute", inset: 0, background: "linear-gradient(90deg, transparent, #C8AA6E0a, transparent)", backgroundSize: "200% 100%", animation: "badgeShimmer 3s linear infinite", pointerEvents: "none" }} />
+            {/* S1 block */}
+            <div style={{ background: "#C8AA6E", borderRadius: 3, padding: "2px 7px", lineHeight: 1 }}>
+              <span style={{ fontFamily: "Bebas Neue, sans-serif", fontSize: 14, color: "#0a0a0c", letterSpacing: 2 }}>S1</span>
+            </div>
+            <div>
+              <div style={{ fontFamily: "Bebas Neue, sans-serif", fontSize: 15, color: "#C8AA6E", letterSpacing: 3, lineHeight: 1 }}>SEASON 1</div>
+              <div style={{ fontFamily: "DM Sans, sans-serif", fontSize: 10, color: "#C8AA6E66", letterSpacing: 2, lineHeight: 1.2, marginTop: 1 }}>NOW ACTIVE</div>
+            </div>
+          </div>
+          {/* Live pill */}
+          <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 12px", background: "#3FB95010", border: "1px solid #3FB95033", borderRadius: 6 }}>
+            <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#3FB950", animation: "livePulse 1.8s ease-in-out infinite" }} />
+            <span style={{ fontFamily: "Bebas Neue, sans-serif", fontSize: 14, color: "#3FB950", letterSpacing: 3 }}>LIVE</span>
           </div>
         </div>
       </nav>
@@ -490,7 +515,7 @@ function AuthPage({ onLogin }) {
           </h1>
 
           <p style={{ fontFamily: "DM Sans, sans-serif", fontSize: 16, color: "#6a6a7a", lineHeight: 1.75, margin: "0 0 44px", maxWidth: 460, animation: "fadeUp 0.7s ease 0.3s both" }}>
-            Put real money behind your ranked games. Win your match, collect your payout, redeem for RP cards. Powered by the Riot API — no screenshots, no disputes.
+            Put real money behind your ranked games. Win your match, collect your payout, redeem for RP cards. Powered by the Riot API.
           </p>
 
           {/* stats */}
@@ -513,14 +538,14 @@ function AuthPage({ onLogin }) {
             {[
               { n: "01", t: "Link your LoL account", d: "Verify in 30 seconds with a profile icon change." },
               { n: "02", t: "Stake before you queue", d: "Set your bet amount, then hit ranked. $1 to $30." },
-              { n: "03", t: "Play your game normally", d: "No restrictions. Win or lose — play how you always do." },
+              { n: "03", t: "Play your game normally", d: "No restrictions. Win or lose, play how you always do." },
               { n: "04", t: "Payout hits automatically", d: "Riot API confirms the result. Credits arrive instantly." },
             ].map((s, i) => (
-              <div key={i} className="step-row" style={{ display: "flex", gap: 20, alignItems: "flex-start", padding: "13px 16px", borderBottom: "1px solid #C8AA6E08", borderRadius: 6, transition: "background 0.2s", animation: `slideInLeft 0.6s ease ${0.55 + i * 0.08}s both`, cursor: "default" }}>
-                <span style={{ fontFamily: "Bebas Neue, sans-serif", fontSize: 30, color: "#C8AA6E22", letterSpacing: 2, flexShrink: 0, lineHeight: 1 }}>{s.n}</span>
-                <div>
-                  <div style={{ fontFamily: "DM Sans, sans-serif", fontSize: 15, fontWeight: 600, color: "#D0D0D8", marginBottom: 3 }}>{s.t}</div>
-                  <div style={{ fontFamily: "DM Sans, sans-serif", fontSize: 13, color: "#555" }}>{s.d}</div>
+              <div key={i} className="step-row" style={{ display: "flex", gap: 20, alignItems: "flex-start", padding: "16px 16px", borderBottom: "1px solid #C8AA6E08", borderRadius: 6, transition: "background 0.2s", animation: `slideInLeft 0.6s ease ${0.55 + i * 0.08}s both`, cursor: "default" }}>
+                <span style={{ fontFamily: "Bebas Neue, sans-serif", fontSize: 42, color: "#C8AA6E33", letterSpacing: 2, flexShrink: 0, lineHeight: 1 }}>{s.n}</span>
+                <div style={{ paddingTop: 4 }}>
+                  <div style={{ fontFamily: "DM Sans, sans-serif", fontSize: 18, fontWeight: 700, color: "#E0E0E8", marginBottom: 5 }}>{s.t}</div>
+                  <div style={{ fontFamily: "DM Sans, sans-serif", fontSize: 15, color: "#666", lineHeight: 1.5 }}>{s.d}</div>
                 </div>
               </div>
             ))}
