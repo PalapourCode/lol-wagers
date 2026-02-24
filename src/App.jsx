@@ -371,6 +371,8 @@ function AuthPage({ onLogin }) {
 
   const handle = async () => {
     if (!username.trim() || !password.trim()) return setError("Fill all fields");
+    if (mode === "register" && !email.trim()) return setError("Email is required to receive your RP card notifications");
+    if (mode === "register" && !email.includes("@")) return setError("Please enter a valid email address");
     setLoading(true); setError("");
     try {
       const data = await apiCall("/api/auth", { action: mode === "register" ? "register" : "login", username: username.trim(), password, email: email.trim() || undefined });
@@ -539,7 +541,7 @@ function AuthPage({ onLogin }) {
             {mode === "register" && (
               <div style={{ marginBottom: 14 }}>
                 <label style={{ display: "block", fontSize: 9, letterSpacing: 3, color: "#A0A0A8", marginBottom: 6 }}>
-                  EMAIL <span style={{ color: "#555", fontWeight: 400, letterSpacing: 1 }}>(for card delivery notifications)</span>
+                  EMAIL <span style={{ color: "#C8464A" }}>*</span> <span style={{ color: "#555", fontWeight: 400, letterSpacing: 1 }}>(for card delivery & welcome email)</span>
                 </label>
                 <input
                   className="auth-input"
