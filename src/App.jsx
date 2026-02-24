@@ -3283,7 +3283,7 @@ function AdminPanel({ adminToken, onLogout }) {
         )}
 
         {/* ══ FINANCIALS TAB ═════════════════════════════════════════════════ */}
-        {!loading && tab === "financials" && financials && (
+        {!loading && tab === "financials" && financials && financials.real && financials.virtual && (
           <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
 
             {/* ══════════════════════════════════════════════════════════════
