@@ -388,293 +388,270 @@ function AuthPage({ onLogin }) {
     finally { setLoading(false); }
   };
 
-  const features = [
-    { icon: "target", title: "Bet on Your Own Games", desc: "Wager on your next ranked Solo/Duo match. Only wins count · no match fixing possible." },
-    { icon: "coin", title: "Earn Virtual Gold", desc: "Win games, stack gold. Your winrate determines your odds · below 40% WR earns up to 3.00x." },
-    { icon: "gift", title: "Redeem for Rewards", desc: "Use your gold balance to claim RP, skins, or champion bundles. Coming soon." },
-    { icon: "chart", title: "Compete on Leaderboards", desc: "See where you rank among your friends. Who's the best at backing themselves?" },
-  ];
-
-  const howItWorks = [
-    { step: "01", text: "Create an account & link your LoL profile via icon verification" },
-    { step: "02", text: "Place a bet ($1–$30) before queuing into ranked" },
-    { step: "03", text: "Play your game. Win = earn gold. Lose = lose your stake." },
-    { step: "04", text: "Check your result · Riot API verifies it automatically" },
-  ];
-
   return (
-    <div style={{
-      minHeight: "100vh", background: "#1A1A1E", fontFamily: "Barlow Condensed, sans-serif",
-      backgroundImage: "radial-gradient(ellipse at 15% 40%, #2A2010 0%, transparent 55%), radial-gradient(ellipse at 85% 15%, #1E1E28 0%, transparent 50%)"
-    }}>
+    <div style={{ minHeight: "100vh", background: "#0a0a0c", fontFamily: "sans-serif", overflowX: "hidden" }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700;800;900&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap');
         * { box-sizing: border-box; }
         @keyframes spin { to { transform: rotate(360deg); } }
-        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes fadeInLeft { from { opacity: 0; transform: translateX(-30px); } to { opacity: 1; transform: translateX(0); } }
-        @keyframes fadeInRight { from { opacity: 0; transform: translateX(30px); } to { opacity: 1; transform: translateX(0); } }
-        @keyframes glow { 0%,100% { text-shadow: 0 0 20px #C8AA6E44; } 50% { text-shadow: 0 0 60px #C8AA6E99; } }
-        @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
-        @keyframes particleFloat { 0%,100% { transform: translateY(0) scale(1); opacity: 0.15; } 50% { transform: translateY(-40px) scale(1.5); opacity: 0.3; } }
-        input::placeholder { color: #FFFFFF33; }
-        ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: #010A13; } ::-webkit-scrollbar-thumb { background: #785A28; border-radius: 3px; }
-        .auth-feature-card:hover { border-color: #C8AA6E44 !important; background: #0d1f3c !important; }
-        .auth-input:focus { border-color: #C8AA6E !important; }
+        @keyframes ticker { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(32px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes scanline { 0% { transform: translateY(-100%); } 100% { transform: translateY(100vh); } }
+        @keyframes glowPulse { 0%,100% { box-shadow: 0 0 20px #C8AA6E18, inset 0 0 20px #C8AA6E06; } 50% { box-shadow: 0 0 50px #C8AA6E33, inset 0 0 30px #C8AA6E10; } }
+        @keyframes numberUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideInLeft { from { opacity: 0; transform: translateX(-60px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes slideInRight { from { opacity: 0; transform: translateX(60px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes heroText { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes stripePulse { 0%,100% { opacity: 0.4; } 50% { opacity: 0.9; } }
+        @keyframes shimBtn { 0% { background-position: 200% center; } 100% { background-position: -200% center; } }
+        .auth-input { transition: all 0.2s !important; }
+        .auth-input:focus { border-color: #C8AA6E !important; background: #111116 !important; box-shadow: 0 0 0 3px #C8AA6E14 !important; outline: none !important; }
+        .auth-input::placeholder { color: #2a2a34 !important; }
+        .step-row:hover { background: #12121a !important; }
+        .stat-item:hover { color: #C8AA6E !important; }
+        .cta-btn { transition: all 0.15s !important; }
+        .cta-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 40px #C8AA6E44 !important; }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: #C8AA6E33; border-radius: 2px; }
       `}</style>
 
-      {/* Top brand bar */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 48px", borderBottom: "1px solid #2D2D32" }}>
+      {/* scanline */}
+      <div style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 100, overflow: "hidden" }}>
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: "linear-gradient(transparent, #C8AA6E06, transparent)", animation: "scanline 10s linear infinite" }} />
+      </div>
+
+      {/* bg */}
+      <div style={{ position: "fixed", inset: 0, zIndex: 0, pointerEvents: "none" }}>
+        <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse 80% 50% at 50% 0%, #1a120600 0%, #0a0a0c 50%)" }} />
+        <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse 80% 50% at 50% -10%, #1a1206 0%, transparent 60%)" }} />
+        <div style={{ position: "absolute", inset: 0, backgroundImage: "linear-gradient(#C8AA6E05 1px, transparent 1px), linear-gradient(90deg, #C8AA6E05 1px, transparent 1px)", backgroundSize: "60px 60px" }} />
+        <div style={{ position: "absolute", top: 0, right: "18%", width: 2, height: "100%", background: "linear-gradient(180deg, transparent, #C8AA6E33, transparent)", animation: "stripePulse 5s ease-in-out infinite" }} />
+        <div style={{ position: "absolute", top: 0, right: "35%", width: 1, height: "100%", background: "linear-gradient(180deg, transparent, #C8AA6E14, transparent)", animation: "stripePulse 5s ease-in-out infinite 2.5s" }} />
+      </div>
+
+      {/* nav */}
+      <nav style={{ position: "relative", zIndex: 10, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 48px", height: 68, borderBottom: "1px solid #C8AA6E14", background: "#0a0a0ccc", backdropFilter: "blur(12px)" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <img src="/logo.png" alt="Runeterra Wagers" style={{ width: 128, height: 128, objectFit: "contain" }} />
+          <img src="/logo.png" alt="" style={{ width: 48, height: 48, objectFit: "contain" }} />
           <div>
-            <div style={{ fontSize: 9, letterSpacing: 5, color: "#A0A0A8" }}>RUNETERRA</div>
-            <div style={{ fontSize: 16, fontWeight: 700, color: "#C8AA6E", lineHeight: 1, fontFamily: "Barlow Condensed, sans-serif" }}>WAGERS</div>
+            <div style={{ fontFamily: "Bebas Neue, sans-serif", fontSize: 20, color: "#C8AA6E", letterSpacing: 4, lineHeight: 1 }}>RUNETERRA</div>
+            <div style={{ fontFamily: "Bebas Neue, sans-serif", fontSize: 12, color: "#44444a", letterSpacing: 5, lineHeight: 1 }}>WAGERS</div>
           </div>
         </div>
-        <div style={{ fontSize: 13, color: "#C0C0C8", fontFamily: "DM Sans, sans-serif", fontStyle: "italic" }}>
-          Stake your gold. Prove your rank.
+        <div style={{ display: "flex", gap: 28, alignItems: "center" }}>
+          <span style={{ fontFamily: "DM Sans, sans-serif", fontSize: 12, color: "#44444a", letterSpacing: 2 }}>SEASON 1</span>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#3FB950", boxShadow: "0 0 8px #3FB950" }} />
+            <span style={{ fontFamily: "DM Sans, sans-serif", fontSize: 11, color: "#3FB950", letterSpacing: 2 }}>LIVE</span>
+          </div>
+        </div>
+      </nav>
+
+      {/* ticker */}
+      <div style={{ position: "relative", zIndex: 10, overflow: "hidden", background: "#C8AA6E08", borderBottom: "1px solid #C8AA6E18", padding: "7px 0" }}>
+        <div style={{ display: "flex", animation: "ticker 28s linear infinite", width: "max-content" }}>
+          {[0,1].map(ri => (
+            <span key={ri} style={{ display: "flex" }}>
+              {[
+                { p: "palapourheal", c: "Jinx", r: "GOLD IV", a: "+$18.50", w: true },
+                { p: "MidOrFeed", c: "Ahri", r: "PLAT I", a: "+$25.65", w: true },
+                { p: "xXSlayerXx", c: "Yasuo", r: "SILVER II", a: "-$10.00", w: false },
+                { p: "ADCarry", c: "Caitlyn", r: "DIAMOND IV", a: "+$28.50", w: true },
+                { p: "JungleKing", c: "Vi", r: "GOLD II", a: "-$20.00", w: false },
+                { p: "RiftWalker", c: "Orianna", r: "MASTER", a: "+$22.80", w: true },
+                { p: "CarryDiff", c: "Akali", r: "EMERALD II", a: "+$14.25", w: true },
+              ].map((e, i) => (
+                <span key={i} style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "0 24px", borderRight: "1px solid #C8AA6E14" }}>
+                  <span style={{ fontFamily: "DM Sans, sans-serif", fontSize: 12, color: "#666" }}>{e.p}</span>
+                  <span style={{ fontFamily: "DM Sans, sans-serif", fontSize: 12, color: "#3a3a44" }}>{e.c} · {e.r}</span>
+                  <span style={{ fontFamily: "Bebas Neue, sans-serif", fontSize: 14, color: e.w ? "#3FB950" : "#F85149", letterSpacing: 1 }}>{e.a}</span>
+                </span>
+              ))}
+            </span>
+          ))}
         </div>
       </div>
 
-      <FloatingParticles />
-      <LiveTicker />
-      <AuthStatsBar />
-      {/* Main split layout */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 420px 1fr", gap: 0, minHeight: "calc(100vh - 73px)", alignItems: "start" }}>
+      {/* main */}
+      <div style={{ position: "relative", zIndex: 10, display: "grid", gridTemplateColumns: "1fr 400px", maxWidth: 1280, margin: "0 auto", padding: "0 48px 60px", gap: 60, alignItems: "start" }}>
 
-        {/* LEFT PANEL · How it works */}
-        <div style={{ padding: "28px 40px 28px 48px", animation: "fadeInLeft 0.7s ease" }}>
-          <div style={{ fontSize: 12, letterSpacing: 3, color: "#C8AA6E", marginBottom: 8 }}>HOW IT WORKS</div>
-          <h2 style={{ fontSize: 26, fontWeight: 800, color: "#F0F0F0", fontFamily: "Barlow Condensed, sans-serif", marginBottom: 20, lineHeight: 1.2 }}>
-            Bet on yourself.<br/><span style={{ color: "#C8AA6E" }}>Win real rewards.</span>
-          </h2>
-          <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-            {howItWorks.map((item, i) => (
-              <div key={i} style={{ display: "flex", gap: 16, alignItems: "flex-start", animation: `fadeInLeft 0.7s ease ${0.1 * i}s both` }}>
-                <div style={{
-                  width: 40, height: 40, borderRadius: 6, flexShrink: 0,
-                  background: "linear-gradient(135deg, #C8AA6E22, #C8AA6E08)",
-                  border: "1px solid #C8AA6E55",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  color: "#C8AA6E", fontSize: 14, fontWeight: 700, letterSpacing: 0,
-                  fontFamily: "Barlow Condensed, sans-serif"
-                }}>{item.step}</div>
-                <div style={{ color: "#E0E0E0", fontSize: 15, lineHeight: 1.75, paddingTop: 8, fontWeight: 400 }}>
-                  {item.text}
+        {/* LEFT */}
+        <div style={{ paddingTop: 64 }}>
+
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 10, marginBottom: 20, animation: "fadeUp 0.6s ease both" }}>
+            <div style={{ height: 1, width: 28, background: "#C8AA6E" }} />
+            <span style={{ fontFamily: "DM Sans, sans-serif", fontSize: 11, letterSpacing: 4, color: "#C8AA6E", textTransform: "uppercase" }}>Ranked Betting Platform</span>
+          </div>
+
+          <h1 style={{ fontFamily: "Bebas Neue, sans-serif", fontSize: "clamp(64px, 8vw, 110px)", lineHeight: 0.9, margin: "0 0 20px", animation: "heroText 0.7s ease 0.15s both", letterSpacing: 2 }}>
+            <span style={{ color: "#F0F0F0", display: "block" }}>BET ON</span>
+            <span style={{ color: "#C8AA6E", display: "block" }}>YOURSELF</span>
+            <span style={{ color: "#F0F0F022", display: "block", fontSize: "50%" }}>WIN FOR REAL</span>
+          </h1>
+
+          <p style={{ fontFamily: "DM Sans, sans-serif", fontSize: 16, color: "#6a6a7a", lineHeight: 1.75, margin: "0 0 44px", maxWidth: 460, animation: "fadeUp 0.7s ease 0.3s both" }}>
+            Put real money behind your ranked games. Win your match, collect your payout, redeem for RP cards. Powered by the Riot API — no screenshots, no disputes.
+          </p>
+
+          {/* stats */}
+          <div style={{ display: "flex", gap: 40, marginBottom: 52, animation: "fadeUp 0.7s ease 0.4s both" }}>
+            {[
+              { n: "1,847", l: "Bets Placed" },
+              { n: "$24,390", l: "Gold Wagered" },
+              { n: "312", l: "Active Players" },
+            ].map((s, i) => (
+              <div key={i} style={{ borderLeft: i > 0 ? "1px solid #C8AA6E14" : "none", paddingLeft: i > 0 ? 40 : 0 }}>
+                <div style={{ fontFamily: "Bebas Neue, sans-serif", fontSize: 38, color: "#C8AA6E", letterSpacing: 2, lineHeight: 1, animation: `numberUp 0.5s ease ${0.5 + i * 0.1}s both` }}>{s.n}</div>
+                <div style={{ fontFamily: "DM Sans, sans-serif", fontSize: 11, color: "#444", letterSpacing: 2, textTransform: "uppercase", marginTop: 3 }}>{s.l}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* steps */}
+          <div style={{ animation: "fadeUp 0.7s ease 0.5s both" }}>
+            <div style={{ fontFamily: "DM Sans, sans-serif", fontSize: 11, letterSpacing: 4, color: "#444", textTransform: "uppercase", marginBottom: 12 }}>How it works</div>
+            {[
+              { n: "01", t: "Link your LoL account", d: "Verify in 30 seconds with a profile icon change." },
+              { n: "02", t: "Stake before you queue", d: "Set your bet amount, then hit ranked. $1 to $30." },
+              { n: "03", t: "Play your game normally", d: "No restrictions. Win or lose — play how you always do." },
+              { n: "04", t: "Payout hits automatically", d: "Riot API confirms the result. Credits arrive instantly." },
+            ].map((s, i) => (
+              <div key={i} className="step-row" style={{ display: "flex", gap: 20, alignItems: "flex-start", padding: "13px 16px", borderBottom: "1px solid #C8AA6E08", borderRadius: 6, transition: "background 0.2s", animation: `slideInLeft 0.6s ease ${0.55 + i * 0.08}s both`, cursor: "default" }}>
+                <span style={{ fontFamily: "Bebas Neue, sans-serif", fontSize: 30, color: "#C8AA6E22", letterSpacing: 2, flexShrink: 0, lineHeight: 1 }}>{s.n}</span>
+                <div>
+                  <div style={{ fontFamily: "DM Sans, sans-serif", fontSize: 15, fontWeight: 600, color: "#D0D0D8", marginBottom: 3 }}>{s.t}</div>
+                  <div style={{ fontFamily: "DM Sans, sans-serif", fontSize: 13, color: "#555" }}>{s.d}</div>
                 </div>
               </div>
             ))}
           </div>
 
-          {/* Winrate odds table */}
-          <div style={{ marginTop: 40, background: "#24242888", border: "1px solid #2A2A2E", borderRadius: 8, padding: 20 }}>
-            <div style={{ fontSize: 13, letterSpacing: 3, color: "#C8AA6E", marginBottom: 4, fontWeight: 700 }}>PAYOUT MULTIPLIERS</div>
-            <div style={{ fontSize: 13, color: "#A0A0A8", fontFamily: "DM Sans, sans-serif", marginBottom: 16 }}>Based on your winrate — not your rank</div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px 24px" }}>
+          {/* odds table */}
+          <div style={{ marginTop: 40, background: "#0d0d12", border: "1px solid #C8AA6E14", borderRadius: 8, padding: "20px 24px", animation: "fadeUp 0.8s ease 0.9s both" }}>
+            <div style={{ fontFamily: "DM Sans, sans-serif", fontSize: 11, letterSpacing: 4, color: "#C8AA6E", textTransform: "uppercase", marginBottom: 16 }}>Payout Multipliers</div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px 40px" }}>
               {WR_BRACKETS.map(({ range, odds, desc }) => (
-                <div key={range} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 0", borderBottom: "1px solid #222225" }}>
+                <div key={range} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 0", borderBottom: "1px solid #C8AA6E08" }}>
                   <div>
-                    <div style={{ fontSize: 13, color: "#D0D0D8", fontFamily: "DM Sans, sans-serif" }}>{range}</div>
-                    <div style={{ fontSize: 12, color: "#7A7A82", fontFamily: "DM Sans, sans-serif" }}>{desc}</div>
+                    <span style={{ fontFamily: "DM Sans, sans-serif", fontSize: 13, color: "#888" }}>{range}</span>
+                    <span style={{ fontFamily: "DM Sans, sans-serif", fontSize: 11, color: "#444", marginLeft: 8 }}>{desc}</span>
                   </div>
-                  <span style={{ fontSize: 16, color: "#C8AA6E", fontWeight: 700 }}>{odds.toFixed(2)}x</span>
+                  <span style={{ fontFamily: "Bebas Neue, sans-serif", fontSize: 22, color: "#C8AA6E", letterSpacing: 1 }}>{odds.toFixed(2)}x</span>
                 </div>
               ))}
             </div>
           </div>
         </div>
 
-        {/* CENTER · Login form */}
-        <div style={{ padding: "28px 0", borderLeft: "1px solid #252528", borderRight: "1px solid #252528" }}>
-          <div style={{ padding: "0 36px" }}>
-            {/* Hero */}
-            <div style={{ textAlign: "center", marginBottom: 36 }}>
-              <div style={{ marginBottom: 4, animation: "float 4s ease-in-out infinite" }}>
-              <img src="/logo.png" alt="Runeterra Wagers" style={{ width: 220, height: 220, objectFit: "contain", filter: "drop-shadow(0 0 40px #C8AA6E66)" }} />
-            </div>
-              <h1 style={{ fontSize: 38, fontWeight: 900, color: "#C8AA6E", margin: "0 0 2px", animation: "glow 3s ease-in-out infinite", lineHeight: 1, fontFamily: "Barlow Condensed, sans-serif" }}>
-                BET ON<br /><span style={{ color: "#F0F0F0" }}>YOURSELF</span>
-              </h1>
-              <div style={{ width: 60, height: 1, background: "linear-gradient(90deg, transparent, #C8AA6E, transparent)", margin: "8px auto" }} />
+        {/* RIGHT: FORM */}
+        <div style={{ paddingTop: 48, animation: "slideInRight 0.7s ease 0.25s both" }}>
+          <div style={{ background: "#0d0d12", border: "1px solid #C8AA6E1e", borderRadius: 12, padding: "32px 28px", animation: "glowPulse 5s ease-in-out infinite", position: "relative", overflow: "hidden" }}>
+            <div style={{ position: "absolute", top: 0, right: 0, width: 100, height: 100, background: "linear-gradient(225deg, #C8AA6E14, transparent)", borderRadius: "0 12px 0 0", pointerEvents: "none" }} />
+
+            <div style={{ textAlign: "center", marginBottom: 28 }}>
+              <img src="/logo.png" alt="" style={{ width: 72, height: 72, objectFit: "contain", marginBottom: 10, filter: "drop-shadow(0 0 16px #C8AA6E44)" }} />
+              <div style={{ fontFamily: "Bebas Neue, sans-serif", fontSize: 26, color: "#C8AA6E", letterSpacing: 4 }}>
+                {mode === "login" ? "WELCOME BACK" : "JOIN THE RIFT"}
+              </div>
+              <div style={{ fontFamily: "DM Sans, sans-serif", fontSize: 13, color: "#444", marginTop: 3 }}>
+                {mode === "login" ? "Your bets are waiting." : "Free to start. Real rewards."}
+              </div>
             </div>
 
-            {/* Tabs */}
-            <div style={{ display: "flex", marginBottom: 24, border: "1px solid #2D2D32", borderRadius: 4, overflow: "hidden" }}>
+            <div style={{ display: "flex", marginBottom: 24, background: "#08080c", borderRadius: 6, padding: 3, gap: 3 }}>
               {["login", "register"].map(m => (
                 <button key={m} onClick={() => { setMode(m); setError(""); }} style={{
-                  flex: 1, padding: "11px", border: "none", cursor: "pointer",
+                  flex: 1, padding: "10px", border: "none", cursor: "pointer", borderRadius: 4,
                   background: mode === m ? "#C8AA6E" : "transparent",
-                  color: mode === m ? "#1A1A1E" : "#C0C0C8",
-                  fontFamily: "Barlow Condensed, sans-serif", fontSize: 11, fontWeight: 700,
-                  textTransform: "uppercase", letterSpacing: 2, transition: "all 0.2s"
-                }}>{m}</button>
+                  color: mode === m ? "#0a0a0c" : "#444",
+                  fontFamily: "Bebas Neue, sans-serif", fontSize: 14, letterSpacing: 3, transition: "all 0.15s"
+                }}>
+                  {m === "login" ? "Sign In" : "Register"}
+                </button>
               ))}
             </div>
 
-            {/* Fields */}
-            {[
-              { label: "Username", value: username, set: setUsername, type: "text", placeholder: "your summoner name" },
-              { label: "Password", value: password, set: setPassword, type: "password", placeholder: "••••••••" }
-            ].map(f => (
-              <div key={f.label} style={{ marginBottom: 14 }}>
-                <label style={{ display: "block", fontSize: 9, letterSpacing: 3, color: "#A0A0A8", marginBottom: 6 }}>
-                  {f.label.toUpperCase()}
-                </label>
-                <input
-                  className="auth-input"
-                  type={f.type} value={f.value} placeholder={f.placeholder}
-                  onChange={e => f.set(e.target.value)}
-                  onKeyDown={e => e.key === "Enter" && handle()}
-                  style={{
-                    width: "100%", background: "#1A1A1E", border: "1px solid #2D2D32",
-                    color: "#F0F0F0", padding: "11px 14px", borderRadius: 4,
-                    fontFamily: "Barlow Condensed, sans-serif", fontSize: 13, outline: "none",
-                    transition: "border-color 0.2s"
-                  }}
-                />
-              </div>
-            ))}
-
-            {/* Email — register only */}
-            {mode === "register" && (
-              <div style={{ marginBottom: 14 }}>
-                <label style={{ display: "block", fontSize: 9, letterSpacing: 3, color: "#A0A0A8", marginBottom: 6 }}>
-                  EMAIL <span style={{ color: "#C8464A" }}>*</span> <span style={{ color: "#555", fontWeight: 400, letterSpacing: 1 }}>(for card delivery & welcome email)</span>
-                </label>
-                <input
-                  className="auth-input"
-                  type="email" value={email} placeholder="you@example.com"
-                  onChange={e => setEmail(e.target.value)}
-                  onKeyDown={e => e.key === "Enter" && handle()}
-                  style={{
-                    width: "100%", background: "#1A1A1E", border: "1px solid #2D2D32",
-                    color: "#F0F0F0", padding: "11px 14px", borderRadius: 4,
-                    fontFamily: "Barlow Condensed, sans-serif", fontSize: 13, outline: "none",
-                    transition: "border-color 0.2s"
-                  }}
-                />
-              </div>
-            )}
+            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+              {[
+                { label: "Username", value: username, set: setUsername, type: "text", placeholder: "summoner name" },
+                { label: "Password", value: password, set: setPassword, type: "password", placeholder: "••••••••" },
+              ].map(f => (
+                <div key={f.label}>
+                  <label style={{ display: "block", fontFamily: "DM Sans, sans-serif", fontSize: 11, letterSpacing: 3, color: "#444", textTransform: "uppercase", marginBottom: 7 }}>{f.label}</label>
+                  <input className="auth-input" type={f.type} value={f.value} placeholder={f.placeholder}
+                    onChange={e => f.set(e.target.value)} onKeyDown={e => e.key === "Enter" && handle()}
+                    style={{ width: "100%", background: "#08080c", border: "1px solid #1c1c24", color: "#F0F0F0", padding: "12px 14px", borderRadius: 6, fontFamily: "DM Sans, sans-serif", fontSize: 14 }}
+                  />
+                </div>
+              ))}
+              {mode === "register" && (
+                <div>
+                  <label style={{ display: "block", fontFamily: "DM Sans, sans-serif", fontSize: 11, letterSpacing: 3, color: "#444", textTransform: "uppercase", marginBottom: 7 }}>
+                    Email <span style={{ color: "#C8464A" }}>*</span><span style={{ color: "#2a2a34", letterSpacing: 1, fontWeight: 400, fontSize: 10 }}> for RP delivery</span>
+                  </label>
+                  <input className="auth-input" type="email" value={email} placeholder="you@example.com"
+                    onChange={e => setEmail(e.target.value)} onKeyDown={e => e.key === "Enter" && handle()}
+                    style={{ width: "100%", background: "#08080c", border: "1px solid #1c1c24", color: "#F0F0F0", padding: "12px 14px", borderRadius: 6, fontFamily: "DM Sans, sans-serif", fontSize: 14 }}
+                  />
+                </div>
+              )}
+            </div>
 
             {error && (
-              <div style={{ background: "#C8464A11", border: "1px solid #C8464A33", borderRadius: 3, padding: "10px 14px", marginBottom: 14 }}>
-                <p style={{ color: "#F85149", fontSize: 13, margin: 0 }}>{error}</p>
+              <div style={{ background: "#C8464A0a", border: "1px solid #C8464A2a", borderRadius: 6, padding: "10px 14px", marginTop: 12 }}>
+                <p style={{ color: "#F85149", fontSize: 13, margin: 0, fontFamily: "DM Sans, sans-serif" }}>{error}</p>
               </div>
             )}
 
-            {/* Remember me */}
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
-              <div
-                onClick={() => setRememberMe(v => !v)}
-                style={{
-                  width: 18, height: 18, borderRadius: 3, flexShrink: 0, cursor: "pointer",
-                  border: `1px solid ${rememberMe ? "#C8AA6E" : "#35353A"}`,
-                  background: rememberMe ? "#C8AA6E" : "transparent",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  transition: "all 0.15s"
-                }}
-              >
-                {rememberMe && (
-                  <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
-                    <path d="M1 4L3.5 6.5L9 1" stroke="#1A1A1E" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                )}
+            <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "16px 0" }}>
+              <div onClick={() => setRememberMe(v => !v)} style={{ width: 17, height: 17, borderRadius: 3, flexShrink: 0, cursor: "pointer", border: `1px solid ${rememberMe ? "#C8AA6E" : "#242430"}`, background: rememberMe ? "#C8AA6E" : "transparent", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.15s" }}>
+                {rememberMe && <svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="#0a0a0c" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>}
               </div>
-              <span
-                onClick={() => setRememberMe(v => !v)}
-                style={{ fontSize: 13, color: "#C0C0C8", cursor: "pointer", userSelect: "none" }}
-              >
-                Remember me on this device
-              </span>
+              <span onClick={() => setRememberMe(v => !v)} style={{ fontFamily: "DM Sans, sans-serif", fontSize: 13, color: "#444", cursor: "pointer", userSelect: "none" }}>Remember me</span>
             </div>
 
             {loading ? <Loader text="Authenticating..." /> : (
-              <button onClick={handle} style={{
-                width: "100%", background: "linear-gradient(135deg, #C8AA6E, #785A28)",
-                border: "none", color: "#010A13", padding: "13px", borderRadius: 4,
-                fontFamily: "Barlow Condensed, sans-serif", fontSize: 13, fontWeight: 700,
-                letterSpacing: 2, cursor: "pointer", textTransform: "uppercase",
-                transition: "opacity 0.2s", marginBottom: 12
-              }}
-                onMouseEnter={e => e.target.style.opacity = "0.85"}
-                onMouseLeave={e => e.target.style.opacity = "1"}
-              >
+              <button className="cta-btn" onClick={handle} style={{
+                width: "100%", background: "linear-gradient(135deg, #C8AA6E, #9a7828)",
+                border: "none", color: "#0a0a0c", padding: "14px", borderRadius: 6,
+                fontFamily: "Bebas Neue, sans-serif", fontSize: 18, letterSpacing: 4, cursor: "pointer",
+              }}>
                 {mode === "login" ? "Enter the Rift" : "Create Account"}
               </button>
             )}
 
             {mode === "register" && (
-              <div style={{ background: "#C8AA6E11", border: "1px solid #C8AA6E22", borderRadius: 4, padding: "12px 16px", textAlign: "center" }}>
-                <p style={{ color: "#C8AA6E", fontSize: 13, margin: 0 }}>
-                  You start with <strong>$500 in virtual gold</strong>. No real money needed.
-                </p>
+              <div style={{ marginTop: 14, textAlign: "center", background: "#C8AA6E08", border: "1px solid #C8AA6E14", borderRadius: 6, padding: "11px" }}>
+                <span style={{ fontFamily: "DM Sans, sans-serif", fontSize: 13, color: "#C8AA6E99" }}>Start with <strong style={{ color: "#C8AA6E" }}>$500 virtual gold</strong> — no deposit needed</span>
               </div>
             )}
 
-            <div style={{ marginTop: 24, padding: "16px", background: "#24242866", borderRadius: 4, border: "1px solid #2D2D32" }}>
-              <div style={{ fontSize: 10, letterSpacing: 3, color: "#C8AA6E88", marginBottom: 10 }}>PLATFORM INFO</div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                {["Virtual currency only · no real money", "Solo/Duo ranked games only", "$30 max virtual bet per game", "5% platform rake on winnings"].map(t => (
-                  <div key={t} style={{ fontSize: 15, color: "#D0D0D8", fontFamily: "DM Sans, sans-serif", display: "flex", gap: 8, alignItems: "center" }}>
-                    {t}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* RIGHT PANEL · Features / rewards */}
-        <div style={{ padding: "28px 48px 28px 40px", animation: "fadeInRight 0.7s ease" }}>
-          <div style={{ fontSize: 12, letterSpacing: 3, color: "#C8AA6E", marginBottom: 8 }}>FEATURES</div>
-          <h2 style={{ fontSize: 26, fontWeight: 800, color: "#F0F0F0", fontFamily: "Barlow Condensed, sans-serif", marginBottom: 20, lineHeight: 1.2 }}>
-            What you can<br/><span style={{ color: "#C8AA6E" }}>win & earn.</span>
-          </h2>
-
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            {features.map((f, i) => (
-              <div key={i} className="auth-feature-card" style={{
-                background: "#24242888", border: "1px solid #2A2A2E", borderRadius: 8,
-                padding: "16px 20px", transition: "all 0.2s", cursor: "default",
-                animation: `fadeInRight 0.7s ease ${0.1 * i}s both`
-              }}>
-                <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
-                  <FeatureIcon type={f.icon} />
-                  <div>
-                    <div style={{ color: "#C8AA6E", fontSize: 13, fontWeight: 700, marginBottom: 4 }}>{f.title}</div>
-                    <div style={{ color: "#E0E0E0", fontSize: 15, fontFamily: "DM Sans, sans-serif", lineHeight: 1.7 }}>{f.desc}</div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Coming soon rewards */}
-          <div style={{ marginTop: 28, background: "linear-gradient(135deg, #C8AA6E11, #785A2811)", border: "1px solid #C8AA6E22", borderRadius: 8, padding: 20 }}>
-            <div style={{ fontSize: 13, letterSpacing: 2, color: "#C8AA6E", marginBottom: 14, fontFamily: "Barlow Condensed, sans-serif", fontWeight: 600 }}>COMING SOON · REWARDS SHOP</div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {[
-                { item: "Champion Skin", price: "$800 gold", icon: "diamond" },
-                { item: "Riot Points Pack (650 RP)", price: "$350 gold", icon: "rp" },
-                { item: "Champion Bundle", price: "$800 gold", emoji: "⚔" },
-              ].map(r => (
-                <div key={r.item} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid #222225" }}>
-                  <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                    <RewardIcon type={r.icon} />
-                    <span style={{ fontSize: 13, color: "#E0E0E0", fontFamily: "DM Sans, sans-serif" }}>{r.item}</span>
-                  </div>
-                  <span style={{ fontSize: 14, color: "#C8AA6E", fontWeight: 700 }}>{r.price}</span>
+            <div style={{ marginTop: 18, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+              {["Solo/Duo ranked only", "Riot API verified", "$30 max virtual bet", "5% platform rake"].map(t => (
+                <div key={t} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <div style={{ width: 4, height: 4, borderRadius: "50%", background: "#C8AA6E33", flexShrink: 0 }} />
+                  <span style={{ fontFamily: "DM Sans, sans-serif", fontSize: 11, color: "#333" }}>{t}</span>
                 </div>
               ))}
             </div>
-            <div style={{ marginTop: 12, fontSize: 13, color: "#A0A0A8", fontStyle: "italic" }}>
-              * Rewards are virtual and for demonstration purposes
-            </div>
           </div>
-          <RecentWinsScroll />
+
+          <div style={{ marginTop: 14, background: "#0d0d12", border: "1px solid #1a1a22", borderRadius: 8, overflow: "hidden" }}>
+            <div style={{ padding: "9px 14px", borderBottom: "1px solid #1a1a22", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span style={{ fontFamily: "DM Sans, sans-serif", fontSize: 11, letterSpacing: 3, color: "#333", textTransform: "uppercase" }}>Recent Activity</span>
+              <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                <div style={{ width: 5, height: 5, borderRadius: "50%", background: "#3FB950", boxShadow: "0 0 6px #3FB950" }} />
+                <span style={{ fontFamily: "DM Sans, sans-serif", fontSize: 10, color: "#3FB950", letterSpacing: 2 }}>LIVE</span>
+              </div>
+            </div>
+            <RecentWinsScroll />
+          </div>
         </div>
+      </div>
+
+      <div style={{ position: "relative", zIndex: 10, borderTop: "1px solid #C8AA6E0e", padding: "18px 48px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <span style={{ fontFamily: "DM Sans, sans-serif", fontSize: 12, color: "#2a2a34" }}>Not affiliated with Riot Games</span>
+        <span style={{ fontFamily: "Bebas Neue, sans-serif", fontSize: 13, color: "#C8AA6E33", letterSpacing: 3 }}>RUNETERRA-WAGERS.ONLINE</span>
       </div>
     </div>
   );
